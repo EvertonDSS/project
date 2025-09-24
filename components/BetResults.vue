@@ -41,6 +41,14 @@
             <span class="font-semibold text-neutral-800">{{ bet.campeonato }}</span>
           </div>
           
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-neutral-600 flex items-center space-x-2">
+              <CalendarIcon class="w-4 h-4" />
+              <span>Rodada:</span>
+            </span>
+            <span class="font-semibold text-neutral-800">{{ bet.rodada }}</span>
+          </div>
+          
           <div class="bg-gradient-to-r from-primary-50 to-secondary-50 p-4 rounded-xl space-y-2 mt-4">
             <div class="flex items-center justify-between">
               <span class="text-sm text-neutral-600 flex items-center space-x-2">
@@ -77,6 +85,7 @@ import {
   UserIcon, 
   SparklesIcon, 
   TrophyIcon,
+  CalendarIcon,
   CurrencyDollarIcon,
   BanknotesIcon,
   CalculatorIcon

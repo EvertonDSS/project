@@ -52,9 +52,7 @@
     if (!isFormValid.value) return
   
     const apostador = {
-      id: Date.now().toString(),
-      nome: formData.value.nome.trim(),
-      dataCadastro: new Date()
+      nome: formData.value.nome.trim()
     }
   
     emit('apostadorSubmitted', apostador)

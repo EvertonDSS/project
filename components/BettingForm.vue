@@ -59,6 +59,16 @@
             placeholder="Digite o nome do campeonato..."
           />
           
+          <FormSelectSearchable
+            label="Rodada"
+            v-model="formData.rodada"
+            :options="rodadaOptions"
+            :disabled="loading"
+            required
+            icon="CalendarIcon"
+            placeholder="Digite o nome da rodada..."
+          />
+          
           <FormInput
             label="Valor Total"
             type="number"
@@ -110,12 +120,13 @@
 import { PaperAirplaneIcon } from '@heroicons/vue/24/outline'
 
 const emit = defineEmits(['betSubmitted'])
-const { api, getApostadores, getCavalos, getCampeonatos } = useApi()
+const { api, getApostadores, getCavalos, getCampeonatos, getRodadas } = useApi()
 
 const formData = ref({
   apostador: '',
   cavalo: '',
   campeonato: '',
+  rodada: '',
   valorTotal: '',
   valorAposta: '',
   porcentagem: ''
@@ -125,6 +136,7 @@ const formData = ref({
 const apostadorOptions = ref([])
 const cavaloOptions = ref([])
 const campeonatoOptions = ref([])
+const rodadaOptions = ref([])
 const loading = ref(false)
 const error = ref('')
 
@@ -158,16 +170,22 @@ const loadFormData = async () => {
       value: campeonato.id,
       label: campeonato.nome
     }))
+
+    // Carregar rodadas do backend
+    const rodadas = await getRodadas()
+    rodadaOptions.value = rodadas.map(rodada => ({
+      value: rodada.id,
+      label: rodada.nomeRodada
+    }))
   } catch (err) {
     error.value = 'Erro ao carregar dados do servidor. Usando dados padrão.'
     console.error('Erro ao carregar dados:', err)
     
     // Fallback para dados estáticos em caso de erro
     apostadorOptions.value = []
-    
     cavaloOptions.value = []
-    
     campeonatoOptions.value = []
+    rodadaOptions.value = []
   } finally {
     loading.value = false
   }
@@ -185,6 +203,7 @@ const submitBet = async () => {
     cavaloId: parseInt(formData.value.cavalo),
     campeonatoId: parseInt(formData.value.campeonato),
     apostadorId: parseInt(formData.value.apostador),
+    rodadaId: parseInt(formData.value.rodada),
     total: parseFloat(formData.value.valorTotal),
     valorUnitario: parseFloat(formData.value.valorAposta),
     porcentagem: parseFloat(formData.value.porcentagem)
@@ -200,6 +219,7 @@ const submitBet = async () => {
       apostador: apostadorOptions.value.find(opt => opt.value === formData.value.apostador)?.label || '',
       cavalo: cavaloOptions.value.find(opt => opt.value === formData.value.cavalo)?.label || '',
       campeonato: campeonatoOptions.value.find(opt => opt.value === formData.value.campeonato)?.label || '',
+      rodada: rodadaOptions.value.find(opt => opt.value === formData.value.rodada)?.label || '',
       valorTotal: apostaData.total,
       valorAposta: apostaData.valorUnitario,
       porcentagem: apostaData.porcentagem,

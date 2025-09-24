@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-const { getApostadores } = useApi()
+const { getApostadores, postApostador } = useApi()
 const submittedApostadores = ref([])
 const loadingApostadores = ref(false)
 const errorApostadores = ref('')
@@ -68,10 +68,15 @@ const loadApostadores = async () => {
   }
 }
 
-const handleApostadorSubmission = (apostador) => {
-  // Adicionar novo apostador no início da lista
-  submittedApostadores.value.unshift(apostador)
-  // Recarregar apostadores do backend para garantir sincronização
-  loadApostadores()
+const handleApostadorSubmission = async (apostador) => {
+  try {
+    // Enviar apostador para o backend
+    await postApostador(apostador)
+    // Recarregar apostadores do backend para garantir sincronização
+    await loadApostadores()
+  } catch (error) {
+    console.error('Erro ao enviar apostador:', error)
+    errorApostadores.value = 'Erro ao cadastrar apostador. Tente novamente.'
+  }
 }
 </script>

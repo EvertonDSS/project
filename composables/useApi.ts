@@ -26,6 +26,16 @@ export const useApi = () => {
       }
     },
 
+    async postApostador(apostador: any) {
+      try {
+        const response = await api('/apostador', { method: 'POST', body: apostador })
+        return response
+      } catch (error) {
+        console.error('Erro ao postar apostador:', error)
+        throw error
+      }
+    },
+
     // Métodos para outros recursos (cavalos, campeonatos)
     async getCavalos() {
       try {
