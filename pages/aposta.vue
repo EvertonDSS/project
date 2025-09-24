@@ -22,11 +22,19 @@
           </div>
         </div>
         
-        <!-- Lista de apostas -->
-        <BetResults v-if="submittedBets.length > 0 && !loadingBets" :bets="submittedBets" />
+        <!-- Cabeçalho das últimas apostas -->
+        <div v-if="submittedBets.length > 0 && !loadingBets" class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-neutral-800 mb-2">Últimas Apostas</h2>
+          <p class="text-neutral-600">
+            Exibindo as últimas {{ ultimasApostas.length }} de {{ submittedBets.length }} apostas
+          </p>
+        </div>
+        
+        <!-- Lista de apostas (últimas 6) -->
+        <BetResults v-if="ultimasApostas.length > 0 && !loadingBets" :bets="ultimasApostas" />
         
         <!-- Mensagem quando não há apostas -->
-        <div v-if="submittedBets.length === 0 && !loadingBets && !errorBets" class="text-center py-12">
+        <div v-if="ultimasApostas.length === 0 && !loadingBets && !errorBets" class="text-center py-12">
           <div class="text-neutral-400 mb-4">
             <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -44,6 +52,11 @@
   const submittedBets = ref([])
   const loadingBets = ref(false)
   const errorBets = ref('')
+
+  // Computed para as últimas 6 apostas
+  const ultimasApostas = computed(() => {
+    return submittedBets.value.slice(0, 6)
+  })
   
   // Carregar apostas do backend quando o componente for montado
   onMounted(async () => {
@@ -57,7 +70,9 @@
     try {
       const apostas = await getApostas()
       console.log(apostas)
-      submittedBets.value = apostas.map(aposta => ({
+      
+      // Mapear e ordenar apostas por data (mais recentes primeiro)
+      const apostasMapeadas = apostas.map(aposta => ({
         id: aposta.id.toString(),
         apostador: aposta.apostador?.nome || 'N/A',
         cavalo: aposta.cavalo?.nome || 'N/A',
@@ -67,6 +82,9 @@
         porcentagem: aposta.porcentagem,
         dataAposta: new Date(aposta.createdAt || aposta.dataAposta)
       }))
+      
+      // Ordenar por data (mais recentes primeiro)
+      submittedBets.value = apostasMapeadas.sort((a, b) => b.dataAposta - a.dataAposta)
     } catch (err) {
       errorBets.value = 'Erro ao carregar apostas do servidor.'
       console.error('Erro ao carregar apostas:', err)

@@ -29,31 +29,34 @@
       
       <form @submit.prevent="submitBet" class="space-y-6" :class="{ 'opacity-50 pointer-events-none': loading }">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FormSelect
+          <FormSelectSearchable
             label="Apostador"
             v-model="formData.apostador"
             :options="apostadorOptions"
             :disabled="loading"
             required
             icon="UserIcon"
+            placeholder="Digite o nome do apostador..."
           />
           
-          <FormSelect
+          <FormSelectSearchable
             label="Cavalo"
             v-model="formData.cavalo"
             :options="cavaloOptions"
             :disabled="loading"
             required
             icon="SparklesIcon"
+            placeholder="Digite o nome do cavalo..."
           />
           
-          <FormSelect
+          <FormSelectSearchable
             label="Campeonato"
             v-model="formData.campeonato"
             :options="campeonatoOptions"
             :disabled="loading"
             required
             icon="TrophyIcon"
+            placeholder="Digite o nome do campeonato..."
           />
           
           <FormInput
@@ -84,6 +87,7 @@
             required
             suffix="%"
             icon="CalculatorIcon"
+            :max="100"
           />
         </div>
         

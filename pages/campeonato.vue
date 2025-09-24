@@ -3,6 +3,56 @@
     <main class="container mx-auto px-4 py-8">
       <CampeonatoForm @campeonato-submitted="handleCampeonatoSubmission" />
       
+      <!-- Filtro de busca -->
+      <div v-if="submittedCampeonatos.length > 0 && !mostrandoApostadores" class="mb-8">
+        <div class="card p-6 max-w-2xl mx-auto">
+          <div class="text-center mb-4">
+            <h3 class="text-xl font-semibold text-neutral-800 mb-2">Filtrar Campeonatos</h3>
+            <p class="text-neutral-600 text-sm">Busque por nome ou ano do campeonato</p>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+              <FormInput
+                label="Nome do Campeonato"
+                type="text"
+                v-model="filtroNome"
+                placeholder="Digite o nome do campeonato"
+                icon="MagnifyingGlassIcon"
+              />
+            </div>
+            
+            <div class="flex-1">
+              <FormInput
+                label="Ano"
+                type="number"
+                v-model="filtroAno"
+                placeholder="20__ (digite apenas os 2 últimos dígitos)"
+                icon="CalendarIcon"
+                :min="2020"
+                :max="2100"
+              />
+            </div>
+            
+            <div class="flex items-end">
+              <button 
+                @click="limparFiltros"
+                class="px-4 py-2 bg-neutral-600 text-white rounded hover:bg-neutral-700 transition-colors text-sm"
+              >
+                Limpar
+              </button>
+            </div>
+          </div>
+          
+          <!-- Resultados do filtro -->
+          <div v-if="filtroNome || filtroAno" class="mt-4 text-center">
+            <p class="text-sm text-neutral-600">
+              {{ campeonatosFiltrados.length }} campeonato{{ campeonatosFiltrados.length !== 1 ? 's' : '' }} encontrado{{ campeonatosFiltrados.length !== 1 ? 's' : '' }}
+            </p>
+          </div>
+        </div>
+      </div>
+      
       <!-- Loading dos campeonatos -->
       <div v-if="loadingCampeonatos" class="text-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
@@ -24,8 +74,8 @@
       
       <!-- Lista de campeonatos ou apostadores -->
       <CampeonatoResults 
-        v-if="submittedCampeonatos.length > 0 && !loadingCampeonatos && !mostrandoApostadores" 
-        :campeonatos="submittedCampeonatos"
+        v-if="campeonatosParaExibir.length > 0 && !loadingCampeonatos && !mostrandoApostadores" 
+        :campeonatos="campeonatosParaExibir"
         @campeonato-clicked="handleCampeonatoClick"
       />
       
@@ -37,6 +87,42 @@
         @apostador-clicked="handleApostadorClick"
         @voltar="voltarParaCampeonatos"
       />
+      
+      <!-- Mensagem quando não há apostadores -->
+      <div v-if="mostrandoApostadores && apostadores.length === 0 && !loadingApostadores" class="text-center py-12">
+        <div class="text-neutral-400 mb-4">
+          <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-neutral-600 mb-2">Nenhum apostador encontrado</h3>
+        <p class="text-neutral-500 mb-6">Este campeonato ainda não possui apostadores cadastrados.</p>
+        
+        <!-- Botão para voltar -->
+        <button 
+          @click="voltarParaCampeonatos"
+          class="px-6 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+        >
+          Voltar aos Campeonatos
+        </button>
+      </div>
+      
+      <!-- Mensagem quando não há resultados do filtro -->
+      <div v-if="submittedCampeonatos.length > 0 && campeonatosParaExibir.length === 0 && !loadingCampeonatos && !mostrandoApostadores" class="text-center py-12">
+        <div class="text-neutral-400 mb-4">
+          <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-neutral-600 mb-2">Nenhum campeonato encontrado</h3>
+        <p class="text-neutral-500 mb-6">Não foram encontrados campeonatos com os critérios de busca informados.</p>
+        <button 
+          @click="limparFiltros"
+          class="px-6 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+        >
+          Limpar Filtros
+        </button>
+      </div>
       
       <!-- Mensagem quando não há campeonatos -->
       <div v-if="submittedCampeonatos.length === 0 && !loadingCampeonatos && !errorCampeonatos" class="text-center py-12">
@@ -77,6 +163,40 @@ const loadingApostadores = ref(false)
 const modalApostadorOpen = ref(false)
 const apostadorSelecionado = ref(null)
 const apostasApostador = ref([])
+
+// Estados para filtro
+const filtroNome = ref('')
+const filtroAno = ref(new Date().getFullYear()) // Inicializa com o ano atual
+
+// Computeds para filtro
+const campeonatosFiltrados = computed(() => {
+  let filtrados = submittedCampeonatos.value
+
+  // Filtrar por nome
+  if (filtroNome.value.trim()) {
+    filtrados = filtrados.filter(campeonato => 
+      campeonato.nome.toLowerCase().includes(filtroNome.value.toLowerCase())
+    )
+  }
+
+  // Filtrar por ano
+  if (filtroAno.value) {
+    filtrados = filtrados.filter(campeonato => 
+      campeonato.ano === parseInt(filtroAno.value)
+    )
+  }
+
+  return filtrados
+})
+
+const campeonatosParaExibir = computed(() => {
+  // Se há filtros ativos, mostrar resultados filtrados
+  if (filtroNome.value.trim() || filtroAno.value) {
+    return campeonatosFiltrados.value
+  }
+  // Senão, mostrar todos os campeonatos
+  return submittedCampeonatos.value
+})
 
 // Carregar campeonatos do backend quando o componente for montado
 onMounted(async () => {
@@ -129,17 +249,24 @@ const handleCampeonatoClick = async (campeonato) => {
   try {
     const apostadoresData = await getApostadoresPorCampeonato(parseInt(campeonato.id))
     
-    // Mapear apostadores (sem apostas ainda)
-    apostadores.value = apostadoresData.map(apostador => ({
-      id: apostador.id,
-      nome: apostador.nome,
-      apostas: [] // Será carregado quando clicar no apostador
-    }))
+    // Verificar se há apostadores
+    if (apostadoresData && apostadoresData.length > 0) {
+      // Mapear apostadores (sem apostas ainda)
+      apostadores.value = apostadoresData.map(apostador => ({
+        id: apostador.id,
+        nome: apostador.nome,
+        apostas: [] // Será carregado quando clicar no apostador
+      }))
+    } else {
+      // Array vazio - nenhum apostador encontrado
+      apostadores.value = []
+    }
     
     mostrandoApostadores.value = true
   } catch (error) {
     console.error('Erro ao carregar apostadores:', error)
     errorCampeonatos.value = 'Erro ao carregar apostadores do campeonato.'
+    apostadores.value = []
   } finally {
     loadingApostadores.value = false
   }
@@ -162,12 +289,18 @@ const handleApostadorClick = async (apostador) => {
       parseInt(apostador.id)
     )
     
-    // Mapear apostas para o formato do modal
+    // Mapear apostas para o formato do modal com dados reais da API
     apostasApostador.value = apostasData.map(aposta => ({
-      rodada: `Rodada ${aposta.id}`, // Você pode ajustar conforme necessário
+      id: aposta.id,
+      cavaloId: aposta.cavaloId,
       cavalo: aposta.cavalo.nome,
-      valorAposta: parseFloat(aposta.valorUnitario),
+      campeonatoId: aposta.campeonatoId,
+      campeonato: aposta.campeonato,
+      apostadorId: aposta.apostadorId,
+      total: parseFloat(aposta.total),
+      valorUnitario: parseFloat(aposta.valorUnitario),
       porcentagem: parseFloat(aposta.porcentagem),
+      // Cálculos baseados nos dados reais
       premioIndividual: (parseFloat(aposta.valorUnitario) * parseFloat(aposta.porcentagem)) / 100,
       totalRodada: parseFloat(aposta.total)
     }))
@@ -183,5 +316,11 @@ const fecharModalApostador = () => {
   modalApostadorOpen.value = false
   apostadorSelecionado.value = null
   apostasApostador.value = []
+}
+
+// Função para limpar filtros
+const limparFiltros = () => {
+  filtroNome.value = ''
+  filtroAno.value = new Date().getFullYear() // Reset para o ano atual
 }
 </script>

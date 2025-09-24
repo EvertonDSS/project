@@ -45,6 +45,7 @@
           required
           suffix="%"
           icon="CalculatorIcon"
+          :max="100"
         />
         
         <div class="flex justify-center pt-4">

@@ -25,8 +25,8 @@
             v-model="formData.ano"
             required
             icon="CalendarIcon"
-            placeholder="Ex: 2024"
-            :min="2000"
+            placeholder="20__ (digite apenas os 2 últimos dígitos)"
+            :min="2020"
             :max="2100"
           />
         </div>
@@ -53,13 +53,13 @@ const emit = defineEmits(['campeonatoSubmitted'])
 
 const formData = ref({
   nome: '',
-  ano: ''
+  ano: new Date().getFullYear() // Inicializa com o ano atual
 })
 
 const isFormValid = computed(() => {
   return formData.value.nome.trim() !== '' && 
          formData.value.ano !== '' && 
-         formData.value.ano >= 2000 && 
+         formData.value.ano >= 2020 && 
          formData.value.ano <= 2100
 })
 
@@ -76,6 +76,6 @@ const submitCampeonato = () => {
   
   // Reset form
   formData.value.nome = ''
-  formData.value.ano = ''
+  formData.value.ano = new Date().getFullYear() // Reset para o ano atual
 }
 </script>

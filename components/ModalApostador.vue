@@ -7,6 +7,7 @@
           <div>
             <h2 class="text-2xl font-bold">{{ apostador.nome }}</h2>
             <p class="text-primary-100">{{ campeonato.nome }} - {{ campeonato.ano }}</p>
+            <p class="text-primary-200 text-sm">ID Apostador: {{ apostador.id }} | ID Campeonato: {{ campeonato.id }}</p>
           </div>
           <button 
             @click="closeModal"
@@ -35,24 +36,35 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(aposta, index) in apostas" :key="index" class="hover:bg-neutral-50">
-                  <td class="border border-neutral-300 px-4 py-2">{{ aposta.rodada }}</td>
+                <tr v-for="(aposta, index) in apostas" :key="aposta.id" class="hover:bg-neutral-50">
+                  <td class="border border-neutral-300 px-4 py-2">Aposta #{{ aposta.id }}</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ aposta.cavalo }}</td>
-                  <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.valorAposta) }}</td>
+                  <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.valorUnitario) }}</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ aposta.porcentagem }}%</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.premioIndividual) }}</td>
-                  <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.totalRodada) }}</td>
+                  <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.total) }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Total da aposta -->
-        <div class="bg-gradient-to-r from-primary-50 to-secondary-50 p-4 rounded-lg">
+        <!-- Resumo das apostas -->
+        <div class="bg-gradient-to-r from-primary-50 to-secondary-50 p-4 rounded-lg space-y-3">
           <div class="flex justify-between items-center">
-            <span class="text-lg font-semibold text-neutral-800">Valor Total da Aposta:</span>
+            <span class="text-lg font-semibold text-neutral-800">Valor Total das Apostas:</span>
             <span class="text-2xl font-bold text-primary-600">{{ formatCurrency(valorTotalAposta) }}</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="flex justify-between">
+              <span class="text-neutral-600">Total de Apostas:</span>
+              <span class="font-semibold">{{ apostas.length }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-neutral-600">Cavalos Únicos:</span>
+              <span class="font-semibold">{{ cavalosUnicos }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -101,7 +113,12 @@ const formatCurrency = (value) => {
 }
 
 const valorTotalAposta = computed(() => {
-  return props.apostas.reduce((total, aposta) => total + aposta.valorAposta, 0)
+  return props.apostas.reduce((total, aposta) => total + aposta.valorUnitario, 0)
+})
+
+const cavalosUnicos = computed(() => {
+  const cavalos = new Set(props.apostas.map(aposta => aposta.cavalo))
+  return cavalos.size
 })
 
 const generatePDF = () => {
@@ -125,6 +142,9 @@ const generatePDF = () => {
         <div class="header">
           <div class="title">Relatório de Apostas</div>
           <div class="subtitle">${props.apostador.nome} - ${props.campeonato.nome} (${props.campeonato.ano})</div>
+          <div style="font-size: 12px; color: #666; margin-top: 5px;">
+            ID Apostador: ${props.apostador.id} | ID Campeonato: ${props.campeonato.id}
+          </div>
         </div>
         
         <table>
@@ -141,19 +161,25 @@ const generatePDF = () => {
           <tbody>
             ${props.apostas.map(aposta => `
               <tr>
-                <td>${aposta.rodada}</td>
+                <td>Aposta #${aposta.id}</td>
                 <td>${aposta.cavalo}</td>
-                <td>${formatCurrency(aposta.valorAposta)}</td>
+                <td>${formatCurrency(aposta.valorUnitario)}</td>
                 <td>${aposta.porcentagem}%</td>
                 <td>${formatCurrency(aposta.premioIndividual)}</td>
-                <td>${formatCurrency(aposta.totalRodada)}</td>
+                <td>${formatCurrency(aposta.total)}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
         
         <div class="total">
-          Valor Total da Aposta: ${formatCurrency(valorTotalAposta.value)}
+          <div style="margin-bottom: 10px;">
+            <strong>Valor Total das Apostas: ${formatCurrency(valorTotalAposta.value)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px;">
+            <span>Total de Apostas: ${props.apostas.length}</span>
+            <span>Cavalos Únicos: ${cavalosUnicos.value}</span>
+          </div>
         </div>
       </body>
     </html>
