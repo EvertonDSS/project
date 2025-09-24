@@ -110,8 +110,13 @@ const updateValue = (event) => {
         }
       }
     } else if (props.label && props.label.toLowerCase().includes('porcentagem')) {
-      // Para campos de porcentagem, limitar a 100
+      // Para campos de porcentagem, limitar entre 0 e 100
       const numValue = parseFloat(value)
+      
+      // Não permitir valores negativos
+      if (numValue < 0) {
+        value = '0'
+      }
       
       // Se tem min definido e o valor é menor, usar o min
       if (props.min !== undefined && numValue < parseFloat(props.min)) {
@@ -168,6 +173,12 @@ const validateOnKeyup = (event) => {
     if (value !== '') {
       const numValue = parseFloat(value)
       
+      // Não permitir valores negativos
+      if (numValue < 0) {
+        event.target.value = '0'
+        emit('update:modelValue', '0')
+      }
+      
       // Limitar porcentagem a 100
       if (numValue > 100) {
         event.target.value = '100'
@@ -185,6 +196,13 @@ const validateOnBlur = (event) => {
     
     // Validação especial para campos de porcentagem
     if (props.label && props.label.toLowerCase().includes('porcentagem')) {
+      // Não permitir valores negativos
+      if (numValue < 0) {
+        event.target.value = '0'
+        emit('update:modelValue', '0')
+        return
+      }
+      
       // Limitar porcentagem a 100
       if (numValue > 100) {
         event.target.value = '100'

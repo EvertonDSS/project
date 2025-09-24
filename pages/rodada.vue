@@ -137,6 +137,10 @@ const handleRodadaSubmission = async (rodada) => {
     await postRodada({ nomeRodada: rodada.nomeRodada })
     submittedRodadas.value.unshift(rodada)
     await loadRodadas()
+    
+    // Emitir evento global para atualizar selects de rodadas
+    await nextTick()
+    window.dispatchEvent(new CustomEvent('rodada-adicionada'))
   } catch (error) {
     console.error('Erro ao cadastrar rodada:', error)
     errorRodadas.value = 'Erro ao cadastrar rodada. Tente novamente.'

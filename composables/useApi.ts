@@ -118,6 +118,26 @@ export const useApi = () => {
       }
     },
 
+    async getRodadasPorCampeonato(campeonatoId: number) {
+      try {
+        const response = await api(`/rodada/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar rodadas por campeonato:', error)
+        throw error
+      }
+    },
+
+    async getRodadasCampeonatoDetalhadas(campeonatoId: number) {
+      try {
+        const response = await api(`/rodada/campeonato/${campeonatoId}/rodadas`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar rodadas detalhadas do campeonato:', error)
+        throw error
+      }
+    },
+
     async postRodadaCampeonato(rodadaCampeonato: any) {
       try {
         const response = await api('/rodada/campeonato', { method: 'POST', body: rodadaCampeonato })

@@ -18,7 +18,7 @@
         @focus="handleFocus"
         @blur="handleBlur"
         @click="handleClick"
-        :placeholder="placeholder || `Buscar ${label.toLowerCase()}...`"
+        :placeholder="placeholder || `Buscar ${(label || '').toLowerCase()}...`"
         class="form-input pr-10"
         :class="{ 'border-red-500': required && !modelValue }"
       />
@@ -81,7 +81,7 @@ const emit = defineEmits(['update:modelValue'])
 const searchValue = ref('')
 const showDropdown = ref(false)
 
-const selectId = computed(() => `select-${props.label.toLowerCase().replace(/\s+/g, '-')}`)
+const selectId = computed(() => `select-${(props.label || '').toLowerCase().replace(/\s+/g, '-')}`)
 
 const iconComponent = computed(() => {
   const icons = {
@@ -103,7 +103,7 @@ const filteredOptions = computed(() => {
   
   const searchTerm = searchValue.value.toLowerCase()
   return props.options.filter(option => 
-    option.label.toLowerCase().includes(searchTerm)
+    option.label && option.label.toLowerCase().includes(searchTerm)
   )
 })
 
@@ -124,7 +124,7 @@ const handleClick = () => {
 
 const selectOption = (option) => {
   emit('update:modelValue', option.value)
-  searchValue.value = option.label
+  searchValue.value = option.label || ''
   showDropdown.value = false
 }
 
@@ -138,7 +138,7 @@ const handleBlur = () => {
       searchValue.value = ''
     } else if (selectedOption.value) {
       // Se há valor selecionado, mostrar o label
-      searchValue.value = selectedOption.value.label
+      searchValue.value = selectedOption.value.label || ''
     }
   }, 150)
 }
@@ -146,7 +146,7 @@ const handleBlur = () => {
 // Watch para atualizar o searchValue quando modelValue muda externamente
 watch(() => props.modelValue, (newValue) => {
   if (newValue && selectedOption.value) {
-    searchValue.value = selectedOption.value.label
+    searchValue.value = selectedOption.value.label || ''
   } else if (!newValue) {
     searchValue.value = ''
   }

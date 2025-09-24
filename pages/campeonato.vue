@@ -300,9 +300,11 @@ const handleApostadorClick = async (apostador) => {
       total: parseFloat(aposta.total),
       valorUnitario: parseFloat(aposta.valorUnitario),
       porcentagem: parseFloat(aposta.porcentagem),
-      // Cálculos baseados nos dados reais
-      premioIndividual: (parseFloat(aposta.valorUnitario) * parseFloat(aposta.porcentagem)) / 100,
-      totalRodada: parseFloat(aposta.total)
+      rodadasId: aposta.rodadasId,
+      rodadas: aposta.rodadas, // ← Incluir objeto rodadas completo
+      // Usar valorPremio real da API
+      premioIndividual: parseFloat(aposta.rodadas?.valorPremio || 0),
+      totalRodada: parseFloat(aposta.rodadas?.valorRodada || 0)
     }))
     
     modalApostadorOpen.value = true

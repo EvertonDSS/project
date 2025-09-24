@@ -84,6 +84,14 @@ const loading = ref(false)
 // Carregar dados quando o componente for montado
 onMounted(async () => {
   await loadFormData()
+  
+  // Escutar evento de nova rodada adicionada
+  window.addEventListener('rodada-adicionada', handleNovaRodadaAdicionada)
+})
+
+// Limpar listener quando componente for desmontado
+onUnmounted(() => {
+  window.removeEventListener('rodada-adicionada', handleNovaRodadaAdicionada)
 })
 
 const loadFormData = async () => {
@@ -98,16 +106,29 @@ const loadFormData = async () => {
     }))
 
     // Carregar rodadas
+    await loadRodadas()
+  } catch (err) {
+    console.error('Erro ao carregar dados:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadRodadas = async () => {
+  try {
     const rodadas = await getRodadas()
     rodadaOptions.value = rodadas.map(rodada => ({
       value: rodada.id,
       label: rodada.nomeRodada
     }))
   } catch (err) {
-    console.error('Erro ao carregar dados:', err)
-  } finally {
-    loading.value = false
+    console.error('Erro ao carregar rodadas:', err)
   }
+}
+
+const handleNovaRodadaAdicionada = async () => {
+  console.log('Nova rodada adicionada, recarregando lista de rodadas...')
+  await loadRodadas()
 }
 
 const isFormValid = computed(() => {

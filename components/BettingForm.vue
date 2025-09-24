@@ -59,25 +59,27 @@
             placeholder="Digite o nome do campeonato..."
           />
           
-          <FormSelectSearchable
-            label="Rodada"
-            v-model="formData.rodada"
-            :options="rodadaOptions"
-            :disabled="loading"
-            required
-            icon="CalendarIcon"
-            placeholder="Digite o nome da rodada..."
-          />
-          
-          <FormInput
-            label="Valor Total"
-            type="number"
-            step="0.01"
-            v-model="formData.valorTotal"
-            required
-            prefix="R$"
-            icon="CurrencyDollarIcon"
-          />
+          <div class="flex flex-col">
+            <label class="block text-sm font-medium text-neutral-700 mb-2">
+              <CalendarIcon class="w-4 h-4 inline mr-1" />
+              Rodada
+              <span class="text-red-500">*</span>
+            </label>
+            <button
+              type="button"
+              @click="abrirModalRodada"
+              :disabled="loading || !formData.campeonato"
+              class="w-full px-4 py-3 border border-neutral-300 rounded-lg text-left bg-white hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed transition-colors"
+              :class="{ 'border-red-500': !rodadaSelecionada && formData.campeonato }"
+            >
+              <span v-if="rodadaSelecionada" class="text-neutral-800">
+                {{ rodadaSelecionada.rodada.nomeRodada }}
+              </span>
+              <span v-else class="text-neutral-500">
+                {{ formData.campeonato ? 'Clique para selecionar uma rodada' : 'Selecione um campeonato primeiro' }}
+              </span>
+            </button>
+          </div>
           
           <FormInput
             label="Valor da Aposta"
@@ -99,6 +101,27 @@
             icon="CalculatorIcon"
             :max="100"
           />
+          
+          <div class="flex flex-col">
+            <label class="block text-sm font-medium text-neutral-700 mb-2">
+              <CurrencyDollarIcon class="w-4 h-4 inline mr-1" />
+              Valor Total da Rodada
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-neutral-500 text-sm">R$</span>
+              </div>
+              <input
+                type="text"
+                :value="rodadaSelecionada ? formatCurrency(parseFloat(rodadaSelecionada.valorPremio || 0)) : '0,00'"
+                readonly
+                class="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg bg-neutral-50 text-neutral-600 cursor-not-allowed"
+              />
+            </div>
+            <p class="text-xs text-neutral-500 mt-1">
+              Valor do prêmio da rodada selecionada
+            </p>
+          </div>
         </div>
         
         <div class="flex justify-center pt-6">
@@ -113,21 +136,32 @@
         </div>
       </form>
     </div>
+
+    <!-- Modal de Seleção de Rodada -->
+    <ModalSelecaoRodada
+      :isOpen="showModalRodada"
+      :campeonatoId="formData.campeonato"
+      :campeonatoNome="campeonatoOptions.find(opt => opt.value === formData.campeonato)?.label || ''"
+      :rodadas="rodadasDisponiveis"
+      :loading="loadingRodadas"
+      :error="errorRodadas"
+      @close="fecharModalRodada"
+      @select="selecionarRodada"
+      @reload="carregarRodadas"
+    />
   </div>
 </template>
 
 <script setup>
-import { PaperAirplaneIcon } from '@heroicons/vue/24/outline'
+import { PaperAirplaneIcon, CalendarIcon, CurrencyDollarIcon } from '@heroicons/vue/24/outline'
 
 const emit = defineEmits(['betSubmitted'])
-const { api, getApostadores, getCavalos, getCampeonatos, getRodadas } = useApi()
+const { api, getApostadores, getCavalos, getCampeonatos, getRodadasCampeonatoDetalhadas } = useApi()
 
 const formData = ref({
   apostador: '',
   cavalo: '',
   campeonato: '',
-  rodada: '',
-  valorTotal: '',
   valorAposta: '',
   porcentagem: ''
 })
@@ -136,13 +170,27 @@ const formData = ref({
 const apostadorOptions = ref([])
 const cavaloOptions = ref([])
 const campeonatoOptions = ref([])
-const rodadaOptions = ref([])
 const loading = ref(false)
 const error = ref('')
+
+// Estados para modal de rodada
+const showModalRodada = ref(false)
+const rodadasDisponiveis = ref([])
+const loadingRodadas = ref(false)
+const errorRodadas = ref('')
+const rodadaSelecionada = ref(null)
 
 // Carregar dados do backend quando o componente for montado
 onMounted(async () => {
   await loadFormData()
+})
+
+// Watcher para limpar rodada quando campeonato for alterado
+watch(() => formData.value.campeonato, (newCampeonatoId) => {
+  if (!newCampeonatoId) {
+    // Limpar rodada se campeonato for desmarcado
+    rodadaSelecionada.value = null
+  }
 })
 
 const loadFormData = async () => {
@@ -171,12 +219,7 @@ const loadFormData = async () => {
       label: campeonato.nome
     }))
 
-    // Carregar rodadas do backend
-    const rodadas = await getRodadas()
-    rodadaOptions.value = rodadas.map(rodada => ({
-      value: rodada.id,
-      label: rodada.nomeRodada
-    }))
+    // Rodadas serão carregadas via modal quando necessário
   } catch (err) {
     error.value = 'Erro ao carregar dados do servidor. Usando dados padrão.'
     console.error('Erro ao carregar dados:', err)
@@ -185,15 +228,68 @@ const loadFormData = async () => {
     apostadorOptions.value = []
     cavaloOptions.value = []
     campeonatoOptions.value = []
-    rodadaOptions.value = []
   } finally {
     loading.value = false
   }
 }
 
+// Funções para modal de rodada
+const abrirModalRodada = async () => {
+  if (!formData.value.campeonato) {
+    error.value = 'Selecione um campeonato primeiro'
+    return
+  }
+  
+  showModalRodada.value = true
+  await carregarRodadas()
+}
+
+const carregarRodadas = async () => {
+  loadingRodadas.value = true
+  errorRodadas.value = ''
+  
+  try {
+    const rodadas = await getRodadasCampeonatoDetalhadas(parseInt(formData.value.campeonato))
+    rodadasDisponiveis.value = rodadas
+  } catch (err) {
+    console.error('Erro ao carregar rodadas:', err)
+    errorRodadas.value = 'Erro ao carregar rodadas do campeonato'
+  } finally {
+    loadingRodadas.value = false
+  }
+}
+
+const selecionarRodada = (rodada) => {
+  rodadaSelecionada.value = rodada
+  showModalRodada.value = false
+}
+
+const fecharModalRodada = () => {
+  showModalRodada.value = false
+}
+
+// Função para formatar moeda
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value)
+}
+
 
 const isFormValid = computed(() => {
-  return Object.values(formData.value).every(value => value !== '')
+  const allFieldsFilled = Object.values(formData.value).every(value => value !== '')
+  const rodadaSelected = !!rodadaSelecionada.value
+  
+  console.log('Validação do formulário:', {
+    formData: formData.value,
+    allFieldsFilled,
+    rodadaSelected,
+    rodadaSelecionada: rodadaSelecionada.value,
+    isValid: allFieldsFilled && rodadaSelected
+  })
+  
+  return allFieldsFilled && rodadaSelected
 })
 
 const submitBet = async () => {
@@ -203,8 +299,8 @@ const submitBet = async () => {
     cavaloId: parseInt(formData.value.cavalo),
     campeonatoId: parseInt(formData.value.campeonato),
     apostadorId: parseInt(formData.value.apostador),
-    rodadaId: parseInt(formData.value.rodada),
-    total: parseFloat(formData.value.valorTotal),
+    rodadasId: rodadaSelecionada.value.id,
+    total: parseFloat(rodadaSelecionada.value.valorPremio || 0),
     valorUnitario: parseFloat(formData.value.valorAposta),
     porcentagem: parseFloat(formData.value.porcentagem)
   }
@@ -219,7 +315,7 @@ const submitBet = async () => {
       apostador: apostadorOptions.value.find(opt => opt.value === formData.value.apostador)?.label || '',
       cavalo: cavaloOptions.value.find(opt => opt.value === formData.value.cavalo)?.label || '',
       campeonato: campeonatoOptions.value.find(opt => opt.value === formData.value.campeonato)?.label || '',
-      rodada: rodadaOptions.value.find(opt => opt.value === formData.value.rodada)?.label || '',
+      rodada: rodadaSelecionada.value?.rodada?.nomeRodada || '',
       valorTotal: apostaData.total,
       valorAposta: apostaData.valorUnitario,
       porcentagem: apostaData.porcentagem,
@@ -230,6 +326,7 @@ const submitBet = async () => {
     Object.keys(formData.value).forEach(key => {
       formData.value[key] = ''
     })
+    rodadaSelecionada.value = null
   } catch (error) {
     console.error('Erro ao enviar aposta:', error)
     error.value = 'Erro ao enviar aposta. Tente novamente.'

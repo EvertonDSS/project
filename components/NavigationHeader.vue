@@ -49,6 +49,15 @@
               Rodada
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink 
+              to="/relatorio" 
+              class="nav-link"
+              :class="{ active: $route.path === '/relatorio' }"
+            >
+              Relatório
+            </NuxtLink>
+          </li>
         </ul>
       </div>
 
@@ -142,6 +151,19 @@
                 </div>
               </NuxtLink>
             </li>
+            <li>
+              <NuxtLink 
+                to="/relatorio" 
+                class="mobile-nav-link"
+                :class="{ 'mobile-nav-link-active': $route.path === '/relatorio' }"
+                @click="closeMobileMenu"
+              >
+                <div class="flex items-center space-x-3">
+                  <DocumentTextIcon class="w-5 h-5" />
+                  <span>Relatório</span>
+                </div>
+              </NuxtLink>
+            </li>
           </ul>
         </div>
       </div>
@@ -157,7 +179,8 @@ import {
   UserIcon, 
   SparklesIcon, 
   TrophyIcon, 
-  PlayIcon 
+  PlayIcon,
+  DocumentTextIcon
 } from '@heroicons/vue/24/outline'
 
 const isMobileMenuOpen = ref(false)

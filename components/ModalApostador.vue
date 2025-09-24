@@ -36,8 +36,8 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(aposta, index) in apostas" :key="aposta.id" class="hover:bg-neutral-50">
-                  <td class="border border-neutral-300 px-4 py-2">Aposta #{{ aposta.id }}</td>
+                <tr v-for="aposta in apostas" :key="aposta.id" class="hover:bg-neutral-50">
+                  <td class="border border-neutral-300 px-4 py-2">{{ aposta.rodadas?.rodada?.nomeRodada || 'N/A' }}</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ aposta.cavalo }}</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.valorUnitario) }}</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ aposta.porcentagem }}%</td>
@@ -161,7 +161,7 @@ const generatePDF = () => {
           <tbody>
             ${props.apostas.map(aposta => `
               <tr>
-                <td>Aposta #${aposta.id}</td>
+                <td>${aposta.rodadas?.rodada?.nomeRodada || 'N/A'}</td>
                 <td>${aposta.cavalo}</td>
                 <td>${formatCurrency(aposta.valorUnitario)}</td>
                 <td>${aposta.porcentagem}%</td>
