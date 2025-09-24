@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-const { getCampeonatos, postCampeonato, getApostasPorCampeonato } = useApi()
+const { getCampeonatos, postCampeonato, getApostadoresPorCampeonato, getApostasPorApostador } = useApi()
 const submittedCampeonatos = ref([])
 const loadingCampeonatos = ref(false)
 const errorCampeonatos = ref('')
@@ -127,37 +127,19 @@ const handleCampeonatoClick = async (campeonato) => {
   loadingApostadores.value = true
   
   try {
-    const apostasData = await getApostasPorCampeonato(parseInt(campeonato.id))
+    const apostadoresData = await getApostadoresPorCampeonato(parseInt(campeonato.id))
     
-    // Agrupar apostas por apostador
-    const apostadoresMap = new Map()
+    // Mapear apostadores (sem apostas ainda)
+    apostadores.value = apostadoresData.map(apostador => ({
+      id: apostador.id,
+      nome: apostador.nome,
+      apostas: [] // Será carregado quando clicar no apostador
+    }))
     
-    apostasData.forEach(aposta => {
-      const apostadorId = aposta.apostadorId
-      
-      if (!apostadoresMap.has(apostadorId)) {
-        apostadoresMap.set(apostadorId, {
-          id: aposta.apostador.id,
-          nome: aposta.apostador.nome,
-          apostas: []
-        })
-      }
-      
-      apostadoresMap.get(apostadorId).apostas.push({
-        id: aposta.id,
-        cavalo: aposta.cavalo.nome,
-        total: parseFloat(aposta.total),
-        valorUnitario: parseFloat(aposta.valorUnitario),
-        porcentagem: parseFloat(aposta.porcentagem)
-      })
-    })
-    
-    // Converter Map para Array
-    apostadores.value = Array.from(apostadoresMap.values())
     mostrandoApostadores.value = true
   } catch (error) {
-    console.error('Erro ao carregar apostas:', error)
-    errorCampeonatos.value = 'Erro ao carregar apostas do campeonato.'
+    console.error('Erro ao carregar apostadores:', error)
+    errorCampeonatos.value = 'Erro ao carregar apostadores do campeonato.'
   } finally {
     loadingApostadores.value = false
   }
@@ -170,20 +152,31 @@ const voltarParaCampeonatos = () => {
 }
 
 // Funções para o modal do apostador
-const handleApostadorClick = (apostador) => {
+const handleApostadorClick = async (apostador) => {
   apostadorSelecionado.value = apostador
   
-  // Usar os dados reais das apostas do apostador
-  apostasApostador.value = apostador.apostas.map(aposta => ({
-    rodada: `Rodada ${aposta.id}`, // Você pode ajustar conforme necessário
-    cavalo: aposta.cavalo,
-    valorAposta: aposta.valorUnitario,
-    porcentagem: aposta.porcentagem,
-    premioIndividual: (aposta.valorUnitario * aposta.porcentagem) / 100, // Cálculo do prêmio
-    totalRodada: aposta.total
-  }))
-  
-  modalApostadorOpen.value = true
+  try {
+    // Buscar apostas do apostador no campeonato
+    const apostasData = await getApostasPorApostador(
+      parseInt(campeonatoSelecionado.value.id), 
+      parseInt(apostador.id)
+    )
+    
+    // Mapear apostas para o formato do modal
+    apostasApostador.value = apostasData.map(aposta => ({
+      rodada: `Rodada ${aposta.id}`, // Você pode ajustar conforme necessário
+      cavalo: aposta.cavalo.nome,
+      valorAposta: parseFloat(aposta.valorUnitario),
+      porcentagem: parseFloat(aposta.porcentagem),
+      premioIndividual: (parseFloat(aposta.valorUnitario) * parseFloat(aposta.porcentagem)) / 100,
+      totalRodada: parseFloat(aposta.total)
+    }))
+    
+    modalApostadorOpen.value = true
+  } catch (error) {
+    console.error('Erro ao carregar apostas do apostador:', error)
+    errorCampeonatos.value = 'Erro ao carregar apostas do apostador.'
+  }
 }
 
 const fecharModalApostador = () => {

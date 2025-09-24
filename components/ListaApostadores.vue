@@ -20,7 +20,7 @@
             </div>
             <div>
               <h4 class="font-semibold text-neutral-800">{{ apostador.nome }}</h4>
-              <p class="text-xs text-neutral-500">{{ apostador.apostas.length }} aposta{{ apostador.apostas.length !== 1 ? 's' : '' }} • Clique para ver detalhes</p>
+              <p class="text-xs text-neutral-500">Clique para ver apostas</p>
             </div>
           </div>
           <ChevronRightIcon class="w-5 h-5 text-neutral-400" />

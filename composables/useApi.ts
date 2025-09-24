@@ -128,12 +128,22 @@ export const useApi = () => {
       }
     },
 
-    async getApostasPorCampeonato(campeonatoId: number) {
+    async getApostadoresPorCampeonato(campeonatoId: number) {
       try {
-        const response = await api('/aposta', { params: { campeonatoId } })
+        const response = await api(`/campeonato/${campeonatoId}/apostadores`)
         return response
       } catch (error) {
-        console.error('Erro ao buscar apostas por campeonato:', error)
+        console.error('Erro ao buscar apostadores por campeonato:', error)
+        throw error
+      }
+    },
+
+    async getApostasPorApostador(campeonatoId: number, apostadorId: number) {
+      try {
+        const response = await api(`/campeonato/${campeonatoId}/apostador/${apostadorId}/apostas`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar apostas por apostador:', error)
         throw error
       }
     }
