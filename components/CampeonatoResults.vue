@@ -11,8 +11,9 @@
       <div
         v-for="(campeonato, index) in campeonatos"
         :key="campeonato.id"
-        class="card p-6 hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 animate-bounce-subtle"
+        class="card p-6 hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 animate-bounce-subtle cursor-pointer"
         :style="{ animationDelay: `${index * 100}ms` }"
+        @click="handleCampeonatoClick(campeonato)"
       >
         <div class="text-center">
           <div class="flex justify-center mb-4">
@@ -34,6 +35,10 @@
           <div class="mt-4 text-xs text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full inline-block">
             ID: #{{ campeonato.id.slice(-6) }}
           </div>
+          
+          <div class="mt-3 text-xs text-primary-600 font-medium">
+            Clique para ver apostadores
+          </div>
         </div>
       </div>
     </div>
@@ -46,4 +51,10 @@ import { TrophyIcon, CalendarIcon } from '@heroicons/vue/24/outline'
 defineProps({
   campeonatos: Array
 })
+
+const emit = defineEmits(['campeonatoClicked'])
+
+const handleCampeonatoClick = (campeonato) => {
+  emit('campeonatoClicked', campeonato)
+}
 </script>

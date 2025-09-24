@@ -126,6 +126,16 @@ export const useApi = () => {
         console.error('Erro ao postar aposta:', error)
         throw error
       }
+    },
+
+    async getApostasPorCampeonato(campeonatoId: number) {
+      try {
+        const response = await api('/aposta', { params: { campeonatoId } })
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar apostas por campeonato:', error)
+        throw error
+      }
     }
   }
 }
