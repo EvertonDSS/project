@@ -15,22 +15,12 @@ type LazyComponent<T> = (T & DefineComponent<HydrationStrategies, {}, {}, {}, {}
 
 interface _GlobalComponents {
       'ApostadorForm': typeof import("../../components/ApostadorForm.vue")['default']
-    'ApostadorResults': typeof import("../../components/ApostadorResults.vue")['default']
+    'ApostadorResult': typeof import("../../components/ApostadorResults.vue")['default']
     'BetResults': typeof import("../../components/BetResults.vue")['default']
     'BettingForm': typeof import("../../components/BettingForm.vue")['default']
-    'CampeonatoForm': typeof import("../../components/CampeonatoForm.vue")['default']
-    'CampeonatoResults': typeof import("../../components/CampeonatoResults.vue")['default']
-    'CavaloForm': typeof import("../../components/CavaloForm.vue")['default']
-    'CavaloResults': typeof import("../../components/CavaloResults.vue")['default']
     'FormInput': typeof import("../../components/FormInput.vue")['default']
     'FormSelect': typeof import("../../components/FormSelect.vue")['default']
-    'ListaApostadores': typeof import("../../components/ListaApostadores.vue")['default']
-    'ModalApostador': typeof import("../../components/ModalApostador.vue")['default']
     'NavigationHeader': typeof import("../../components/NavigationHeader.vue")['default']
-    'RodadaCampeonatoForm': typeof import("../../components/RodadaCampeonatoForm.vue")['default']
-    'RodadaCampeonatoResults': typeof import("../../components/RodadaCampeonatoResults.vue")['default']
-    'RodadaForm': typeof import("../../components/RodadaForm.vue")['default']
-    'RodadaResults': typeof import("../../components/RodadaResults.vue")['default']
     'NuxtWelcome': typeof import("../../node_modules/nuxt/dist/app/components/welcome.vue")['default']
     'NuxtLayout': typeof import("../../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
     'NuxtErrorBoundary': typeof import("../../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']
@@ -56,22 +46,12 @@ interface _GlobalComponents {
     'NuxtIsland': typeof import("../../node_modules/nuxt/dist/app/components/nuxt-island")['default']
     'NuxtRouteAnnouncer': typeof import("../../node_modules/nuxt/dist/app/components/server-placeholder")['default']
       'LazyApostadorForm': LazyComponent<typeof import("../../components/ApostadorForm.vue")['default']>
-    'LazyApostadorResults': LazyComponent<typeof import("../../components/ApostadorResults.vue")['default']>
+    'LazyApostadorResult': LazyComponent<typeof import("../../components/ApostadorResults.vue")['default']>
     'LazyBetResults': LazyComponent<typeof import("../../components/BetResults.vue")['default']>
     'LazyBettingForm': LazyComponent<typeof import("../../components/BettingForm.vue")['default']>
-    'LazyCampeonatoForm': LazyComponent<typeof import("../../components/CampeonatoForm.vue")['default']>
-    'LazyCampeonatoResults': LazyComponent<typeof import("../../components/CampeonatoResults.vue")['default']>
-    'LazyCavaloForm': LazyComponent<typeof import("../../components/CavaloForm.vue")['default']>
-    'LazyCavaloResults': LazyComponent<typeof import("../../components/CavaloResults.vue")['default']>
     'LazyFormInput': LazyComponent<typeof import("../../components/FormInput.vue")['default']>
     'LazyFormSelect': LazyComponent<typeof import("../../components/FormSelect.vue")['default']>
-    'LazyListaApostadores': LazyComponent<typeof import("../../components/ListaApostadores.vue")['default']>
-    'LazyModalApostador': LazyComponent<typeof import("../../components/ModalApostador.vue")['default']>
     'LazyNavigationHeader': LazyComponent<typeof import("../../components/NavigationHeader.vue")['default']>
-    'LazyRodadaCampeonatoForm': LazyComponent<typeof import("../../components/RodadaCampeonatoForm.vue")['default']>
-    'LazyRodadaCampeonatoResults': LazyComponent<typeof import("../../components/RodadaCampeonatoResults.vue")['default']>
-    'LazyRodadaForm': LazyComponent<typeof import("../../components/RodadaForm.vue")['default']>
-    'LazyRodadaResults': LazyComponent<typeof import("../../components/RodadaResults.vue")['default']>
     'LazyNuxtWelcome': LazyComponent<typeof import("../../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
     'LazyNuxtLayout': LazyComponent<typeof import("../../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
     'LazyNuxtErrorBoundary': LazyComponent<typeof import("../../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']>
