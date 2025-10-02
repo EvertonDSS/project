@@ -286,10 +286,10 @@ const carregarApostas = async () => {
     // Mapear apostas para o formato do relatório
     apostasCarregadas.value = apostas.map(aposta => ({
       rodada: aposta.rodadas?.rodada?.nomeRodada || 'N/A',
-      chave: `${aposta.cavalo.id.toString().padStart(2, '0')}- ${aposta.cavalo.nome}`,
+      chave: `${aposta.cavalo.nome}`,
       valorAposta: parseFloat(aposta.valorUnitario),
       porcentagem: parseFloat(aposta.porcentagem),
-      premioIndividual: parseFloat(aposta.rodadas?.valorPremio || 0),
+      premioIndividual: parseFloat(aposta.total || 0),
       totalRodada: parseFloat(aposta.rodadas?.valorRodada || 0)
     }))
   } catch (error) {
