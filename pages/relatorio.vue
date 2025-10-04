@@ -102,7 +102,7 @@
           </div>
         </div>
 
-        <!-- Tabela de Apostas -->
+        <!-- Tabela de Apostas (Original) -->
         <div class="overflow-x-auto mb-6">
           <table class="w-full border-collapse">
             <thead>
@@ -128,28 +128,54 @@
           </table>
         </div>
 
-        <!-- Resumos -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Resumos Originais -->
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
           <!-- Valor Total da Aposta -->
           <div class="bg-red-600 text-white p-4 rounded">
             <h3 class="font-semibold text-lg mb-2">VALOR TOTAL DA APOSTA:</h3>
             <p class="text-2xl font-bold">{{ formatCurrency(valorTotalApostas) }}</p>
           </div>
 
-          <!-- Bolões de Chave -->
-          <div>
-            <div class="bg-red-600 text-white p-3 rounded mb-2">
-              <h3 class="font-semibold">BOLÕES DE CHAVE</h3>
+         
+        </div>
+
+        <!-- Seção de Agrupamento por Tipo e Cavalo -->
+        <div class="mb-6">
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-neutral-800 mb-2">Resumo por Tipo e Cavalo</h2>
+            <p class="text-neutral-600">Apostas agrupadas e somadas por tipo de rodada e cavalo</p>
+          </div>
+
+          <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="mb-6">
+            <!-- Cabeçalho do Tipo -->
+            <div class="bg-red-600 text-white p-4 rounded-t-lg">
+              <h3 class="text-lg font-bold text-center">{{ tipo }}</h3>
             </div>
-            <div class="bg-blue-600 text-white p-3 rounded mb-2">
-              <p class="font-semibold">VALOR</p>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div class="bg-green-100 p-3 rounded border">
-                <p class="text-sm text-neutral-600">{{ chaveUnica }}</p>
+
+            <!-- Lista de Cavalos com Valores -->
+            <div class="border border-neutral-300 border-t-0 rounded-b-lg overflow-hidden">
+              <div v-for="cavalo in Object.keys(tipoData).filter(key => !key.startsWith('_'))" :key="cavalo" class="bg-green-100 border-b border-neutral-200 last:border-b-0">
+                <div class="flex justify-between items-center px-4 py-3">
+                  <span class="font-medium text-neutral-800">{{ cavalo }}</span>
+                  <span class="font-bold text-neutral-900">{{ formatCurrency(tipoData[cavalo].premioIndividual) }}</span>
+                </div>
               </div>
-              <div class="bg-green-100 p-3 rounded border">
-                <p class="text-sm font-semibold text-neutral-800">{{ formatCurrency(valorTotalPremios) }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumos por Tipo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg">
+            <h3 class="font-semibold text-lg mb-2">{{ tipo }}</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <span class="text-sm opacity-90">Total Prêmios:</span>
+                <span class="font-bold">{{ formatCurrency(tipoData._totalPremio) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm opacity-90">Cavalos:</span>
+                <span class="font-bold">{{ Object.keys(tipoData).filter(key => !key.startsWith('_')).length }}</span>
               </div>
             </div>
           </div>
@@ -195,7 +221,7 @@ import {
   DocumentArrowDownIcon 
 } from '@heroicons/vue/24/outline'
 
-const { getCampeonatos, getApostadoresPorCampeonato, getApostasPorApostador } = useApi()
+const { getCampeonatos, getApostadoresPorCampeonato, getApostasPorApostador, getTipoPorId } = useApi()
 
 // Estados reativos
 const campeonatoSelecionado = ref('')
@@ -217,6 +243,42 @@ const campeonatoSelecionadoNome = computed(() => {
 
 const apostadorSelecionadoNome = computed(() => {
   return apostadorOptions.value.find(opt => opt.value === apostadorSelecionado.value)?.label || ''
+})
+
+// Agrupar apostas por tipo e cavalo
+const apostasAgrupadas = computed(() => {
+  const agrupado = {}
+  
+  apostasCarregadas.value.forEach(aposta => {
+    const tipo = aposta.tipo
+    const cavalo = aposta.cavalo
+    
+    // Inicializar tipo se não existir
+    if (!agrupado[tipo]) {
+      agrupado[tipo] = {
+        _totalPremio: 0,
+        _totalRodada: 0
+      }
+    }
+    
+    // Inicializar cavalo se não existir
+    if (!agrupado[tipo][cavalo]) {
+      agrupado[tipo][cavalo] = {
+        rodada: aposta.rodada,
+        porcentagem: aposta.porcentagem,
+        premioIndividual: 0,
+        totalRodada: 0
+      }
+    }
+    
+    // Somar valores
+    agrupado[tipo][cavalo].premioIndividual += aposta.premioIndividual
+    agrupado[tipo][cavalo].totalRodada += aposta.totalRodada
+    agrupado[tipo]._totalPremio += aposta.premioIndividual
+    agrupado[tipo]._totalRodada += aposta.totalRodada
+  })
+  
+  return agrupado
 })
 
 const valorTotalApostas = computed(() => {
@@ -283,15 +345,35 @@ const carregarApostas = async () => {
       parseInt(apostadorSelecionado.value)
     )
 
-    // Mapear apostas para o formato do relatório
-    apostasCarregadas.value = apostas.map(aposta => ({
-      rodada: aposta.rodadas?.rodada?.nomeRodada || 'N/A',
-      chave: `${aposta.cavalo.nome}`,
-      valorAposta: parseFloat(aposta.valorUnitario),
-      porcentagem: parseFloat(aposta.porcentagem),
-      premioIndividual: parseFloat(aposta.total || 0),
-      totalRodada: parseFloat(aposta.rodadas?.valorRodada || 0)
+    // Mapear apostas para o formato do relatório, buscando nomes dos tipos quando necessário
+    const apostasComTipos = await Promise.all(apostas.map(async (aposta) => {
+      let nomeTipo = aposta.rodadas?.tipo?.nome || 'SEM TIPO'
+      
+      // Se não tiver nome do tipo, buscar pelo endpoint
+      if (!aposta.rodadas?.tipo?.nome && aposta.rodadas?.tipoId) {
+        try {
+          const tipoInfo = await getTipoPorId(aposta.rodadas.tipoId)
+          nomeTipo = tipoInfo.nome
+        } catch (error) {
+          console.error('Erro ao buscar tipo:', error)
+          nomeTipo = `Tipo ${aposta.rodadas.tipoId}`
+        }
+      }
+      
+      
+      return {
+        rodada: aposta.rodadas?.rodada?.nomeRodada || 'N/A',
+        chave: `${aposta.cavalo?.nome || 'Cavalo Desconhecido'}`,
+        valorAposta: parseFloat(aposta.valorUnitario),
+        porcentagem: parseFloat(aposta.porcentagem),
+        premioIndividual: parseFloat(aposta.total || 0),
+        totalRodada: parseFloat(aposta.rodadas?.valorRodada || 0),
+        tipo: nomeTipo,
+        cavalo: aposta.cavalo?.nome || 'Cavalo Desconhecido'
+      }
     }))
+
+    apostasCarregadas.value = apostasComTipos
   } catch (error) {
     console.error('Erro ao carregar apostas:', error)
     errorApostas.value = 'Erro ao carregar apostas do apostador.'
@@ -314,10 +396,14 @@ const adicionarApostaRodada = (novaAposta) => {
 }
 
 const formatCurrency = (value) => {
+  const numValue = parseFloat(value)
+  if (isNaN(numValue) || numValue === null || numValue === undefined) {
+    return 'R$ 0,00'
+  }
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
-  }).format(value)
+  }).format(numValue)
 }
 
 const gerarPDF = () => {
@@ -529,47 +615,111 @@ const gerarPDF = () => {
             </div>
           </div>
           
-          <table>
+          <!-- Tabela Original de Apostas -->
+          <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Apostas Detalhadas</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <thead>
-              <tr>
-                <th>RODADA</th>
-                <th>CHAVE</th>
-                <th>VALOR DA APOSTA</th>
-                <th>%</th>
-                <th>PRÊMIO INDIVIDUAL</th>
-                <th>TOTAL DA RODADA</th>
+              <tr style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white;">
+                <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">RODADA</th>
+                <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">CHAVE</th>
+                <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">VALOR DA APOSTA</th>
+                <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">%</th>
+                <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">PRÊMIO INDIVIDUAL</th>
+                <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">TOTAL DA RODADA</th>
               </tr>
             </thead>
             <tbody>
               ${apostasCarregadas.value.map(aposta => `
                 <tr>
-                  <td>${aposta.rodada}</td>
-                  <td>${aposta.chave}</td>
-                  <td>${formatCurrency(aposta.valorAposta)}</td>
-                  <td>${aposta.porcentagem}%</td>
-                  <td>${formatCurrency(aposta.premioIndividual)}</td>
-                  <td>${formatCurrency(aposta.totalRodada)}</td>
+                  <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.rodada}</td>
+                  <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.chave}</td>
+                  <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.valorAposta)}</td>
+                  <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.porcentagem}%</td>
+                  <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.premioIndividual)}</td>
+                  <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.totalRodada)}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
-          
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="summary-header">VALOR TOTAL DA APOSTA</div>
-              <div class="summary-content">
-                <div class="summary-value">${formatCurrency(valorTotalApostas.value)}</div>
+
+          <!-- Resumos Originais -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
+              <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; text-align: center;">
+                <div style="font-size: 24px; font-weight: bold;">${formatCurrency(valorTotalApostas.value)}</div>
               </div>
             </div>
             
-            <div class="boloes-section">
-              <div class="boloes-header">BOLÕES DE CHAVE</div>
-              <div class="boloes-subheader">VALOR</div>
-              <div class="boloes-content">
-                <div class="boloes-item">${chaveUnica.value}</div>
-                <div class="boloes-item">${formatCurrency(valorTotalPremios.value)}</div>
+            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">BOLÕES DE CHAVE</div>
+              <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 14px;">VALOR</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; background-color: #f0fdf4;">
+                <div style="padding: 15px; border: 1px solid #e5e5e5; font-size: 14px; color: #666;">${chaveUnica.value}</div>
+                <div style="padding: 15px; border: 1px solid #e5e5e5; font-size: 14px; font-weight: bold; color: #333;">${formatCurrency(valorTotalPremios.value)}</div>
               </div>
             </div>
+          </div>
+
+          <!-- Seção de Agrupamento -->
+          <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Resumo por Tipo e Cavalo</h2>
+          <p style="text-align: center; color: #666; margin-bottom: 30px; font-size: 14px;">Apostas agrupadas e somadas por tipo de rodada e cavalo</p>
+          
+          ${Object.entries(apostasAgrupadas.value).map(([tipo, tipoData]) => `
+            <div style="margin-bottom: 30px;">
+              <h3 style="background: #2563eb; color: white; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
+              <table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">
+                <thead>
+                  <tr style="background: #f5f5f5;">
+                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">CAVALO</th>
+                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">RODADA</th>
+                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">%</th>
+                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">PRÊMIO INDIVIDUAL</th>
+                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">TOTAL DA RODADA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([cavalo, cavaloData]) => `
+                    <tr>
+                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavalo}</td>
+                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${cavaloData.rodada}</td>
+                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${cavaloData.porcentagem}%</td>
+                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
+                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.totalRodada)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+                <tfoot>
+                  <tr style="background: #dcfce7; font-weight: bold;">
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; text-align: right;" colspan="3">TOTAL ${tipo}:</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: #bbf7d0;">${formatCurrency(tipoData._totalPremio)}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: #bbf7d0;">${formatCurrency(tipoData._totalRodada)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          `).join('')}
+          
+          <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
+            ${Object.entries(apostasAgrupadas.value).map(([tipo, tipoData]) => `
+              <div class="summary-card" style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div class="summary-header" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">${tipo}</div>
+                <div class="summary-content" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; text-align: center;">
+                  <div style="margin-bottom: 10px;">
+                    <div style="font-size: 14px; opacity: 0.9;">Total Prêmios</div>
+                    <div style="font-size: 18px; font-weight: bold;">${formatCurrency(tipoData._totalPremio)}</div>
+                  </div>
+                  <div style="margin-bottom: 10px;">
+                    <div style="font-size: 14px; opacity: 0.9;">Total Rodadas</div>
+                    <div style="font-size: 18px; font-weight: bold;">${formatCurrency(tipoData._totalRodada)}</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 14px; opacity: 0.9;">Cavalos</div>
+                    <div style="font-size: 18px; font-weight: bold;">${Object.keys(tipoData).filter(key => !key.startsWith('_')).length}</div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
           </div>
         </div>
       </body>

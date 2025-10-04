@@ -3,6 +3,17 @@
     <div class="text-center mb-6">
       <h3 class="text-xl font-bold text-neutral-800 mb-2">Apostadores do Campeonato</h3>
       <p class="text-neutral-600 text-sm">{{ campeonato.nome }} - {{ campeonato.ano }}</p>
+      
+      <!-- Botão para gerenciar cavalos -->
+      <div class="mt-4">
+        <button 
+          @click="abrirModalCavalos"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto"
+        >
+          <CogIcon class="w-4 h-4" />
+          <span>Gerenciar Cavalos</span>
+        </button>
+      </div>
     </div>
     
     <div class="space-y-3 max-h-96 overflow-y-auto">
@@ -37,18 +48,28 @@
         Voltar aos Campeonatos
       </button>
     </div>
+
+    <!-- Modal para gerenciar cavalos -->
+    <ModalGerenciarCavalos
+      :isOpen="showModalCavalos"
+      :campeonato="campeonato"
+      @close="fecharModalCavalos"
+      @cavalos-adicionados="handleCavalosAdicionados"
+    />
   </div>
 </template>
 
 <script setup>
-import { UserIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { UserIcon, ChevronRightIcon, CogIcon } from '@heroicons/vue/24/outline'
 
 defineProps({
   campeonato: Object,
   apostadores: Array
 })
 
-const emit = defineEmits(['apostadorClicked', 'voltar'])
+const emit = defineEmits(['apostadorClicked', 'voltar', 'cavalosAdicionados'])
+
+const showModalCavalos = ref(false)
 
 const handleApostadorClick = (apostador) => {
   emit('apostadorClicked', apostador)
@@ -56,5 +77,18 @@ const handleApostadorClick = (apostador) => {
 
 const voltar = () => {
   emit('voltar')
+}
+
+const abrirModalCavalos = () => {
+  showModalCavalos.value = true
+}
+
+const fecharModalCavalos = () => {
+  showModalCavalos.value = false
+}
+
+const handleCavalosAdicionados = (cavalos) => {
+  emit('cavalosAdicionados', cavalos)
+  fecharModalCavalos()
 }
 </script>

@@ -176,6 +176,58 @@ export const useApi = () => {
         console.error('Erro ao buscar apostas por apostador:', error)
         throw error
       }
+    },
+
+    // Métodos para tipos de rodada
+    async getTiposRodada() {
+      try {
+        const response = await api('/tipo')
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar tipos de rodada:', error)
+        throw error
+      }
+    },
+
+    async getTipoPorId(tipoId: number) {
+      try {
+        const response = await api(`/tipo/${tipoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar tipo por ID:', error)
+        throw error
+      }
+    },
+
+    async postTipoRodada(tipoRodada: any) {
+      try {
+        const response = await api('/tipo', { method: 'POST', body: tipoRodada })
+        return response
+      } catch (error) {
+        console.error('Erro ao postar tipo de rodada:', error)
+        throw error
+      }
+    },
+
+    // Métodos para cavalos por campeonato
+    async getCavalosPorCampeonato(campeonatoId: number) {
+      try {
+        const response = await api(`/cavalo-campeonato/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar cavalos por campeonato:', error)
+        throw error
+      }
+    },
+
+    async postCavalosCampeonato(dados: any) {
+      try {
+        const response = await api('/cavalo-campeonato', { method: 'POST', body: dados })
+        return response
+      } catch (error) {
+        console.error('Erro ao adicionar cavalos ao campeonato:', error)
+        throw error
+      }
     }
   }
 }

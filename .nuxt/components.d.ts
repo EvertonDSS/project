@@ -28,7 +28,9 @@ export const FormSelectSearchable: typeof import("../components/FormSelectSearch
 export const ListaApostadores: typeof import("../components/ListaApostadores.vue")['default']
 export const ModalAdicionarRodada: typeof import("../components/ModalAdicionarRodada.vue")['default']
 export const ModalApostador: typeof import("../components/ModalApostador.vue")['default']
+export const ModalGerenciarCavalos: typeof import("../components/ModalGerenciarCavalos.vue")['default']
 export const ModalSelecaoRodada: typeof import("../components/ModalSelecaoRodada.vue")['default']
+export const ModalTipoRodada: typeof import("../components/ModalTipoRodada.vue")['default']
 export const NavigationHeader: typeof import("../components/NavigationHeader.vue")['default']
 export const RodadaCampeonatoForm: typeof import("../components/RodadaCampeonatoForm.vue")['default']
 export const RodadaCampeonatoResults: typeof import("../components/RodadaCampeonatoResults.vue")['default']
@@ -72,7 +74,9 @@ export const LazyFormSelectSearchable: LazyComponent<typeof import("../component
 export const LazyListaApostadores: LazyComponent<typeof import("../components/ListaApostadores.vue")['default']>
 export const LazyModalAdicionarRodada: LazyComponent<typeof import("../components/ModalAdicionarRodada.vue")['default']>
 export const LazyModalApostador: LazyComponent<typeof import("../components/ModalApostador.vue")['default']>
+export const LazyModalGerenciarCavalos: LazyComponent<typeof import("../components/ModalGerenciarCavalos.vue")['default']>
 export const LazyModalSelecaoRodada: LazyComponent<typeof import("../components/ModalSelecaoRodada.vue")['default']>
+export const LazyModalTipoRodada: LazyComponent<typeof import("../components/ModalTipoRodada.vue")['default']>
 export const LazyNavigationHeader: LazyComponent<typeof import("../components/NavigationHeader.vue")['default']>
 export const LazyRodadaCampeonatoForm: LazyComponent<typeof import("../components/RodadaCampeonatoForm.vue")['default']>
 export const LazyRodadaCampeonatoResults: LazyComponent<typeof import("../components/RodadaCampeonatoResults.vue")['default']>

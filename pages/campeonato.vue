@@ -86,6 +86,7 @@
         :apostadores="apostadores"
         @apostador-clicked="handleApostadorClick"
         @voltar="voltarParaCampeonatos"
+        @cavalos-adicionados="handleCavalosAdicionados"
       />
       
       <!-- Mensagem quando não há apostadores -->
@@ -324,5 +325,11 @@ const fecharModalApostador = () => {
 const limparFiltros = () => {
   filtroNome.value = ''
   filtroAno.value = new Date().getFullYear() // Reset para o ano atual
+}
+
+// Função para lidar com cavalos adicionados
+const handleCavalosAdicionados = (cavalos) => {
+  console.log('Cavalos adicionados ao campeonato:', cavalos)
+  // Aqui você pode adicionar feedback visual ou outras ações necessárias
 }
 </script>

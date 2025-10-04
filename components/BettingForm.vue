@@ -39,15 +39,36 @@
             placeholder="Digite o nome do apostador..."
           />
           
-          <FormSelectSearchable
-            label="Cavalo"
-            v-model="formData.cavalo"
-            :options="cavaloOptions"
-            :disabled="loading"
-            required
-            icon="SparklesIcon"
-            placeholder="Digite o nome do cavalo..."
-          />
+          <div class="flex flex-col">
+            <FormSelectSearchable
+              label="Cavalo"
+              v-model="formData.cavalo"
+              :options="cavaloOptions"
+              :disabled="loading || !formData.campeonato || cavaloOptions.length === 0"
+              required
+              icon="SparklesIcon"
+              :placeholder="getCavaloPlaceholder()"
+            />
+            
+            <!-- Mensagem quando não há cavalos no campeonato -->
+            <div v-if="formData.campeonato && cavaloOptions.length === 0 && !loadingCavalos" 
+                 class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <span class="text-sm text-yellow-700">
+                  Nenhum cavalo cadastrado neste campeonato. Não é possível criar apostas.
+                </span>
+              </div>
+            </div>
+            
+            <!-- Loading dos cavalos -->
+            <div v-if="loadingCavalos" class="mt-2 flex items-center space-x-2 text-sm text-neutral-600">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+              <span>Carregando cavalos...</span>
+            </div>
+          </div>
           
           <FormSelectSearchable
             label="Campeonato"
@@ -129,9 +150,10 @@
             type="submit" 
             class="btn-primary flex items-center space-x-2"
             :disabled="!isFormValid"
+            :title="!cavaloOptions.length && formData.campeonato ? 'Não é possível criar apostas sem cavalos no campeonato' : ''"
           >
             <PaperAirplaneIcon class="w-5 h-5" />
-            <span>Enviar Aposta</span>
+            <span>{{ getSubmitButtonText() }}</span>
           </button>
         </div>
       </form>
@@ -156,7 +178,7 @@
 import { PaperAirplaneIcon, CalendarIcon, CurrencyDollarIcon } from '@heroicons/vue/24/outline'
 
 const emit = defineEmits(['betSubmitted'])
-const { api, getApostadores, getCavalos, getCampeonatos, getRodadasCampeonatoDetalhadas } = useApi()
+const { api, getApostadores, getCavalos, getCampeonatos, getRodadasCampeonatoDetalhadas, getCavalosPorCampeonato } = useApi()
 
 const formData = ref({
   apostador: '',
@@ -171,6 +193,7 @@ const apostadorOptions = ref([])
 const cavaloOptions = ref([])
 const campeonatoOptions = ref([])
 const loading = ref(false)
+const loadingCavalos = ref(false)
 const error = ref('')
 
 // Estados para modal de rodada
@@ -185,13 +208,75 @@ onMounted(async () => {
   await loadFormData()
 })
 
-// Watcher para limpar rodada quando campeonato for alterado
-watch(() => formData.value.campeonato, (newCampeonatoId) => {
+// Watcher para carregar cavalos quando campeonato for alterado
+watch(() => formData.value.campeonato, async (newCampeonatoId) => {
+  // Limpar rodada se campeonato for desmarcado
   if (!newCampeonatoId) {
-    // Limpar rodada se campeonato for desmarcado
     rodadaSelecionada.value = null
+    cavaloOptions.value = []
+    formData.value.cavalo = ''
+    return
   }
+  
+  // Carregar cavalos do campeonato selecionado
+  await carregarCavalosPorCampeonato(newCampeonatoId)
 })
+
+// Função para carregar cavalos por campeonato
+const carregarCavalosPorCampeonato = async (campeonatoId) => {
+  loadingCavalos.value = true
+  
+  try {
+    const cavalosCampeonato = await getCavalosPorCampeonato(parseInt(campeonatoId))
+    
+    // Mapear os dados para o formato esperado pelo select
+    cavaloOptions.value = cavalosCampeonato.map(item => ({
+      value: item.cavaloId,
+      label: `${item.numeroPareo} - ${item.cavalo.nome}`
+    }))
+    
+    // Limpar seleção de cavalo se não estiver mais disponível
+    if (formData.value.cavalo && !cavaloOptions.value.find(opt => opt.value === formData.value.cavalo)) {
+      formData.value.cavalo = ''
+    }
+  } catch (err) {
+    console.error('Erro ao carregar cavalos do campeonato:', err)
+    cavaloOptions.value = []
+    formData.value.cavalo = ''
+  } finally {
+    loadingCavalos.value = false
+  }
+}
+
+// Função para determinar o placeholder do select de cavalo
+const getCavaloPlaceholder = () => {
+  if (!formData.value.campeonato) {
+    return 'Selecione um campeonato primeiro'
+  }
+  
+  if (loadingCavalos.value) {
+    return 'Carregando cavalos...'
+  }
+  
+  if (cavaloOptions.value.length === 0) {
+    return 'Nenhum cavalo disponível neste campeonato'
+  }
+  
+  return 'Digite o nome do cavalo...'
+}
+
+// Função para determinar o texto do botão de envio
+const getSubmitButtonText = () => {
+  if (!cavaloOptions.value.length && formData.value.campeonato) {
+    return 'Sem cavalos no campeonato'
+  }
+  
+  if (!isFormValid.value) {
+    return 'Preencha todos os campos'
+  }
+  
+  return 'Enviar Aposta'
+}
 
 const loadFormData = async () => {
   loading.value = true
@@ -205,13 +290,6 @@ const loadFormData = async () => {
       label: apostador.nome
     }))
 
-    // Carregar cavalos do backend
-    const cavalos = await getCavalos()
-    cavaloOptions.value = cavalos.map(cavalo => ({
-      value: cavalo.id,
-      label: cavalo.nome
-    }))
-
     // Carregar campeonatos do backend
     const campeonatos = await getCampeonatos()
     campeonatoOptions.value = campeonatos.map(campeonato => ({
@@ -219,6 +297,7 @@ const loadFormData = async () => {
       label: campeonato.nome
     }))
 
+    // Cavalos serão carregados quando um campeonato for selecionado
     // Rodadas serão carregadas via modal quando necessário
   } catch (err) {
     error.value = 'Erro ao carregar dados do servidor. Usando dados padrão.'
@@ -280,16 +359,18 @@ const formatCurrency = (value) => {
 const isFormValid = computed(() => {
   const allFieldsFilled = Object.values(formData.value).every(value => value !== '')
   const rodadaSelected = !!rodadaSelecionada.value
+  const hasCavalos = cavaloOptions.value.length > 0
   
   console.log('Validação do formulário:', {
     formData: formData.value,
     allFieldsFilled,
     rodadaSelected,
+    hasCavalos,
     rodadaSelecionada: rodadaSelecionada.value,
-    isValid: allFieldsFilled && rodadaSelected
+    isValid: allFieldsFilled && rodadaSelected && hasCavalos
   })
   
-  return allFieldsFilled && rodadaSelected
+  return allFieldsFilled && rodadaSelected && hasCavalos
 })
 
 const submitBet = async () => {

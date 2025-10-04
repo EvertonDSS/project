@@ -96,14 +96,22 @@ const selectedOption = computed(() => {
   return props.options.find(option => option.value === props.modelValue)
 })
 
+// Função para normalizar texto removendo acentos
+const normalizeText = (text) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 const filteredOptions = computed(() => {
   if (!searchValue.value.trim()) {
     return props.options
   }
   
-  const searchTerm = searchValue.value.toLowerCase()
+  const searchTerm = normalizeText(searchValue.value)
   return props.options.filter(option => 
-    option.label && option.label.toLowerCase().includes(searchTerm)
+    option.label && normalizeText(option.label).includes(searchTerm)
   )
 })
 
