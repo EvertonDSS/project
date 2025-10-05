@@ -130,7 +130,7 @@
 
         <!-- Resumos Originais -->
         <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
-          <!-- Valor Total da Aposta -->
+          <!-- Valor Total da Aposta --> 
           <div class="bg-red-600 text-white p-4 rounded">
             <h3 class="font-semibold text-lg mb-2">VALOR TOTAL DA APOSTA:</h3>
             <p class="text-2xl font-bold">{{ formatCurrency(valorTotalApostas) }}</p>
@@ -643,22 +643,14 @@ const gerarPDF = () => {
           </table>
 
           <!-- Resumos Originais -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
               <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
               <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; text-align: center;">
                 <div style="font-size: 24px; font-weight: bold;">${formatCurrency(valorTotalApostas.value)}</div>
               </div>
             </div>
-            
-            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-              <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">BOLÕES DE CHAVE</div>
-              <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 14px;">VALOR</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; background-color: #f0fdf4;">
-                <div style="padding: 15px; border: 1px solid #e5e5e5; font-size: 14px; color: #666;">${chaveUnica.value}</div>
-                <div style="padding: 15px; border: 1px solid #e5e5e5; font-size: 14px; font-weight: bold; color: #333;">${formatCurrency(valorTotalPremios.value)}</div>
-              </div>
-            </div>
+           
           </div>
 
           <!-- Seção de Agrupamento -->
@@ -671,57 +663,22 @@ const gerarPDF = () => {
               <table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">
                 <thead>
                   <tr style="background: #f5f5f5;">
-                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">CAVALO</th>
-                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">RODADA</th>
-                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">%</th>
-                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">PRÊMIO INDIVIDUAL</th>
-                    <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold;">TOTAL DA RODADA</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([cavalo, cavaloData]) => `
                     <tr>
                       <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavalo}</td>
-                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${cavaloData.rodada}</td>
-                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${cavaloData.porcentagem}%</td>
                       <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
-                      <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.totalRodada)}</td>
                     </tr>
                   `).join('')}
                 </tbody>
-                <tfoot>
-                  <tr style="background: #dcfce7; font-weight: bold;">
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; text-align: right;" colspan="3">TOTAL ${tipo}:</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: #bbf7d0;">${formatCurrency(tipoData._totalPremio)}</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: #bbf7d0;">${formatCurrency(tipoData._totalRodada)}</td>
-                  </tr>
-                </tfoot>
+               
               </table>
             </div>
           `).join('')}
           
-          <div class="summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
-            ${Object.entries(apostasAgrupadas.value).map(([tipo, tipoData]) => `
-              <div class="summary-card" style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                <div class="summary-header" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">${tipo}</div>
-                <div class="summary-content" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; text-align: center;">
-                  <div style="margin-bottom: 10px;">
-                    <div style="font-size: 14px; opacity: 0.9;">Total Prêmios</div>
-                    <div style="font-size: 18px; font-weight: bold;">${formatCurrency(tipoData._totalPremio)}</div>
-                  </div>
-                  <div style="margin-bottom: 10px;">
-                    <div style="font-size: 14px; opacity: 0.9;">Total Rodadas</div>
-                    <div style="font-size: 18px; font-weight: bold;">${formatCurrency(tipoData._totalRodada)}</div>
-                  </div>
-                  <div>
-                    <div style="font-size: 14px; opacity: 0.9;">Cavalos</div>
-                    <div style="font-size: 18px; font-weight: bold;">${Object.keys(tipoData).filter(key => !key.startsWith('_')).length}</div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
+          
       </body>
     </html>
   `
