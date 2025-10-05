@@ -99,6 +99,17 @@
         <h3 class="text-lg font-semibold text-neutral-600 mb-2">Nenhum apostador encontrado</h3>
         <p class="text-neutral-500 mb-6">Este campeonato ainda não possui apostadores cadastrados.</p>
         
+        <!-- Botão para gerenciar cavalos -->
+        <div class="mb-6">
+          <button 
+            @click="abrirModalCavalos"
+            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto"
+          >
+            <CogIcon class="w-4 h-4" />
+            <span>Gerenciar Cavalos</span>
+          </button>
+        </div>
+        
         <!-- Botão para voltar -->
         <button 
           @click="voltarParaCampeonatos"
@@ -145,10 +156,20 @@
       :apostas="apostasApostador"
       @close="fecharModalApostador"
     />
+
+    <!-- Modal para gerenciar cavalos -->
+    <ModalGerenciarCavalos
+      :isOpen="showModalCavalos"
+      :campeonato="campeonatoSelecionado"
+      @close="fecharModalCavalos"
+      @cavalos-adicionados="handleCavalosAdicionados"
+    />
   </div>
 </template>
 
 <script setup>
+import { CogIcon } from '@heroicons/vue/24/outline'
+
 const { getCampeonatos, postCampeonato, getApostadoresPorCampeonato, getApostasPorApostador } = useApi()
 const submittedCampeonatos = ref([])
 const loadingCampeonatos = ref(false)
@@ -164,6 +185,9 @@ const loadingApostadores = ref(false)
 const modalApostadorOpen = ref(false)
 const apostadorSelecionado = ref(null)
 const apostasApostador = ref([])
+
+// Estados para modal de cavalos
+const showModalCavalos = ref(false)
 
 // Estados para filtro
 const filtroNome = ref('')
@@ -331,5 +355,14 @@ const limparFiltros = () => {
 const handleCavalosAdicionados = (cavalos) => {
   console.log('Cavalos adicionados ao campeonato:', cavalos)
   // Aqui você pode adicionar feedback visual ou outras ações necessárias
+}
+
+// Funções para o modal de cavalos
+const abrirModalCavalos = () => {
+  showModalCavalos.value = true
+}
+
+const fecharModalCavalos = () => {
+  showModalCavalos.value = false
 }
 </script>
