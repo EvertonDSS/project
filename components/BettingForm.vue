@@ -231,8 +231,8 @@ const carregarCavalosPorCampeonato = async (campeonatoId) => {
     
     // Mapear os dados para o formato esperado pelo select
     cavaloOptions.value = cavalosCampeonato.map(item => ({
-      value: item.cavaloId,
-      label: `${item.numeroPareo} - ${item.cavalo.nome}`
+      value: item.pareo,
+      label: `${item.pareo} - ${item.cavalos}`
     }))
     
     // Limpar seleção de cavalo se não estiver mais disponível

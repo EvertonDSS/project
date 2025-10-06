@@ -36,8 +36,8 @@
               <div v-if="cavalosAtuais.length > 0" class="mt-4">
                 <h4 class="text-sm font-medium text-neutral-700 mb-2">Cavalos atuais no campeonato:</h4>
                 <div class="bg-neutral-50 rounded-lg p-3 max-h-32 overflow-y-auto">
-                  <div v-for="cavalo in cavalosAtuais" :key="cavalo.id" class="flex items-center justify-between text-sm py-1">
-                    <span>{{ cavalo.numeroPareo }} - {{ cavalo.cavalo.nome }}</span>
+                  <div v-for="cavalo in cavalosAtuais" :key="cavalo.pareo" class="flex items-center justify-between text-sm py-1">
+                    <span>{{ cavalo.pareo }} - {{ cavalo.cavalos }}</span>
                   </div>
                 </div>
               </div>
