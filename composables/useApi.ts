@@ -231,6 +231,17 @@ export const useApi = () => {
         console.error('Erro ao adicionar cavalos ao campeonato:', error)
         throw error
       }
+    },
+
+    // Método para buscar dados do grupo por campeonato e grupoId
+    async getGrupoPorCampeonato(campeonatoId: number, grupoId: number) {
+      try {
+        const response = await api(`/cavalo-campeonato/campeonato/${campeonatoId}/grupo/${grupoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar dados do grupo:', error)
+        throw error
+      }
     }
   }
 }

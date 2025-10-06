@@ -221,7 +221,7 @@ import {
   DocumentArrowDownIcon 
 } from '@heroicons/vue/24/outline'
 
-const { getCampeonatos, getApostadoresPorCampeonato, getApostasPorApostador, getTipoPorId } = useApi()
+const { getCampeonatos, getApostadoresPorCampeonato, getApostasPorApostador, getTipoPorId, getGrupoPorCampeonato } = useApi()
 
 // Estados reativos
 const campeonatoSelecionado = ref('')
@@ -345,7 +345,7 @@ const carregarApostas = async () => {
       parseInt(apostadorSelecionado.value)
     )
 
-    // Mapear apostas para o formato do relatório, buscando nomes dos tipos quando necessário
+    // Mapear apostas para o formato do relatório, buscando nomes dos tipos e dados do grupo
     const apostasComTipos = await Promise.all(apostas.map(async (aposta) => {
       let nomeTipo = aposta.rodadas?.tipo?.nome || 'SEM TIPO'
       
@@ -360,16 +360,27 @@ const carregarApostas = async () => {
         }
       }
       
+      // Buscar dados do grupo para obter pareo e cavalos
+      let nomeCavalo = 'Grupo Desconhecido'
+      if (aposta.grupoId) {
+        try {
+          const grupoInfo = await getGrupoPorCampeonato(aposta.campeonatoId, aposta.grupoId)
+          nomeCavalo = `${grupoInfo.pareo} - ${grupoInfo.cavalos}`
+        } catch (error) {
+          console.error('Erro ao buscar dados do grupo:', error)
+          nomeCavalo = `Grupo ${aposta.grupoId}`
+        }
+      }
       
       return {
         rodada: aposta.rodadas?.rodada?.nomeRodada || 'N/A',
-        chave: `${aposta.cavalo?.nome || 'Cavalo Desconhecido'}`,
+        chave: nomeCavalo,
         valorAposta: parseFloat(aposta.valorUnitario),
         porcentagem: parseFloat(aposta.porcentagem),
         premioIndividual: parseFloat(aposta.total || 0),
         totalRodada: parseFloat(aposta.rodadas?.valorRodada || 0),
         tipo: nomeTipo,
-        cavalo: aposta.cavalo?.nome || 'Cavalo Desconhecido'
+        cavalo: nomeCavalo
       }
     }))
 
