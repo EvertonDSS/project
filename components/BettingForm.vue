@@ -231,7 +231,7 @@ const carregarCavalosPorCampeonato = async (campeonatoId) => {
     
     // Mapear os dados para o formato esperado pelo select
     cavaloOptions.value = cavalosCampeonato.map(item => ({
-      value: item.pareo,
+      value: item.grupoId,
       label: `${item.pareo} - ${item.cavalos}`
     }))
     
@@ -377,7 +377,7 @@ const submitBet = async () => {
   if (!isFormValid.value) return
   
   const apostaData = {
-    cavaloId: parseInt(formData.value.cavalo),
+    grupoId: parseInt(formData.value.cavalo),
     campeonatoId: parseInt(formData.value.campeonato),
     apostadorId: parseInt(formData.value.apostador),
     rodadasId: rodadaSelecionada.value.id,

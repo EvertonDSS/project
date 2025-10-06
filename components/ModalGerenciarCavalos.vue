@@ -36,7 +36,7 @@
               <div v-if="cavalosAtuais.length > 0" class="mt-4">
                 <h4 class="text-sm font-medium text-neutral-700 mb-2">Cavalos atuais no campeonato:</h4>
                 <div class="bg-neutral-50 rounded-lg p-3 max-h-32 overflow-y-auto">
-                  <div v-for="cavalo in cavalosAtuais" :key="cavalo.pareo" class="flex items-center justify-between text-sm py-1">
+                  <div v-for="cavalo in cavalosAtuais" :key="cavalo.grupoId" class="flex items-center justify-between text-sm py-1">
                     <span>{{ cavalo.pareo }} - {{ cavalo.cavalos }}</span>
                   </div>
                 </div>
@@ -271,31 +271,32 @@ const adicionarCavalos = async () => {
   loading.value = true
   
   try {
-    // Coletar todos os cavalos selecionados de todas as linhas
-    const cavalosSelecionados = []
+    // Coletar todos os cavalos selecionados agrupados por pareo
+    const pareos = []
     
     linhasCavalos.value.forEach(linha => {
-      linha.cavalosSelecionados.forEach(cavalo => {
-        cavalosSelecionados.push({
-          cavaloId: parseInt(cavalo.value),
-          numeroPareo: linha.numeroPareo
+      if (linha.cavalosSelecionados.length > 0) {
+        const cavalosIds = linha.cavalosSelecionados.map(cavalo => parseInt(cavalo.value))
+        pareos.push({
+          nomePareo: linha.numeroPareo,
+          cavalos: cavalosIds
         })
-      })
+      }
     })
     
-    if (cavalosSelecionados.length === 0) {
+    if (pareos.length === 0) {
       return
     }
     
     const dados = {
       campeonatoId: props.campeonato.id,
-      cavalos: cavalosSelecionados
+      pareos: pareos
     }
     
     await postCavalosCampeonato(dados)
     
     // Emitir evento de sucesso
-    emit('cavalosAdicionados', cavalosSelecionados)
+    emit('cavalosAdicionados', pareos)
     
     // Recarregar dados
     await carregarDados()

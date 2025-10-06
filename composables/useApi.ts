@@ -28,6 +28,7 @@ export const useApi = () => {
 
     async postApostador(apostador: any) {
       try {
+        console.log(apostador)
         const response = await api('/apostador', { method: 'POST', body: apostador })
         return response
       } catch (error) {
@@ -150,6 +151,8 @@ export const useApi = () => {
 
     async postAposta(aposta: any) {
       try {
+        console.log(aposta)
+
         const response = await api('/aposta', { method: 'POST', body: aposta })
         return response
       } catch (error) {
