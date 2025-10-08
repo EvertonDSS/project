@@ -79,25 +79,18 @@
       <!-- Relatório -->
       <div v-if="apostasCarregadas.length > 0" class="card p-8 max-w-6xl mx-auto">
         <!-- Cabeçalho do Relatório -->
-        <div class="text-center mb-8">
-          <div class="flex items-center justify-center mb-4">
-            <div class="w-16 h-16 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full flex items-center justify-center mr-4">
-              <span class="text-white font-bold text-xl">J</span>
-            </div>
-            <div class="text-left">
-              <h2 class="text-2xl font-bold text-neutral-800">JOGOS</h2>
-              <p class="text-sm text-neutral-600">ONLINE</p>
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div class="bg-blue-600 text-white p-3 rounded">
-              <p class="font-semibold">NOME APOSTADOR</p>
-              <p class="text-lg">{{ apostadorSelecionadoNome }}</p>
-            </div>
-            <div class="bg-blue-600 text-white p-3 rounded">
-              <p class="font-semibold">NOME CAMPEONATO</p>
-              <p class="text-lg">{{ campeonatoSelecionadoNome }}</p>
+        <div class="mb-8">
+          <div class="flex items-center gap-6 mb-6">
+            <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-20 w-auto" />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+              <div class="text-white p-3 rounded" style="background-color: #D3AF37;">
+                <p class="font-semibold">NOME APOSTADOR</p>
+                <p class="text-lg">{{ apostadorSelecionadoNome }}</p>
+              </div>
+              <div class="text-white p-3 rounded" style="background-color: #D3AF37;">
+                <p class="font-semibold">NOME CAMPEONATO</p>
+                <p class="text-lg">{{ campeonatoSelecionadoNome }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -106,7 +99,7 @@
         <div class="overflow-x-auto mb-6">
           <table class="w-full border-collapse">
             <thead>
-              <tr class="bg-red-600 text-white">
+              <tr class="text-white" style="background-color: #000000;">
                 <th class="border border-neutral-300 px-4 py-3 text-left font-semibold">RODADA</th>
                 <th class="border border-neutral-300 px-4 py-3 text-left font-semibold">CHAVE</th>
                 <th class="border border-neutral-300 px-4 py-3 text-left font-semibold">VALOR DA APOSTA</th>
@@ -131,7 +124,7 @@
         <!-- Resumos Originais -->
         <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
           <!-- Valor Total da Aposta --> 
-          <div class="bg-red-600 text-white p-4 rounded">
+          <div class="text-white p-4 rounded" style="background-color: #D3AF37;">
             <h3 class="font-semibold text-lg mb-2">VALOR TOTAL DA APOSTA:</h3>
             <p class="text-2xl font-bold">{{ formatCurrency(valorTotalApostas) }}</p>
           </div>
@@ -148,7 +141,7 @@
 
           <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="mb-6">
             <!-- Cabeçalho do Tipo -->
-            <div class="bg-red-600 text-white p-4 rounded-t-lg">
+            <div class="text-white p-4 rounded-t-lg" style="background-color: #D3AF37;">
               <h3 class="text-lg font-bold text-center">{{ tipo }}</h3>
             </div>
 
@@ -166,7 +159,7 @@
 
         <!-- Resumos por Tipo -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg">
+          <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="text-white p-6 rounded-lg" style="background-color: #D3AF37;">
             <h3 class="font-semibold text-lg mb-2">{{ tipo }}</h3>
             <div class="space-y-2">
               <div class="flex justify-between">
@@ -449,22 +442,6 @@ const gerarPDF = () => {
             justify-content: center;
             margin-bottom: 20px;
           }
-          .logo-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-          }
-          .logo-text {
-            text-align: left;
-          }
           .title { 
             font-size: 28px; 
             font-weight: bold; 
@@ -476,14 +453,8 @@ const gerarPDF = () => {
             color: #666; 
             margin: 0;
           }
-          .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-          }
           .info-card {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #D3AF37;
             color: white;
             padding: 15px;
             border-radius: 8px;
@@ -514,7 +485,7 @@ const gerarPDF = () => {
             text-align: left; 
           }
           th { 
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            background: #000000;
             color: white;
             font-weight: bold;
             font-size: 14px;
@@ -538,7 +509,7 @@ const gerarPDF = () => {
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           }
           .summary-header {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            background: #000000;
             color: white;
             padding: 15px;
             text-align: center;
@@ -546,7 +517,7 @@ const gerarPDF = () => {
             font-size: 16px;
           }
           .summary-content {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #D3AF37;
             color: white;
             padding: 20px;
             text-align: center;
@@ -563,7 +534,7 @@ const gerarPDF = () => {
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           }
           .boloes-header {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            background: #000000;
             color: white;
             padding: 15px;
             text-align: center;
@@ -571,7 +542,7 @@ const gerarPDF = () => {
             font-size: 16px;
           }
           .boloes-subheader {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #D3AF37;
             color: white;
             padding: 10px;
             text-align: center;
@@ -606,23 +577,18 @@ const gerarPDF = () => {
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">
-              <div class="logo-icon">J</div>
-              <div class="logo-text">
-                <div class="title">JOGOS</div>
-                <div class="subtitle">ONLINE</div>
+            <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
+              <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto;" />
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1;">
+                <div class="info-card">
+                  <div class="info-label">NOME APOSTADOR</div>
+                  <div class="info-value">${apostadorSelecionadoNome.value}</div>
+                </div>
+                <div class="info-card">
+                  <div class="info-label">NOME CAMPEONATO</div>
+                  <div class="info-value">${campeonatoSelecionadoNome.value}</div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          <div class="info-grid">
-            <div class="info-card">
-              <div class="info-label">NOME APOSTADOR</div>
-              <div class="info-value">${apostadorSelecionadoNome.value}</div>
-            </div>
-            <div class="info-card">
-              <div class="info-label">NOME CAMPEONATO</div>
-              <div class="info-value">${campeonatoSelecionadoNome.value}</div>
             </div>
           </div>
           
@@ -630,7 +596,7 @@ const gerarPDF = () => {
           <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Apostas Detalhadas</h2>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <thead>
-              <tr style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white;">
+              <tr style="background: #000000; color: white;">
                 <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">RODADA</th>
                 <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">CHAVE</th>
                 <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">VALOR DA APOSTA</th>
@@ -656,8 +622,8 @@ const gerarPDF = () => {
           <!-- Resumos Originais -->
           <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-              <div style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
-              <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; text-align: center;">
+              <div style="background: #000000; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
+              <div style="background: #D3AF37; color: white; padding: 20px; text-align: center;">
                 <div style="font-size: 24px; font-weight: bold;">${formatCurrency(valorTotalApostas.value)}</div>
               </div>
             </div>
@@ -670,7 +636,7 @@ const gerarPDF = () => {
           
           ${Object.entries(apostasAgrupadas.value).map(([tipo, tipoData]) => `
             <div style="margin-bottom: 30px;">
-              <h3 style="background: #2563eb; color: white; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
+              <h3 style="background: #D3AF37; color: white; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
               <table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">
                 <thead>
                   <tr style="background: #f5f5f5;">
