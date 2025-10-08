@@ -81,7 +81,7 @@
         <!-- Cabeçalho do Relatório -->
         <div class="mb-8">
           <div class="flex items-center gap-6 mb-6">
-            <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-20 w-auto" />
+            <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-20 w-auto border-4 rounded-lg" style="border-color: #D3AF37;" />
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
               <div class="text-white p-3 rounded" style="background-color: #D3AF37;">
                 <p class="font-semibold">NOME APOSTADOR</p>
@@ -578,7 +578,7 @@ const gerarPDF = () => {
         <div class="container">
           <div class="header">
             <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
-              <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto;" />
+              <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto; border: 4px solid #D3AF37; border-radius: 8px;" />
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1;">
                 <div class="info-card">
                   <div class="info-label">NOME APOSTADOR</div>
