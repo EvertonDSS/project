@@ -58,6 +58,15 @@
               Relatório
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink 
+              to="/excecao" 
+              class="nav-link"
+              :class="{ active: $route.path === '/excecao' }"
+            >
+              Exceções
+            </NuxtLink>
+          </li>
         </ul>
       </div>
 
@@ -164,6 +173,19 @@
                 </div>
               </NuxtLink>
             </li>
+            <li>
+              <NuxtLink 
+                to="/excecao" 
+                class="mobile-nav-link"
+                :class="{ 'mobile-nav-link-active': $route.path === '/excecao' }"
+                @click="closeMobileMenu"
+              >
+                <div class="flex items-center space-x-3">
+                  <ExclamationTriangleIcon class="w-5 h-5" />
+                  <span>Exceções</span>
+                </div>
+              </NuxtLink>
+            </li>
           </ul>
         </div>
       </div>
@@ -180,7 +202,8 @@ import {
   SparklesIcon, 
   TrophyIcon, 
   PlayIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 
 const isMobileMenuOpen = ref(false)

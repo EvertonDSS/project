@@ -354,15 +354,21 @@ const carregarApostas = async () => {
       }
       
       // Buscar dados do grupo para obter pareo e cavalos
-      let nomeCavalo = 'Grupo Desconhecido'
+      let nomeCavalo = null
       if (aposta.grupoId) {
         try {
           const grupoInfo = await getGrupoPorCampeonato(aposta.campeonatoId, aposta.grupoId)
           nomeCavalo = `${grupoInfo.pareo} - ${grupoInfo.cavalos}`
         } catch (error) {
-          console.error('Erro ao buscar dados do grupo:', error)
-          nomeCavalo = `Grupo ${aposta.grupoId}`
+          console.error('Erro ao buscar dados do grupo (não será exibido):', error)
+          // Retornar null para que esta aposta seja filtrada
+          return null
         }
+      }
+      
+      // Se não encontrou o cavalo, não incluir esta linha
+      if (!nomeCavalo) {
+        return null
       }
       
       return {
@@ -377,7 +383,8 @@ const carregarApostas = async () => {
       }
     }))
 
-    apostasCarregadas.value = apostasComTipos
+    // Filtrar apostas válidas (remover null)
+    apostasCarregadas.value = apostasComTipos.filter(aposta => aposta !== null)
   } catch (error) {
     console.error('Erro ao carregar apostas:', error)
     errorApostas.value = 'Erro ao carregar apostas do apostador.'

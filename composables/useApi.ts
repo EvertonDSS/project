@@ -173,7 +173,7 @@ export const useApi = () => {
 
     async getApostasPorApostador(campeonatoId: number, apostadorId: number) {
       try {
-        const response = await api(`/campeonato/${campeonatoId}/apostador/${apostadorId}/apostas`)
+        const response = await api(`/campeonato/${campeonatoId}/apostador/${apostadorId}/v2-apostas`)
         return response
       } catch (error) {
         console.error('Erro ao buscar apostas por apostador:', error)
@@ -240,6 +240,47 @@ export const useApi = () => {
         return response
       } catch (error) {
         console.error('Erro ao buscar dados do grupo:', error)
+        throw error
+      }
+    },
+
+    // Métodos para exceções
+    async getExcecoes() {
+      try {
+        const response = await api('/excecao')
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar exceções:', error)
+        throw error
+      }
+    },
+
+    async getExcecoesPorCampeonato(campeonatoId: number) {
+      try {
+        const response = await api(`/excecao/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar exceções por campeonato:', error)
+        throw error
+      }
+    },
+
+    async postExcecao(excecao: any) {
+      try {
+        const response = await api('/excecao', { method: 'POST', body: excecao })
+        return response
+      } catch (error) {
+        console.error('Erro ao criar exceção:', error)
+        throw error
+      }
+    },
+
+    async deleteExcecao(excecaoId: number) {
+      try {
+        const response = await api(`/excecao/${excecaoId}`, { method: 'DELETE' })
+        return response
+      } catch (error) {
+        console.error('Erro ao deletar exceção:', error)
         throw error
       }
     }
