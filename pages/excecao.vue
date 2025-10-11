@@ -125,7 +125,7 @@
         <div v-else class="overflow-x-auto">
           <table class="w-full border-collapse">
             <thead>
-              <tr class="text-white" style="background-color: #D3AF37;">
+              <tr class="text-black" style="background-color: #ffcc00;">
                 <th class="border border-neutral-300 px-4 py-3 text-left font-semibold">ID</th>
                 <th class="border border-neutral-300 px-4 py-3 text-left font-semibold">Grupo</th>
                 <th class="border border-neutral-300 px-4 py-3 text-left font-semibold">Pareo</th>

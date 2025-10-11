@@ -81,13 +81,13 @@
         <!-- Cabeçalho do Relatório -->
         <div class="mb-8">
           <div class="flex items-center gap-6 mb-6">
-            <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-20 w-auto border-4 rounded-lg" style="border-color: #D3AF37;" />
+            <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-20 w-auto border-4 rounded-lg" style="border-color: #ffcc00;" />
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-              <div class="text-white p-3 rounded" style="background-color: #D3AF37;">
+              <div class="text-black p-3 rounded" style="background-color: #ffcc00;">
                 <p class="font-semibold">NOME APOSTADOR</p>
                 <p class="text-lg">{{ apostadorSelecionadoNome }}</p>
               </div>
-              <div class="text-white p-3 rounded" style="background-color: #D3AF37;">
+              <div class="text-black p-3 rounded" style="background-color: #ffcc00;">
                 <p class="font-semibold">NOME CAMPEONATO</p>
                 <p class="text-lg">{{ campeonatoSelecionadoNome }}</p>
               </div>
@@ -124,7 +124,7 @@
         <!-- Resumos Originais -->
         <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
           <!-- Valor Total da Aposta --> 
-          <div class="text-white p-4 rounded" style="background-color: #D3AF37;">
+          <div class="text-black p-4 rounded" style="background-color: #ffcc00;">
             <h3 class="font-semibold text-lg mb-2">VALOR TOTAL DA APOSTA:</h3>
             <p class="text-2xl font-bold">{{ formatCurrency(valorTotalApostas) }}</p>
           </div>
@@ -141,7 +141,7 @@
 
           <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="mb-6">
             <!-- Cabeçalho do Tipo -->
-            <div class="text-white p-4 rounded-t-lg" style="background-color: #D3AF37;">
+            <div class="text-black p-4 rounded-t-lg" style="background-color: #ffcc00;">
               <h3 class="text-lg font-bold text-center">{{ tipo }}</h3>
             </div>
 
@@ -159,7 +159,7 @@
 
         <!-- Resumos por Tipo -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="text-white p-6 rounded-lg" style="background-color: #D3AF37;">
+          <div v-for="(tipoData, tipo) in apostasAgrupadas" :key="tipo" class="text-black p-6 rounded-lg" style="background-color: #ffcc00;">
             <h3 class="font-semibold text-lg mb-2">{{ tipo }}</h3>
             <div class="space-y-2">
               <div class="flex justify-between">
@@ -338,6 +338,13 @@ const carregarApostas = async () => {
       parseInt(apostadorSelecionado.value)
     )
 
+    // Verificar se retornou vazio
+    if (!apostas || apostas.length === 0) {
+      apostasCarregadas.value = []
+      errorApostas.value = 'Não há aposta válida para este apostador neste campeonato.'
+      return
+    }
+
     // Mapear apostas para o formato do relatório, buscando nomes dos tipos e dados do grupo
     const apostasComTipos = await Promise.all(apostas.map(async (aposta) => {
       let nomeTipo = aposta.rodadas?.tipo?.nome || 'SEM TIPO'
@@ -384,7 +391,16 @@ const carregarApostas = async () => {
     }))
 
     // Filtrar apostas válidas (remover null)
-    apostasCarregadas.value = apostasComTipos.filter(aposta => aposta !== null)
+    const apostasValidas = apostasComTipos.filter(aposta => aposta !== null)
+    
+    // Verificar se após filtrar ainda há apostas válidas
+    if (apostasValidas.length === 0) {
+      apostasCarregadas.value = []
+      errorApostas.value = 'Não há aposta válida para este apostador neste campeonato.'
+      return
+    }
+    
+    apostasCarregadas.value = apostasValidas
   } catch (error) {
     console.error('Erro ao carregar apostas:', error)
     errorApostas.value = 'Erro ao carregar apostas do apostador.'
@@ -461,8 +477,8 @@ const gerarPDF = () => {
             margin: 0;
           }
           .info-card {
-            background: #D3AF37;
-            color: white;
+            background: #ffcc00;
+            color: black;
             padding: 15px;
             border-radius: 8px;
             text-align: center;
@@ -524,8 +540,8 @@ const gerarPDF = () => {
             font-size: 16px;
           }
           .summary-content {
-            background: #D3AF37;
-            color: white;
+            background: #ffcc00;
+            color: black;
             padding: 20px;
             text-align: center;
           }
@@ -549,8 +565,8 @@ const gerarPDF = () => {
             font-size: 16px;
           }
           .boloes-subheader {
-            background: #D3AF37;
-            color: white;
+            background: #ffcc00;
+            color: black;
             padding: 10px;
             text-align: center;
             font-weight: bold;
@@ -585,7 +601,7 @@ const gerarPDF = () => {
         <div class="container">
           <div class="header">
             <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
-              <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto; border: 4px solid #D3AF37; border-radius: 8px;" />
+              <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto; border: 4px solid #ffcc00; border-radius: 8px;" />
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1;">
                 <div class="info-card">
                   <div class="info-label">NOME APOSTADOR</div>
@@ -630,7 +646,7 @@ const gerarPDF = () => {
           <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
               <div style="background: #000000; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
-              <div style="background: #D3AF37; color: white; padding: 20px; text-align: center;">
+              <div style="background: #ffcc00; color: black; padding: 20px; text-align: center;">
                 <div style="font-size: 24px; font-weight: bold;">${formatCurrency(valorTotalApostas.value)}</div>
               </div>
             </div>
@@ -643,7 +659,7 @@ const gerarPDF = () => {
           
           ${Object.entries(apostasAgrupadas.value).map(([tipo, tipoData]) => `
             <div style="margin-bottom: 30px;">
-              <h3 style="background: #D3AF37; color: white; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
+              <h3 style="background: #ffcc00; color: black; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
               <table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">
                 <thead>
                   <tr style="background: #f5f5f5;">
