@@ -98,7 +98,8 @@ const handleRodadaCampeonatoSubmission = async (rodadaCampeonato) => {
       rodadaId: rodadaCampeonato.rodadaId,
       valorRodada: rodadaCampeonato.valorRodada,
       porcentagem: rodadaCampeonato.porcentagem,
-      tipoId: rodadaCampeonato.tipoId
+      tipoId: rodadaCampeonato.tipoId,
+      casa: rodadaCampeonato.casa
     })
     submittedRodadasCampeonato.value.unshift(rodadaCampeonato)
     await loadRodadasCampeonato()

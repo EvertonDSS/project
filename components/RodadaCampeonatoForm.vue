@@ -63,6 +63,14 @@
           :max="100"
         />
         
+        <FormInput
+          label="Casa"
+          type="number"
+          step="1"
+          v-model="formData.casa"
+          icon="HomeIcon"
+        />
+        
         <div class="flex items-end space-x-2">
           <div class="flex-1">
             <FormSelectSearchable
@@ -127,7 +135,8 @@ const formData = ref({
   rodadaId: '',
   valorRodada: '',
   porcentagem: '',
-  tipoId: ''
+  tipoId: '',
+  casa: 0
 })
 
 const campeonatoOptions = ref([])
@@ -264,7 +273,8 @@ const submitRodadaCampeonato = () => {
     rodadaId: parseInt(formData.value.rodadaId),
     valorRodada: parseFloat(formData.value.valorRodada),
     porcentagem: parseFloat(formData.value.porcentagem),
-    tipoId: parseInt(formData.value.tipoId)
+    tipoId: parseInt(formData.value.tipoId),
+    casa: formData.value.casa ? parseFloat(formData.value.casa) : null
   }
 
   emit('rodadaCampeonatoSubmitted', rodadaCampeonato)
@@ -275,5 +285,6 @@ const submitRodadaCampeonato = () => {
   formData.value.valorRodada = ''
   formData.value.porcentagem = ''
   formData.value.tipoId = ''
+  formData.value.casa = 0
 }
 </script>
