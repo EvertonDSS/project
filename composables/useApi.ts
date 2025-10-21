@@ -3,7 +3,7 @@ import { useRuntimeConfig } from "nuxt/app"
 export const useApi = () => {
   const config = useRuntimeConfig()
   
-  // URL base da API - você pode configurar isso no nuxt.config.ts
+  // URL base da API - prioridade: variável de ambiente > localhost
   const baseURL = (config.public.apiBase as string) || 'http://localhost:3002/'
   
   const api = $fetch.create({
