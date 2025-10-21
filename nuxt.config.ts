@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:3002/'
+      apiBase: 'https://corrida-nest.onrender.com/'
     }
   }
 })
