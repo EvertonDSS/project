@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "setup-env": "node scripts/setup-env.js",
+    "predev": "npm run setup-env",
+    "prebuild": "npm run setup-env",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",

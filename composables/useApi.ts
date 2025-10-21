@@ -4,7 +4,7 @@ export const useApi = () => {
   const config = useRuntimeConfig()
   
   // URL base da API - você pode configurar isso no nuxt.config.ts
-  const baseURL = (config.public.apiBase as string) || 'https://corrida-nest.onrender.com/'
+  const baseURL = (config.public.apiBase as string) || 'http://localhost:3002/'
   
   const api = $fetch.create({
     baseURL,
@@ -281,6 +281,47 @@ export const useApi = () => {
         return response
       } catch (error) {
         console.error('Erro ao deletar exceção:', error)
+        throw error
+      }
+    },
+
+    // Métodos para finalistas
+    async getTiposPorCampeonato(campeonatoId: number) {
+      try {
+        const response = await api(`/campeonato/${campeonatoId}/tipos`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar tipos por campeonato:', error)
+        throw error
+      }
+    },
+
+    async getFinalistasCampeonato(campeonatoId: number) {
+      try {
+        const response = await api(`/finalista/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar finalistas:', error)
+        throw error
+      }
+    },
+
+    async postFinalistasCampeonato(campeonatoId: number, tipoId: number, finalistas: any) {
+      try {
+        const response = await api(`/finalista/campeonato/${campeonatoId}/tipo/${tipoId}`, { method: 'POST', body: finalistas })
+        return response
+      } catch (error) {
+        console.error('Erro ao salvar finalistas:', error)
+        throw error
+      }
+    },
+
+    async putFinalistasCampeonato(campeonatoId: number, tipoId: number, finalistas: any) {
+      try {
+        const response = await api(`/finalista/campeonato/${campeonatoId}/tipo/${tipoId}`, { method: 'PUT', body: finalistas })
+        return response
+      } catch (error) {
+        console.error('Erro ao atualizar finalistas:', error)
         throw error
       }
     }

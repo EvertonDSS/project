@@ -30,6 +30,7 @@ interface _GlobalComponents {
     'ModalApostador': typeof import("../../components/ModalApostador.vue")['default']
     'ModalGerenciarCavalos': typeof import("../../components/ModalGerenciarCavalos.vue")['default']
     'ModalSelecaoRodada': typeof import("../../components/ModalSelecaoRodada.vue")['default']
+    'ModalSelecionarFinalistas': typeof import("../../components/ModalSelecionarFinalistas.vue")['default']
     'ModalTipoRodada': typeof import("../../components/ModalTipoRodada.vue")['default']
     'NavigationHeader': typeof import("../../components/NavigationHeader.vue")['default']
     'RodadaCampeonatoForm': typeof import("../../components/RodadaCampeonatoForm.vue")['default']
@@ -76,6 +77,7 @@ interface _GlobalComponents {
     'LazyModalApostador': LazyComponent<typeof import("../../components/ModalApostador.vue")['default']>
     'LazyModalGerenciarCavalos': LazyComponent<typeof import("../../components/ModalGerenciarCavalos.vue")['default']>
     'LazyModalSelecaoRodada': LazyComponent<typeof import("../../components/ModalSelecaoRodada.vue")['default']>
+    'LazyModalSelecionarFinalistas': LazyComponent<typeof import("../../components/ModalSelecionarFinalistas.vue")['default']>
     'LazyModalTipoRodada': LazyComponent<typeof import("../../components/ModalTipoRodada.vue")['default']>
     'LazyNavigationHeader': LazyComponent<typeof import("../../components/NavigationHeader.vue")['default']>
     'LazyRodadaCampeonatoForm': LazyComponent<typeof import("../../components/RodadaCampeonatoForm.vue")['default']>

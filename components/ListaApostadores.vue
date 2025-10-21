@@ -4,14 +4,22 @@
       <h3 class="text-xl font-bold text-neutral-800 mb-2">Apostadores do Campeonato</h3>
       <p class="text-neutral-600 text-sm">{{ campeonato.nome }} - {{ campeonato.ano }}</p>
       
-      <!-- Botão para gerenciar cavalos -->
-      <div class="mt-4">
+      <!-- Botões de gerenciamento -->
+      <div class="mt-4 flex items-center justify-center space-x-3">
         <button 
           @click="abrirModalCavalos"
-          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center space-x-2"
         >
           <CogIcon class="w-4 h-4" />
           <span>Gerenciar Cavalos</span>
+        </button>
+        
+        <button 
+          @click="abrirModalFinalistas"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center space-x-2"
+        >
+          <TrophyIcon class="w-4 h-4" />
+          <span>Selecionar Finalistas</span>
         </button>
       </div>
     </div>
@@ -56,20 +64,29 @@
       @close="fecharModalCavalos"
       @cavalos-adicionados="handleCavalosAdicionados"
     />
+
+    <!-- Modal para selecionar finalistas -->
+    <ModalSelecionarFinalistas
+      :isOpen="showModalFinalistas"
+      :campeonato="campeonato"
+      @close="fecharModalFinalistas"
+      @finalistas-salvos="handleFinalistasSalvos"
+    />
   </div>
 </template>
 
 <script setup>
-import { UserIcon, ChevronRightIcon, CogIcon } from '@heroicons/vue/24/outline'
+import { UserIcon, ChevronRightIcon, CogIcon, TrophyIcon } from '@heroicons/vue/24/outline'
 
 defineProps({
   campeonato: Object,
   apostadores: Array
 })
 
-const emit = defineEmits(['apostadorClicked', 'voltar', 'cavalosAdicionados'])
+const emit = defineEmits(['apostadorClicked', 'voltar', 'cavalosAdicionados', 'finalistasSalvos'])
 
 const showModalCavalos = ref(false)
+const showModalFinalistas = ref(false)
 
 const handleApostadorClick = (apostador) => {
   emit('apostadorClicked', apostador)
@@ -90,5 +107,18 @@ const fecharModalCavalos = () => {
 const handleCavalosAdicionados = (cavalos) => {
   emit('cavalosAdicionados', cavalos)
   fecharModalCavalos()
+}
+
+const abrirModalFinalistas = () => {
+  showModalFinalistas.value = true
+}
+
+const fecharModalFinalistas = () => {
+  showModalFinalistas.value = false
+}
+
+const handleFinalistasSalvos = () => {
+  emit('finalistasSalvos')
+  fecharModalFinalistas()
 }
 </script>
