@@ -181,6 +181,26 @@ export const useApi = () => {
       }
     },
 
+    async getTodasApostasPorApostador(campeonatoId: number, apostadorId: number) {
+      try {
+        const response = await api(`/campeonato/${campeonatoId}/apostador/${apostadorId}/apostas`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar todas apostas por apostador:', error)
+        throw error
+      }
+    },
+
+    async putAposta(apostaId: number, dados: any) {
+      try {
+        const response = await api(`/aposta/${apostaId}`, { method: 'PUT', body: dados })
+        return response
+      } catch (error) {
+        console.error('Erro ao atualizar aposta:', error)
+        throw error
+      }
+    },
+
     // Métodos para tipos de rodada
     async getTiposRodada() {
       try {

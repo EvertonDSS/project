@@ -85,6 +85,7 @@
         :campeonato="campeonatoSelecionado"
         :apostadores="apostadores"
         @apostador-clicked="handleApostadorClick"
+        @editar-apostas="abrirModalEditarApostas"
         @voltar="voltarParaCampeonatos"
         @cavalos-adicionados="handleCavalosAdicionados"
       />
@@ -180,6 +181,15 @@
       @close="fecharModalFinalistas"
       @finalistas-salvos="handleFinalistasSalvos"
     />
+
+    <!-- Modal para editar apostas -->
+    <ModalEditarApostas
+      :isOpen="showModalEditarApostas"
+      :campeonato="campeonatoSelecionado"
+      :apostador="apostadorParaEditar"
+      @close="fecharModalEditarApostas"
+      @aposta-atualizada="handleApostaAtualizada"
+    />
   </div>
 </template>
 
@@ -207,6 +217,10 @@ const showModalCavalos = ref(false)
 
 // Estados para modal de finalistas
 const showModalFinalistas = ref(false)
+
+// Estados para modal de editar apostas
+const showModalEditarApostas = ref(false)
+const apostadorParaEditar = ref(null)
 
 // Estados para filtro
 const filtroNome = ref('')
@@ -337,7 +351,7 @@ const handleApostadorClick = async (apostador) => {
     apostasApostador.value = apostasData.map(aposta => ({
       id: aposta.id,
       cavaloId: aposta.cavaloId,
-      cavalo: aposta.cavalo.nome,
+      cavalo: aposta.cavalo?.nome || 'N/A',
       campeonatoId: aposta.campeonatoId,
       campeonato: aposta.campeonato,
       apostadorId: aposta.apostadorId,
@@ -397,5 +411,20 @@ const fecharModalFinalistas = () => {
 const handleFinalistasSalvos = () => {
   console.log('Finalistas salvos com sucesso!')
   // Aqui você pode adicionar feedback visual ou outras ações necessárias
+}
+
+// Funções para o modal de editar apostas
+const abrirModalEditarApostas = (apostador) => {
+  apostadorParaEditar.value = apostador
+  showModalEditarApostas.value = true
+}
+
+const fecharModalEditarApostas = () => {
+  showModalEditarApostas.value = false
+  apostadorParaEditar.value = null
+}
+
+const handleApostaAtualizada = () => {
+  console.log('Aposta atualizada com sucesso!')
 }
 </script>
