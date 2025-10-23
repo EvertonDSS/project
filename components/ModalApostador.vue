@@ -33,6 +33,7 @@
                   <th class="border border-neutral-300 px-4 py-2 text-left font-semibold">Porcentagem</th>
                   <th class="border border-neutral-300 px-4 py-2 text-left font-semibold">Prêmio Individual</th>
                   <th class="border border-neutral-300 px-4 py-2 text-left font-semibold">Total da Rodada</th>
+                  <th class="border border-neutral-300 px-4 py-2 text-center font-semibold">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -43,6 +44,15 @@
                   <td class="border border-neutral-300 px-4 py-2">{{ aposta.porcentagem }}%</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.premioIndividual) }}</td>
                   <td class="border border-neutral-300 px-4 py-2">{{ formatCurrency(aposta.total) }}</td>
+                  <td class="border border-neutral-300 px-4 py-2 text-center">
+                    <button 
+                      @click="confirmarExclusao(aposta)"
+                      class="text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-50"
+                      title="Excluir aposta"
+                    >
+                      <TrashIcon class="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -87,10 +97,67 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal de Confirmação de Exclusão -->
+  <div v-if="showModalConfirmacao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full">
+      <!-- Header -->
+      <div class="bg-red-50 border-b border-red-200 p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-lg font-semibold text-red-800">Confirmar Exclusão</h3>
+            <p class="text-sm text-red-600">Esta ação não pode ser desfeita</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="p-6">
+        <div class="mb-4">
+          <p class="text-gray-700 mb-2">
+            Tem certeza que deseja excluir a aposta do cavalo:
+          </p>
+          <div class="bg-gray-50 p-3 rounded-lg border">
+            <p class="font-semibold text-gray-900">{{ apostaParaExcluir?.cavalo }}</p>
+            <p class="text-sm text-gray-600">
+              Rodada: {{ apostaParaExcluir?.rodadas?.rodada?.nomeRodada || 'N/A' }}
+            </p>
+            <p class="text-sm text-gray-600">
+              Valor: {{ formatCurrency(apostaParaExcluir?.valorUnitario || 0) }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+        <button 
+          @click="fecharModalConfirmacao"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button 
+          @click="confirmarExclusaoAposta"
+          class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center space-x-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+          <span>Excluir Aposta</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { XMarkIcon, DocumentArrowDownIcon } from '@heroicons/vue/24/outline'
+import { XMarkIcon, DocumentArrowDownIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -99,10 +166,29 @@ const props = defineProps({
   apostas: Array
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'aposta-excluida'])
+
+// Estados para modal de confirmação
+const showModalConfirmacao = ref(false)
+const apostaParaExcluir = ref(null)
 
 const closeModal = () => {
   emit('close')
+}
+
+const confirmarExclusao = (aposta) => {
+  apostaParaExcluir.value = aposta
+  showModalConfirmacao.value = true
+}
+
+const confirmarExclusaoAposta = () => {
+  emit('aposta-excluida', apostaParaExcluir.value)
+  fecharModalConfirmacao()
+}
+
+const fecharModalConfirmacao = () => {
+  showModalConfirmacao.value = false
+  apostaParaExcluir.value = null
 }
 
 const formatCurrency = (value) => {

@@ -4,7 +4,7 @@ export const useApi = () => {
   const config = useRuntimeConfig()
   
   // URL base da API - prioridade: variável de ambiente > localhost
-  const baseURL = (config.public.apiBase as string) || 'http://localhost:3002/'
+  const baseURL = (config.public.apiBase as string) || 'https://back-prod-da6t.onrender.com/'
   
   const api = $fetch.create({
     baseURL,
@@ -197,6 +197,16 @@ export const useApi = () => {
         return response
       } catch (error) {
         console.error('Erro ao atualizar aposta:', error)
+        throw error
+      }
+    },
+
+    async deleteAposta(apostaId: number) {
+      try {
+        const response = await api(`/aposta/${apostaId}`, { method: 'DELETE' })
+        return response
+      } catch (error) {
+        console.error('Erro ao deletar aposta:', error)
         throw error
       }
     },

@@ -164,6 +164,7 @@
       :campeonato="campeonatoSelecionado"
       :apostas="apostasApostador"
       @close="fecharModalApostador"
+      @aposta-excluida="handleApostaExcluida"
     />
 
     <!-- Modal para gerenciar cavalos -->
@@ -196,7 +197,7 @@
 <script setup>
 import { CogIcon, TrophyIcon } from '@heroicons/vue/24/outline'
 
-const { getCampeonatos, postCampeonato, getApostadoresPorCampeonato, getApostasPorApostador } = useApi()
+const { getCampeonatos, postCampeonato, getApostadoresPorCampeonato, getApostasPorApostador, deleteAposta } = useApi()
 const submittedCampeonatos = ref([])
 const loadingCampeonatos = ref(false)
 const errorCampeonatos = ref('')
@@ -426,5 +427,20 @@ const fecharModalEditarApostas = () => {
 
 const handleApostaAtualizada = () => {
   console.log('Aposta atualizada com sucesso!')
+}
+
+const handleApostaExcluida = async (aposta) => {
+  try {
+    // Chamar a API para excluir a aposta
+    await deleteAposta(aposta.id)
+    
+    // Remover a aposta da lista local
+    apostasApostador.value = apostasApostador.value.filter(a => a.id !== aposta.id)
+    
+    console.log('Aposta excluída com sucesso!')
+  } catch (error) {
+    console.error('Erro ao excluir aposta:', error)
+    errorCampeonatos.value = 'Erro ao excluir aposta. Tente novamente.'
+  }
 }
 </script>

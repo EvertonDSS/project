@@ -648,7 +648,7 @@ const _inlineRuntimeConfig = {
     }
   },
   "public": {
-    "apiBase": "https://corrida-nest.onrender.com/"
+    "apiBase": "https://back-prod-da6t.onrender.com/"
   }
 };
 const envOptions = {
