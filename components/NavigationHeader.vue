@@ -67,6 +67,15 @@
               Exceções
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink 
+              to="/corrida-api" 
+              class="nav-link"
+              :class="{ active: $route.path === '/corrida-api' }"
+            >
+              API Corrida
+            </NuxtLink>
+          </li>
         </ul>
       </div>
 
@@ -186,6 +195,19 @@
                 </div>
               </NuxtLink>
             </li>
+            <li>
+              <NuxtLink 
+                to="/corrida-api" 
+                class="mobile-nav-link"
+                :class="{ 'mobile-nav-link-active': $route.path === '/corrida-api' }"
+                @click="closeMobileMenu"
+              >
+                <div class="flex items-center space-x-3">
+                  <GlobeAltIcon class="w-5 h-5" />
+                  <span>API Corrida</span>
+                </div>
+              </NuxtLink>
+            </li>
           </ul>
         </div>
       </div>
@@ -203,7 +225,8 @@ import {
   TrophyIcon, 
   PlayIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  GlobeAltIcon
 } from '@heroicons/vue/24/outline'
 
 const isMobileMenuOpen = ref(false)

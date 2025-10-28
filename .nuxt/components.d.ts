@@ -34,6 +34,8 @@ export const ModalSelecaoRodada: typeof import("../components/ModalSelecaoRodada
 export const ModalSelecionarFinalistas: typeof import("../components/ModalSelecionarFinalistas.vue")['default']
 export const ModalTipoRodada: typeof import("../components/ModalTipoRodada.vue")['default']
 export const NavigationHeader: typeof import("../components/NavigationHeader.vue")['default']
+export const RelatorioApostasPDF: typeof import("../components/RelatorioApostasPDF.vue")['default']
+export const RelatorioApostasSimplesPDF: typeof import("../components/RelatorioApostasSimplesPDF.vue")['default']
 export const RodadaCampeonatoForm: typeof import("../components/RodadaCampeonatoForm.vue")['default']
 export const RodadaCampeonatoResults: typeof import("../components/RodadaCampeonatoResults.vue")['default']
 export const RodadaForm: typeof import("../components/RodadaForm.vue")['default']
@@ -82,6 +84,8 @@ export const LazyModalSelecaoRodada: LazyComponent<typeof import("../components/
 export const LazyModalSelecionarFinalistas: LazyComponent<typeof import("../components/ModalSelecionarFinalistas.vue")['default']>
 export const LazyModalTipoRodada: LazyComponent<typeof import("../components/ModalTipoRodada.vue")['default']>
 export const LazyNavigationHeader: LazyComponent<typeof import("../components/NavigationHeader.vue")['default']>
+export const LazyRelatorioApostasPDF: LazyComponent<typeof import("../components/RelatorioApostasPDF.vue")['default']>
+export const LazyRelatorioApostasSimplesPDF: LazyComponent<typeof import("../components/RelatorioApostasSimplesPDF.vue")['default']>
 export const LazyRodadaCampeonatoForm: LazyComponent<typeof import("../components/RodadaCampeonatoForm.vue")['default']>
 export const LazyRodadaCampeonatoResults: LazyComponent<typeof import("../components/RodadaCampeonatoResults.vue")['default']>
 export const LazyRodadaForm: LazyComponent<typeof import("../components/RodadaForm.vue")['default']>
