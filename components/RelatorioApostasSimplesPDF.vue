@@ -121,6 +121,16 @@ const gerarHTML = () => {
   let totalApostado = 0
   let apostasPorTipo = new Map()
   
+  // Função para formatar números no padrão brasileiro
+  const formatarNumeroBrasileiro = (numero) => {
+    // Converter string para número se necessário
+    const valorNumerico = typeof numero === 'string' ? parseFloat(numero) : numero
+    return valorNumerico.toLocaleString('pt-BR', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })
+  }
+  
   // Processar dados
   props.dados.apostasPorRodada.forEach(rodada => {
     rodada.apostas.forEach((aposta, index) => {
@@ -154,12 +164,12 @@ const gerarHTML = () => {
       
       return `
         <tr>
-          <td>${isUltimaLinha ? rodada.nomeRodada : ''}</td>
+          <td>${rodada.nomeRodada}</td>
           <td>${aposta.pareo.numero}- ${cavalos}</td>
           <td class="valor">R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
           <td class="porcentagem">${aposta.porcentagemAposta}%</td>
           <td class="premio">R$ ${aposta.valorPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-          <td class="total-rodada">${isUltimaLinha ? `R$ ${aposta.valorOriginalPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}</td>
+          <td class="total-rodada">R$ ${formatarNumeroBrasileiro(aposta.valorOriginalPremio)}</td>
         </tr>
       `
     }).join('')
@@ -378,6 +388,16 @@ const gerarPDFDownload = async () => {
   // Importação dinâmica do jsPDF
   const { default: jsPDF } = await import('jspdf')
   
+  // Função para formatar números no padrão brasileiro
+  const formatarNumeroBrasileiro = (numero) => {
+    // Converter string para número se necessário
+    const valorNumerico = typeof numero === 'string' ? parseFloat(numero) : numero
+    return valorNumerico.toLocaleString('pt-BR', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })
+  }
+  
   const doc = new jsPDF('p', 'mm', 'a4')
   
   // Configurações de fonte e cores
@@ -538,7 +558,7 @@ const gerarPDFDownload = async () => {
         doc.rect(currentX, currentY, colWidths[5], 12, 'F')
         doc.setTextColor(verdeRgb.r, verdeRgb.g, verdeRgb.b)
         doc.setFont(undefined, 'bold')
-        doc.text(`R$ ${aposta.valorOriginalPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + 8)
+        doc.text(`R$ ${formatarNumeroBrasileiro(aposta.valorOriginalPremio)}`, currentX + 2, currentY + 8)
       }
       
       totalApostado += aposta.valor
