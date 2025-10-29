@@ -205,6 +205,61 @@ export const useCorridaApi = () => {
         console.error('Erro ao buscar dados do PDF:', error)
         throw error
       }
+    },
+
+    async getTiposRodadasCampeonato(campeonatoId: string | number) {
+      try {
+        const response = await api(`/tipos-rodadas/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar tipos de rodadas do campeonato:', error)
+        throw error
+      }
+    },
+
+    async removerCavaloPareo(campeonatoId: string | number, tipoRodadaId: string | number, numeroPareo: string, nomeCavalo: string) {
+      try {
+        const response = await api(`/pareos/remover-cavalo/${campeonatoId}/${tipoRodadaId}/${numeroPareo}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: { nomeCavalo: nomeCavalo }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao remover cavalo do pareo:', error)
+        throw error
+      }
+    },
+
+    async getApostas(campeonatoId: string | number, tipoRodadaId: string | number) {
+      try {
+        const response = await api(`/apostas/${campeonatoId}/${tipoRodadaId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar apostas:', error)
+        throw error
+      }
+    },
+
+    async renomearApostador(campeonatoId: string | number, nomeOriginal: string, novoNome: string) {
+      try {
+        const response = await api(`/apostadores/renomear/${campeonatoId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: { 
+            nomeOriginal: nomeOriginal,
+            novoNome: novoNome
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao renomear apostador:', error)
+        throw error
+      }
     }
   }
 }

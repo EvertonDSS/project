@@ -11,204 +11,280 @@
         </p>
       </div>
 
-      <!-- Formulário e Lista de Campeonatos -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 max-w-6xl mx-auto">
-        <!-- Formulário de Criação -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">➕ Criar Campeonato</h2>
-          
-          <form @submit.prevent="criarCampeonato">
-            <div class="mb-4">
-              <label for="nome" class="block text-sm font-medium text-gray-700 mb-2">
-                Nome do Campeonato
-              </label>
-              <input
-                id="nome"
-                v-model="novoCampeonato.nome"
-                type="text"
-                required
-                placeholder="Digite o nome do campeonato"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
+      <!-- Dropdown de Campeonatos -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('campeonatos')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-left flex items-center justify-between hover:from-indigo-700 hover:to-blue-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🏆</span>
+              <h2 class="text-xl font-semibold">Campeonatos</h2>
             </div>
-
-            <button
-              type="submit"
-              :disabled="criando"
-              class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.campeonatos ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
             >
-              <svg v-if="criando" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>{{ criando ? 'Criando...' : 'Criar Campeonato' }}</span>
-            </button>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
 
-            <div v-if="mensagem" :class="mensagemTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm">
-              {{ mensagem }}
-            </div>
-          </form>
-        </div>
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.campeonatos" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Formulário de Criação -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">➕ Criar Campeonato</h3>
+                
+                <form @submit.prevent="criarCampeonato">
+                  <div class="mb-4">
+                    <label for="nome" class="block text-sm font-medium text-gray-700 mb-2">
+                      Nome do Campeonato
+                    </label>
+                    <input
+                      id="nome"
+                      v-model="novoCampeonato.nome"
+                      type="text"
+                      required
+                      placeholder="Digite o nome do campeonato"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
 
-        <!-- Lista de Campeonatos -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-semibold text-gray-800">🏆 Campeonatos</h2>
-            <button
-              @click="loadCampeonatos"
-              :disabled="carregando"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              <span>{{ carregando ? 'Carregando...' : 'Atualizar' }}</span>
-            </button>
-          </div>
+                  <button
+                    type="submit"
+                    :disabled="criando"
+                    class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <svg v-if="criando" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ criando ? 'Criando...' : 'Criar Campeonato' }}</span>
+                  </button>
 
-          <!-- Loading -->
-          <div v-if="carregando" class="text-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-          </div>
+                  <div v-if="mensagem" :class="mensagemTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm">
+                    {{ mensagem }}
+                  </div>
+                </form>
+              </div>
 
-          <!-- Lista -->
-          <div v-else-if="campeonatos.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
-            <div
-              v-for="campeonato in campeonatos"
-              :key="campeonato.id"
-              class="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-100 hover:shadow-md transition-shadow"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-semibold text-gray-800">{{ campeonato.nome }}</h3>
-                  <p class="text-sm text-gray-600">ID: {{ campeonato.id }}</p>
+              <!-- Lista de Campeonatos -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                  <h3 class="text-lg font-semibold text-gray-800">📋 Lista de Campeonatos</h3>
+                  <button
+                    @click="loadCampeonatos"
+                    :disabled="carregando"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>{{ carregando ? 'Carregando...' : 'Atualizar' }}</span>
+                  </button>
                 </div>
-                <button
-                  @click="deletarCampeonato(campeonato.id)"
-                  class="text-red-600 hover:text-red-800 transition-colors"
-                  title="Excluir"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
-                </button>
+
+                <!-- Loading -->
+                <div v-if="carregando" class="text-center py-8">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                </div>
+
+                <!-- Lista -->
+                <div v-else-if="campeonatos.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+                  <div
+                    v-for="campeonato in campeonatos"
+                    :key="campeonato.id"
+                    class="p-4 bg-white rounded-lg border border-indigo-100 hover:shadow-md transition-shadow"
+                  >
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h4 class="font-semibold text-gray-800">{{ campeonato.nome }}</h4>
+                        <p class="text-sm text-gray-600">ID: {{ campeonato.id }}</p>
+                      </div>
+                      <button
+                        @click="deletarCampeonato(campeonato.id)"
+                        class="text-red-600 hover:text-red-800 transition-colors"
+                        title="Excluir"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="text-center py-8">
+                  <div class="text-gray-400 mb-4">
+                    <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </div>
+                  <p class="text-gray-600">Nenhum campeonato encontrado</p>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- Empty State -->
-          <div v-else class="text-center py-8">
-            <div class="text-gray-400 mb-4">
-              <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-            </div>
-            <p class="text-gray-600">Nenhum campeonato encontrado</p>
           </div>
         </div>
       </div>
 
-      <!-- Formulário e Lista de Tipos de Rodadas -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 max-w-6xl mx-auto">
-        <!-- Formulário de Criação -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">🎯 Criar Tipo de Rodada</h2>
-          
-          <form @submit.prevent="criarTipoRodada">
-            <div class="mb-4">
-              <label for="nomeTipoRodada" class="block text-sm font-medium text-gray-700 mb-2">
-                Nome do Tipo de Rodada
-              </label>
-              <input
-                id="nomeTipoRodada"
-                v-model="novoTipoRodada.nome"
-                type="text"
-                required
-                placeholder="Ex: Eliminatória, Classificatória..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
+      <!-- Dropdown de Tipos de Rodadas -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('tiposRodadas')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-left flex items-center justify-between hover:from-purple-700 hover:to-pink-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🎯</span>
+              <h2 class="text-xl font-semibold">Tipos de Rodadas</h2>
             </div>
-
-            <button
-              type="submit"
-              :disabled="criandoTipoRodada"
-              class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.tiposRodadas ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
             >
-              <svg v-if="criandoTipoRodada" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>{{ criandoTipoRodada ? 'Criando...' : 'Criar Tipo de Rodada' }}</span>
-            </button>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
 
-            <div v-if="mensagemTipoRodada" :class="mensagemTipoRodadaTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm">
-              {{ mensagemTipoRodada }}
-            </div>
-          </form>
-        </div>
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.tiposRodadas" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Formulário de Criação -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">➕ Criar Tipo de Rodada</h3>
+                
+                <form @submit.prevent="criarTipoRodada">
+                  <div class="mb-4">
+                    <label for="nomeTipoRodada" class="block text-sm font-medium text-gray-700 mb-2">
+                      Nome do Tipo de Rodada
+                    </label>
+                    <input
+                      id="nomeTipoRodada"
+                      v-model="novoTipoRodada.nome"
+                      type="text"
+                      required
+                      placeholder="Ex: Eliminatória, Classificatória..."
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
 
-        <!-- Lista de Tipos de Rodadas -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-semibold text-gray-800">🎯 Tipos de Rodadas</h2>
-            <button
-              @click="loadTiposRodadas"
-              :disabled="carregandoTipos"
-              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              <span>{{ carregandoTipos ? 'Carregando...' : 'Atualizar' }}</span>
-            </button>
-          </div>
+                  <button
+                    type="submit"
+                    :disabled="criandoTipoRodada"
+                    class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <svg v-if="criandoTipoRodada" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ criandoTipoRodada ? 'Criando...' : 'Criar Tipo de Rodada' }}</span>
+                  </button>
 
-          <!-- Loading -->
-          <div v-if="carregandoTipos" class="text-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          </div>
+                  <div v-if="mensagemTipoRodada" :class="mensagemTipoRodadaTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm">
+                    {{ mensagemTipoRodada }}
+                  </div>
+                </form>
+              </div>
 
-          <!-- Lista -->
-          <div v-else-if="tiposRodadas.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
-            <div
-              v-for="tipoRodada in tiposRodadas"
-              :key="tipoRodada.id"
-              class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100 hover:shadow-md transition-shadow"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-semibold text-gray-800">{{ tipoRodada.nome }}</h3>
-                  <p class="text-sm text-gray-600">ID: {{ tipoRodada.id }}</p>
+              <!-- Lista de Tipos de Rodadas -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                  <h3 class="text-lg font-semibold text-gray-800">📋 Lista de Tipos de Rodadas</h3>
+                  <button
+                    @click="loadTiposRodadas"
+                    :disabled="carregandoTipos"
+                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>{{ carregandoTipos ? 'Carregando...' : 'Atualizar' }}</span>
+                  </button>
                 </div>
-                <button
-                  @click="deletarTipoRodada(tipoRodada.id)"
-                  class="text-red-600 hover:text-red-800 transition-colors"
-                  title="Excluir"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
-                </button>
+
+                <!-- Loading -->
+                <div v-if="carregandoTipos" class="text-center py-8">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                </div>
+
+                <!-- Lista -->
+                <div v-else-if="tiposRodadas.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+                  <div
+                    v-for="tipoRodada in tiposRodadas"
+                    :key="tipoRodada.id"
+                    class="p-4 bg-white rounded-lg border border-purple-100 hover:shadow-md transition-shadow"
+                  >
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h4 class="font-semibold text-gray-800">{{ tipoRodada.nome }}</h4>
+                        <p class="text-sm text-gray-600">ID: {{ tipoRodada.id }}</p>
+                      </div>
+                      <button
+                        @click="deletarTipoRodada(tipoRodada.id)"
+                        class="text-red-600 hover:text-red-800 transition-colors"
+                        title="Excluir"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="text-center py-8">
+                  <div class="text-gray-400 mb-4">
+                    <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </div>
+                  <p class="text-gray-600">Nenhum tipo de rodada encontrado</p>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- Empty State -->
-          <div v-else class="text-center py-8">
-            <div class="text-gray-400 mb-4">
-              <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-            </div>
-            <p class="text-gray-600">Nenhum tipo de rodada encontrado</p>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto mb-8">
-        <!-- Formulário de Criação -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">🔥 Criar Pareo</h2>
+      <!-- Dropdown de Pareos -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('pareos')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white text-left flex items-center justify-between hover:from-orange-700 hover:to-amber-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🔥</span>
+              <h2 class="text-xl font-semibold">Pareos</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.pareos ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.pareos" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Formulário de Criação -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">➕ Criar Pareo</h3>
           
           <form @submit.prevent="enviarPareo">
             <!-- Seleção de Campeonato -->
@@ -280,9 +356,9 @@
           </form>
         </div>
 
-        <!-- Buscar e Visualizar Pareos -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">🔍 Buscar Pareos</h2>
+              <!-- Buscar e Visualizar Pareos -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Buscar Pareos</h3>
           
           <!-- Seleção de Campeonato -->
           <div class="mb-4">
@@ -292,6 +368,7 @@
             <select
               id="campeonatoBuscar"
               v-model="pareoFormBuscar.campeonatoId"
+              @change="carregarTiposRodadasCampeonato"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="">Selecione um campeonato</option>
@@ -309,13 +386,22 @@
             <select
               id="tipoRodadaBuscar"
               v-model="pareoFormBuscar.tipoRodadaId"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              :disabled="carregandoTiposCampeonato || tiposRodadasCampeonato.length === 0"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value="">Selecione um tipo de rodada</option>
-              <option v-for="tipoRodada in tiposRodadas" :key="tipoRodada.id" :value="tipoRodada.id">
+              <option value="">
+                {{ carregandoTiposCampeonato ? 'Carregando tipos...' : tiposRodadasCampeonato.length === 0 ? 'Selecione um campeonato primeiro' : 'Selecione um tipo de rodada' }}
+              </option>
+              <option v-for="tipoRodada in tiposRodadasCampeonato" :key="tipoRodada.id" :value="tipoRodada.id">
                 {{ tipoRodada.nome }}
               </option>
             </select>
+            
+            <!-- Loading dos tipos de rodadas -->
+            <div v-if="carregandoTiposCampeonato" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+              <span>Carregando tipos de rodadas...</span>
+            </div>
           </div>
 
           <button
@@ -344,14 +430,39 @@
             </div>
             <p class="text-gray-600">Selecione o campeonato e o tipo de rodada para buscar pareos</p>
           </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Formulário Criar Apostas -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto mb-8">
-        <!-- Formulário de Criação -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">💰 Criar Apostas</h2>
+      <!-- Dropdown de Apostas -->
+      <div class="max-w-7xl mx-auto mb-6 mt-8">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('apostas')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-left flex items-center justify-between hover:from-green-700 hover:to-emerald-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">💰</span>
+              <h2 class="text-xl font-semibold">Apostas</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.apostas ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.apostas" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Formulário de Criação -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">➕ Criar Apostas</h3>
           
           <form @submit.prevent="enviarApostas">
             <!-- Seleção de Campeonato -->
@@ -417,49 +528,106 @@
               <span>{{ enviandoApostas ? 'Enviando...' : 'Enviar Apostas' }}</span>
             </button>
 
-            <div v-if="mensagemApostas" :class="mensagemApostasTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm">
-              {{ mensagemApostas }}
-            </div>
-          </form>
-        </div>
+                <div v-if="mensagemApostas" :class="mensagemApostasTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm">
+                  {{ mensagemApostas }}
+                </div>
+              </form>
+              </div>
 
-        <!-- Card informativo -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">ℹ️ Informações</h2>
-          
-          <!-- Seleção de Campeonato -->
-          <div class="mb-4">
-            <label for="campeonatoInfo" class="block text-sm font-medium text-gray-700 mb-2">
-              Selecionar Campeonato
-            </label>
-            <select
-              id="campeonatoInfo"
-              v-model="campeonatoSelecionado"
-              @change="carregarApostadores"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">Selecione um campeonato</option>
-              <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
-                {{ campeonato.nome }}
-              </option>
-            </select>
-          </div>
+              <!-- Card informativo -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Dados do Sistema</h3>
+                
+                <!-- Seleção de Campeonato -->
+                <div class="mb-4">
+                  <label for="campeonatoInfo" class="block text-sm font-medium text-gray-700 mb-2">
+                    Selecionar Campeonato
+                  </label>
+                  <select
+                    id="campeonatoInfo"
+                    v-model="campeonatoSelecionado"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Selecione um campeonato</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Botão de Busca -->
+                <div class="mb-4">
+                  <button
+                    @click="carregarApostadores"
+                    :disabled="carregandoApostadores || !campeonatoSelecionado"
+                    class="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <svg v-if="carregandoApostadores" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>{{ carregandoApostadores ? 'Buscando...' : 'Buscar Apostadores' }}</span>
+                  </button>
+                </div>
 
           <!-- Lista de Apostadores -->
           <div v-if="apostadores.length > 0" class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Apostadores
-            </label>
+            <div class="flex justify-between items-center mb-2">
+              <label class="block text-sm font-medium text-gray-700">
+                Apostadores
+              </label>
+              <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                Total: {{ totalApostadores }}
+              </span>
+            </div>
             <div class="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
               <div
                 v-for="apostador in apostadores"
                 :key="apostador.id"
                 @click="carregarDadosPdf(apostador)"
-                class="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                :class="[
+                  'p-2 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200',
+                  apostadorSelecionado?.id === apostador.id 
+                    ? 'bg-green-100 border-green-300 shadow-sm' 
+                    : 'hover:bg-gray-50'
+                ]"
               >
                 <div class="flex justify-between items-center">
-                  <span class="text-sm font-medium text-gray-800">{{ apostador.nome }}</span>
-                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class="flex items-center space-x-2">
+                    <span 
+                      :class="[
+                        'text-sm font-medium',
+                        apostadorSelecionado?.id === apostador.id 
+                          ? 'text-green-800' 
+                          : 'text-gray-800'
+                      ]"
+                    >
+                      {{ apostador.nome }}
+                    </span>
+                    <div 
+                      v-if="apostadorSelecionado?.id === apostador.id"
+                      class="w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                    ></div>
+                  </div>
+                  <div class="text-xs text-gray-500 text-right">
+                    <div>R$ {{ apostador.totalApostado?.toFixed(2) || '0.00' }}</div>
+                    <div>Prêmio: R$ {{ apostador.totalPremio?.toFixed(2) || '0.00' }}</div>
+                    <div>{{ apostador.totalApostas || 0 }} apostas</div>
+                  </div>
+                  <svg 
+                    :class="[
+                      'w-4 h-4 transition-colors',
+                      apostadorSelecionado?.id === apostador.id 
+                        ? 'text-green-600' 
+                        : 'text-gray-400'
+                    ]" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                   </svg>
                 </div>
@@ -473,13 +641,13 @@
               <h3 class="text-lg font-semibold text-gray-800">Dados do PDF</h3>
               <div class="flex gap-2">
                 <button
-                  @click="mostrarJsonDados = !mostrarJsonDados"
-                  class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
+                  @click="abrirModalEditar"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                   </svg>
-                  <span>{{ mostrarJsonDados ? 'Ocultar JSON' : 'Exibir JSON' }}</span>
+                  <span>Editar Nome</span>
                 </button>
                 <button
                   @click="gerarPDF"
@@ -496,9 +664,6 @@
                   <span>{{ gerandoPDF ? 'Gerando...' : 'Gerar PDF' }}</span>
                 </button>
               </div>
-            </div>
-            <div v-if="mostrarJsonDados" class="bg-gray-50 p-3 rounded-lg max-h-40 overflow-y-auto">
-              <pre class="text-xs text-gray-700 whitespace-pre-wrap">{{ JSON.stringify(dadosPdf, null, 2) }}</pre>
             </div>
           </div>
 
@@ -522,29 +687,92 @@
               <p>O sistema processará as apostas automaticamente</p>
             </div>
           </div>
+            </div>
+          </div>
+        </div>
+      </div>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="text-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-        <p class="text-gray-600">Carregando dados da API...</p>
-      </div>
-
-      <!-- Error State -->
-      <div v-if="error" class="max-w-2xl mx-auto">
-        <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <svg class="w-16 h-16 text-red-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <h3 class="text-xl font-semibold text-red-800 mb-2">Erro ao carregar dados</h3>
-          <p class="text-red-700 mb-4">{{ error }}</p>
-          <button 
-            @click="loadData"
-            class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+      <!-- Dropdown de Informações -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('informacoes')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-left flex items-center justify-between hover:from-blue-700 hover:to-cyan-700 transition-colors"
           >
-            Tentar novamente
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">ℹ️</span>
+              <h2 class="text-xl font-semibold">Informações</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.informacoes ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.informacoes" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Card informativo -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Dados do Sistema</h3>
+                
+                <!-- Seleção de Campeonato -->
+                <div class="mb-4">
+                  <label for="campeonatoInfo" class="block text-sm font-medium text-gray-700 mb-2">
+                    Selecionar Campeonato
+                  </label>
+                  <select
+                    id="campeonatoInfo"
+                    v-model="campeonatoSelecionado"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Selecione um campeonato</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Seção de Exibição do JSON -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📄 Visualizar JSON</h3>
+                
+                <div v-if="dadosPdf" class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <p class="text-sm text-gray-600">Dados do apostador selecionado:</p>
+                    <button
+                      @click="mostrarJsonDados = !mostrarJsonDados"
+                      class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <span>{{ mostrarJsonDados ? 'Ocultar JSON' : 'Exibir JSON' }}</span>
+                    </button>
+                  </div>
+                  
+                  <div v-if="mostrarJsonDados" class="bg-gray-900 p-4 rounded-lg max-h-96 overflow-y-auto">
+                    <pre class="text-xs text-green-400 whitespace-pre-wrap font-mono">{{ JSON.stringify(dadosPdf, null, 2) }}</pre>
+                  </div>
+                </div>
+                
+                <div v-else class="text-center py-8 text-gray-500">
+                  <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <p class="text-sm">Selecione um apostador para visualizar os dados em JSON</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -773,12 +1001,26 @@
               </div>
               
               <div v-for="cavalo in pareo.cavalos" :key="cavalo.id" class="ml-4 mt-2">
-                <div class="flex items-center space-x-2">
-                  <span :class="[
-                    'font-semibold',
-                    isPareoExcluido(pareo) ? 'text-red-700' : 'text-blue-700'
-                  ]">{{ cavalo.nome }}</span>
-                  <span v-if="cavalo.identificador" class="text-xs text-gray-600">({{ cavalo.identificador }})</span>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span :class="[
+                      'font-semibold',
+                      isPareoExcluido(pareo) ? 'text-red-700' : 'text-blue-700'
+                    ]">{{ cavalo.nome }}</span>
+                    <span v-if="cavalo.identificador" class="text-xs text-gray-600">({{ cavalo.identificador }})</span>
+                  </div>
+                  
+                  <!-- Botão para remover cavalo individual (só aparece se há mais de um cavalo) -->
+                  <button
+                    v-if="!isPareoExcluido(pareo) && pareo.cavalos.length > 1"
+                    @click="removerCavaloPareo(pareo, cavalo)"
+                    class="text-red-500 hover:text-red-700 transition-colors p-1 ml-2"
+                    :title="`Remover ${cavalo.nome}`"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -794,6 +1036,79 @@
             Fechar
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Editar Apostador -->
+  <div v-if="modalEditarApostador" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+      <!-- Header -->
+      <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+        <h3 class="text-lg font-semibold">Editar Nome do Apostador</h3>
+        <button 
+          @click="fecharModalEditar"
+          class="text-white hover:text-gray-200 transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Conteúdo -->
+      <div class="p-6">
+        <form @submit.prevent="salvarEdicao">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nome Atual
+            </label>
+            <input
+              type="text"
+              :value="apostadorSelecionado?.nome"
+              disabled
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+            />
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Novo Nome
+            </label>
+            <input
+              v-model="nomeEditado"
+              type="text"
+              required
+              placeholder="Digite o novo nome"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div v-if="mensagemEdicao" :class="mensagemEdicaoTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mb-4 text-sm">
+            {{ mensagemEdicao }}
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              @click="fecharModalEditar"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="editandoApostador || !nomeEditado.trim()"
+              class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              <svg v-if="editandoApostador" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ editandoApostador ? 'Salvando...' : 'Salvar' }}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -838,6 +1153,8 @@ const mensagemPareoTipo = ref('')
 
 // Estados para buscar pareos
 const pareoFormBuscar = ref({ campeonatoId: '', tipoRodadaId: '' })
+const tiposRodadasCampeonato = ref([])
+const carregandoTiposCampeonato = ref(false)
 const pareosListados = ref([])
 const pareosExcluidos = ref([])
 const carregandoPareos = ref(false)
@@ -851,6 +1168,8 @@ const mensagemApostasTipo = ref('')
 // Estados para apostadores e PDF
 const campeonatoSelecionado = ref('')
 const apostadores = ref([])
+const totalApostadores = ref(0)
+const apostadorSelecionado = ref(null)
 const dadosPdf = ref(null)
 const mostrarJsonDados = ref(false)
 const carregandoApostadores = ref(false)
@@ -858,12 +1177,33 @@ const carregandoPdf = ref(false)
 const gerandoPDF = ref(false)
 const componentePDF = ref(null)
 
+// Estados para editar apostador
+const modalEditarApostador = ref(false)
+const editandoApostador = ref(false)
+const nomeEditado = ref('')
+const mensagemEdicao = ref('')
+const mensagemEdicaoTipo = ref('')
+
 // Estados para modal de pareo
 const modalPareoOpen = ref(false)
 const pareoSelecionado = ref(null)
 
 // Estados para modal de lista de pareos
 const modalPareosOpen = ref(false)
+
+// Estados para dropdowns
+const dropdownsAbertos = ref({
+  campeonatos: false,
+  tiposRodadas: false,
+  pareos: false,
+  apostas: false,
+  informacoes: false
+})
+
+// Função para alternar dropdowns
+const toggleDropdown = (dropdown) => {
+  dropdownsAbertos.value[dropdown] = !dropdownsAbertos.value[dropdown]
+}
 
 // Função para carregar campeonatos
 const loadCampeonatos = async () => {
@@ -1091,6 +1431,29 @@ const enviarPareo = async () => {
   }
 }
 
+// Função para carregar tipos de rodadas do campeonato
+const carregarTiposRodadasCampeonato = async () => {
+  if (!pareoFormBuscar.value.campeonatoId) {
+    tiposRodadasCampeonato.value = []
+    pareoFormBuscar.value.tipoRodadaId = ''
+    return
+  }
+
+  carregandoTiposCampeonato.value = true
+  
+  try {
+    const response = await corridaApi.getTiposRodadasCampeonato(pareoFormBuscar.value.campeonatoId)
+    tiposRodadasCampeonato.value = Array.isArray(response.tipos) ? response.tipos : []
+    pareoFormBuscar.value.tipoRodadaId = '' // Limpar seleção anterior
+    console.log('Tipos de rodadas do campeonato carregados:', response)
+  } catch (err) {
+    console.error('Erro ao carregar tipos de rodadas do campeonato:', err)
+    tiposRodadasCampeonato.value = []
+  } finally {
+    carregandoTiposCampeonato.value = false
+  }
+}
+
 // Função para carregar pareos
 const carregarPareos = async () => {
   if (!pareoFormBuscar.value.campeonatoId || !pareoFormBuscar.value.tipoRodadaId) {
@@ -1159,6 +1522,32 @@ const excluirPareo = async (pareo) => {
   }
 }
 
+// Função para remover cavalo individual do pareo
+const removerCavaloPareo = async (pareo, cavalo) => {
+  if (!confirm(`Tem certeza que deseja remover o cavalo "${cavalo.nome}" do pareo #${pareo.numero}?`)) {
+    return
+  }
+
+  try {
+    const response = await corridaApi.removerCavaloPareo(
+      pareoFormBuscar.value.campeonatoId,
+      pareoFormBuscar.value.tipoRodadaId,
+      pareo.numero,
+      cavalo.nome
+    )
+    
+    alert('Cavalo removido com sucesso!')
+    
+    // Recarregar lista de pareos
+    await carregarPareos()
+    
+    console.log('Cavalo removido:', response)
+  } catch (err) {
+    alert('Erro ao remover cavalo. Verifique se a API está online.')
+    console.error('Erro ao remover cavalo:', err)
+  }
+}
+
 // Função para enviar apostas
 const enviarApostas = async () => {
   if (!apostaForm.value.campeonatoId || !apostaForm.value.tipoRodadaId || !apostaForm.value.texto) {
@@ -1202,6 +1591,8 @@ const enviarApostas = async () => {
 const carregarApostadores = async () => {
   if (!campeonatoSelecionado.value) {
     apostadores.value = []
+    totalApostadores.value = 0
+    apostadorSelecionado.value = null
     dadosPdf.value = null
     return
   }
@@ -1210,12 +1601,16 @@ const carregarApostadores = async () => {
   
   try {
     const response = await corridaApi.getApostadores(campeonatoSelecionado.value)
-    apostadores.value = Array.isArray(response) ? response : []
+    // Ajustar para a nova estrutura: { campeonatoId, totalApostadores, apostadores: [...] }
+    apostadores.value = response.apostadores || []
+    totalApostadores.value = response.totalApostadores || 0
+    apostadorSelecionado.value = null // Limpar apostador selecionado
     dadosPdf.value = null // Limpar dados do PDF anterior
     console.log('Apostadores carregados:', response)
   } catch (err) {
     console.error('Erro ao carregar apostadores:', err)
     apostadores.value = []
+    totalApostadores.value = 0
   } finally {
     carregandoApostadores.value = false
   }
@@ -1227,6 +1622,7 @@ const carregarDadosPdf = async (apostador) => {
     return
   }
 
+  apostadorSelecionado.value = apostador // Marcar apostador como selecionado
   carregandoPdf.value = true
   
   try {
@@ -1308,6 +1704,69 @@ const pareosListadosUnicos = computed(() => {
 const formatarData = (data) => {
   if (!data) return 'N/A'
   return new Date(data).toLocaleString('pt-BR')
+}
+
+// Funções para editar apostador
+const abrirModalEditar = () => {
+  if (!apostadorSelecionado.value) return
+  
+  nomeEditado.value = apostadorSelecionado.value.nome
+  mensagemEdicao.value = ''
+  mensagemEdicaoTipo.value = ''
+  modalEditarApostador.value = true
+}
+
+const fecharModalEditar = () => {
+  modalEditarApostador.value = false
+  nomeEditado.value = ''
+  mensagemEdicao.value = ''
+  mensagemEdicaoTipo.value = ''
+}
+
+const salvarEdicao = async () => {
+  if (!apostadorSelecionado.value || !nomeEditado.value.trim()) {
+    mensagemEdicao.value = 'Nome não pode estar vazio'
+    mensagemEdicaoTipo.value = 'erro'
+    return
+  }
+
+  if (nomeEditado.value.trim() === apostadorSelecionado.value.nome) {
+    mensagemEdicao.value = 'O novo nome deve ser diferente do atual'
+    mensagemEdicaoTipo.value = 'erro'
+    return
+  }
+
+  editandoApostador.value = true
+  mensagemEdicao.value = ''
+  
+  try {
+    await corridaApi.renomearApostador(
+      campeonatoSelecionado.value,
+      apostadorSelecionado.value.nome,
+      nomeEditado.value.trim()
+    )
+    
+    mensagemEdicao.value = 'Nome atualizado com sucesso!'
+    mensagemEdicaoTipo.value = 'sucesso'
+    
+    // Atualizar o nome do apostador selecionado
+    apostadorSelecionado.value.nome = nomeEditado.value.trim()
+    
+    // Atualizar a lista de apostadores
+    await carregarApostadores()
+    
+    // Fechar modal após 2 segundos
+    setTimeout(() => {
+      fecharModalEditar()
+    }, 2000)
+    
+  } catch (err) {
+    mensagemEdicao.value = 'Erro ao atualizar nome. Verifique se a API está online.'
+    mensagemEdicaoTipo.value = 'erro'
+    console.error('Erro ao renomear apostador:', err)
+  } finally {
+    editandoApostador.value = false
+  }
 }
 
 // Carregar dados quando o componente for montado
