@@ -5,7 +5,8 @@ export const useCorridaApi = () => {
   
   // URL base da API Corrida App
   const baseURL = 'https://corrida-app11.onrender.com/'
-  
+  //const baseURL = 'http://localhost:3002/'
+
   const api = $fetch.create({
     baseURL,
     headers: {
@@ -145,6 +146,16 @@ export const useCorridaApi = () => {
       }
     },
 
+    async getPareosCavalos(campeonatoId: string | number, tipoRodadaId: string | number) {
+      try {
+        const response = await api(`/pareos-cavalos/${campeonatoId}/${tipoRodadaId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar pareos com cavalos:', error)
+        throw error
+      }
+    },
+
     async excluirPareo(campeonatoId: string | number, tipoRodadaId: string | number, pareo: string) {
       try {
         const response = await $fetch(`https://corrida-app11.onrender.com/pareos-excluidos/${campeonatoId}/${tipoRodadaId}`, {
@@ -258,6 +269,47 @@ export const useCorridaApi = () => {
         return response
       } catch (error) {
         console.error('Erro ao renomear apostador:', error)
+        throw error
+      }
+    },
+
+    async getRodadasCavalos(campeonatoId: string | number, idRodada: string | number) {
+      try {
+        const response = await api(`/rodadas-cavalos/${campeonatoId}?idRodada=${idRodada}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar cavalos da rodada:', error)
+        throw error
+      }
+    },
+
+    async getGanhadoresPossiveis(campeonatoId: string | number, tipoRodadaId?: string | number) {
+      try {
+        const url = tipoRodadaId 
+          ? `/ganhadores-possiveis/${campeonatoId}/${tipoRodadaId}`
+          : `/ganhadores-possiveis/${campeonatoId}`
+        const response = await api(url)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar ganhadores possíveis:', error)
+        throw error
+      }
+    },
+
+    async postGanhadoresPossiveis(campeonatoId: string | number, tipoRodadaId: string | number, cavalosIds: number[]) {
+      try {
+        const response = await api(`/ganhadores-possiveis/${campeonatoId}/${tipoRodadaId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: {
+            cavalosIds: cavalosIds
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao salvar ganhadores possíveis:', error)
         throw error
       }
     }

@@ -57,6 +57,61 @@
         </div>
       </div>
 
+      <!-- Dropdown FINALISTAS -->
+      <div class="max-w-4xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdownFinalistas"
+            class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-left flex items-center justify-between hover:from-purple-700 hover:to-indigo-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🏆</span>
+              <h2 class="text-xl font-semibold">FINALISTAS</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownFinalistasAberto ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownFinalistasAberto" class="p-6">
+            <!-- Seleção de Campeonato -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-neutral-700 mb-2">
+                <TrophyIcon class="w-4 h-4 inline mr-1" />
+                Campeonato
+                <span class="text-red-500">*</span>
+              </label>
+              <FormSelectSearchable
+                v-model="campeonatoFinalistas"
+                :options="campeonatoOptions"
+                :disabled="loading || carregandoFinalistas"
+                placeholder="Selecione um campeonato..."
+                @update:modelValue="onCampeonatoFinalistasChange"
+              />
+            </div>
+
+            <!-- Botão para carregar finalistas -->
+            <div class="text-center">
+              <button
+                @click="carregarFinalistas"
+                :disabled="!campeonatoFinalistas || carregandoFinalistas"
+                class="btn-primary flex items-center space-x-2 mx-auto"
+              >
+                <MagnifyingGlassIcon class="w-5 h-5" />
+                <span>{{ carregandoFinalistas ? 'Carregando...' : 'Carregar Finalistas' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Loading das apostas -->
       <div v-if="loadingApostas" class="text-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
@@ -201,6 +256,27 @@
         @close="fecharModalRodada"
         @adicionar="adicionarApostaRodada"
       />
+
+      <!-- Modal de Finalistas -->
+      <div v-if="modalFinalistasAberto" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <!-- Header da Modal -->
+          <div class="flex justify-between items-center p-4 border-b">
+            <h2 class="text-xl font-bold text-gray-800">Finalistas - {{ campeonatoFinalistasNome }}</h2>
+            <button 
+              @click="fecharModalFinalistas"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+            >
+              Fechar
+            </button>
+          </div>
+          
+          <!-- Conteúdo da Modal -->
+          <div class="overflow-auto max-h-[calc(90vh-80px)]">
+            <div v-html="htmlFinalistas" class="p-6"></div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </template>
@@ -215,6 +291,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const { getCampeonatos, getApostadoresPorCampeonato, getApostasPorApostador, getTipoPorId, getGrupoPorCampeonato } = useApi()
+const corridaApi = useCorridaApi()
 
 // Estados reativos
 const campeonatoSelecionado = ref('')
@@ -228,6 +305,14 @@ const errorApostas = ref('')
 // Dados do relatório
 const apostasCarregadas = ref([])
 const showModalRodada = ref(false)
+
+// Estados para Finalistas
+const campeonatoFinalistas = ref('')
+const carregandoFinalistas = ref(false)
+const modalFinalistasAberto = ref(false)
+const dropdownFinalistasAberto = ref(false)
+const htmlFinalistas = ref('')
+const finalistasData = ref([])
 
 // Computed properties
 const campeonatoSelecionadoNome = computed(() => {
@@ -285,6 +370,10 @@ const valorTotalPremios = computed(() => {
 const chaveUnica = computed(() => {
   if (apostasCarregadas.value.length === 0) return ''
   return apostasCarregadas.value[0].chave
+})
+
+const campeonatoFinalistasNome = computed(() => {
+  return campeonatoOptions.value.find(opt => opt.value === campeonatoFinalistas.value)?.label || ''
 })
 
 // Carregar dados iniciais
@@ -431,6 +520,311 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'BRL'
   }).format(numValue)
+}
+
+// Funções para Finalistas
+const onCampeonatoFinalistasChange = async (campeonatoId) => {
+  // Não precisa fazer nada especial aqui, apenas limpar dados anteriores
+  if (!campeonatoId) {
+    finalistasData.value = []
+  }
+}
+
+const carregarFinalistas = async () => {
+  if (!campeonatoFinalistas.value) return
+
+  carregandoFinalistas.value = true
+  finalistasData.value = []
+
+  try {
+    // Buscar tipos de rodadas do campeonato
+    const tiposRodadasResponse = await corridaApi.getTiposRodadasCampeonato(campeonatoFinalistas.value)
+    
+    // Filtrar tipos que contém "FINAL" no nome (case insensitive)
+    const tiposFinais = tiposRodadasResponse.tipos?.filter(tipo => 
+      tipo.nome.toLowerCase().includes('final')
+    ) || []
+
+    if (tiposFinais.length === 0) {
+      htmlFinalistas.value = '<div class="p-6 text-center text-gray-600">Nenhum tipo de rodada com "FINAL" encontrado para este campeonato.</div>'
+      modalFinalistasAberto.value = true
+      return
+    }
+
+    // Buscar apostas para cada tipo final
+    const apostasPorTipo = {}
+    
+    for (const tipo of tiposFinais) {
+      try {
+        const apostas = await corridaApi.getApostas(campeonatoFinalistas.value, tipo.id)
+        
+        if (apostas && apostas.length > 0) {
+          apostasPorTipo[tipo.nome] = apostas
+        }
+      } catch (error) {
+        console.error(`Erro ao buscar apostas para tipo ${tipo.nome}:`, error)
+      }
+    }
+
+    // Processar dados para exibição
+    finalistasData.value = {
+      campeonato: campeonatoFinalistasNome.value,
+      tipos: apostasPorTipo
+    }
+
+    // Gerar HTML do relatório
+    htmlFinalistas.value = gerarHTMLFinalistas(apostasPorTipo)
+    modalFinalistasAberto.value = true
+
+  } catch (error) {
+    console.error('Erro ao carregar finalistas:', error)
+    htmlFinalistas.value = '<div class="p-6 text-center text-red-600">Erro ao carregar finalistas. Tente novamente.</div>'
+    modalFinalistasAberto.value = true
+  } finally {
+    carregandoFinalistas.value = false
+  }
+}
+
+const gerarHTMLFinalistas = (apostasPorTipo) => {
+  let html = `
+    <style>
+      .relatorio-finalistas {
+        font-family: 'Arial', sans-serif;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #333;
+        background: white;
+      }
+
+      .header-finalistas {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #D4AF37;
+      }
+
+      .logo-finalistas {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo-icon-finalistas {
+        width: 40px;
+        height: 40px;
+        background: #D4AF37;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      .logo-text-finalistas {
+        font-size: 18px;
+        font-weight: bold;
+        color: #D4AF37;
+      }
+
+      .campeonato-name-finalistas {
+        background: #D4AF37;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .title-finalistas {
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        color: #D4AF37;
+        margin-bottom: 30px;
+      }
+
+      .tipo-section {
+        margin-bottom: 40px;
+      }
+
+      .tipo-title {
+        background: #D4AF37;
+        color: white;
+        padding: 12px 16px;
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+      }
+
+      .pareo-group {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+        background: white;
+      }
+
+      .pareo-header {
+        background: #f5f5f5;
+        padding: 12px 16px;
+        font-weight: bold;
+        border-bottom: 2px solid #D4AF37;
+        font-size: 14px;
+      }
+
+      .cavalos-container {
+        padding: 0;
+      }
+
+      .cavalo-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e5e5;
+        background: white;
+      }
+
+      .cavalo-item:last-child {
+        border-bottom: none;
+      }
+
+      .cavalo-item:nth-child(even) {
+        background: #f9f9f9;
+      }
+
+      .cavalo-nome {
+        font-weight: bold;
+        color: #333;
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .cavalo-detalhes {
+        font-size: 11px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      .cavalo-id {
+        font-size: 10px;
+        color: #999;
+        margin-top: 2px;
+      }
+
+      .empty-state {
+        padding: 20px;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+      }
+    </style>
+    
+    <div class="relatorio-finalistas">
+      <div class="header-finalistas">
+        <div class="logo-finalistas">
+          <div class="logo-icon-finalistas">🐎</div>
+          <div class="logo-text-finalistas">JOGOS ONLINE</div>
+        </div>
+        <div class="campeonato-name-finalistas">${campeonatoFinalistasNome.value}</div>
+      </div>
+
+      <div class="title-finalistas">RELATÓRIO DE FINALISTAS</div>
+  `
+
+  // Verificar se há dados
+  if (Object.keys(apostasPorTipo).length === 0) {
+    html += `
+      <div class="empty-state">
+        <p>Nenhuma aposta encontrada para os tipos finalistas.</p>
+      </div>
+    `
+  } else {
+    // Gerar seções por tipo
+    Object.keys(apostasPorTipo).forEach(tipoNome => {
+      const apostas = apostasPorTipo[tipoNome]
+      
+      html += `
+        <div class="tipo-section">
+          <div class="tipo-title">${tipoNome.toUpperCase()}</div>
+      `
+
+      // Agrupar apostas por pareo usando um Set para evitar duplicatas
+      const pareosProcessados = new Set()
+      const pareosUnicos = []
+      
+      apostas.forEach(aposta => {
+        // Verificar se a aposta tem pareo e cavalos
+        if (aposta.pareo && aposta.pareo.cavalos && aposta.pareo.cavalos.length > 0) {
+          const pareoNumero = aposta.pareo.numero
+          const chavePareo = `${pareoNumero}`
+          
+          if (!pareosProcessados.has(chavePareo)) {
+            pareosProcessados.add(chavePareo)
+            pareosUnicos.push({
+              numero: pareoNumero,
+              cavalos: aposta.pareo.cavalos
+            })
+          }
+        }
+      })
+
+      if (pareosUnicos.length === 0) {
+        html += `
+          <div class="empty-state">
+            <p>Nenhum pareo encontrado para este tipo.</p>
+          </div>
+        `
+      } else {
+        // Exibir pareos únicos
+        pareosUnicos.forEach(pareoData => {
+          const cavalosNomes = pareoData.cavalos.map(c => c.nome).join(' / ')
+          
+          html += `
+            <div class="pareo-group">
+              <div class="pareo-header">Pareo ${pareoData.numero} - ${cavalosNomes}</div>
+              <div class="cavalos-container">
+          `
+          
+          // Separar e exibir cada cavalo individualmente
+          pareoData.cavalos.forEach((cavalo, index) => {
+            html += `
+              <div class="cavalo-item">
+                <div class="cavalo-nome">${cavalo.nome || 'N/A'}</div>
+                ${cavalo.identificador ? `<div class="cavalo-detalhes">Identificador: ${cavalo.identificador}</div>` : ''}
+                ${cavalo.id ? `<div class="cavalo-id">ID: ${cavalo.id}</div>` : ''}
+              </div>
+            `
+          })
+
+          html += `
+              </div>
+            </div>
+          `
+        })
+      }
+
+      html += `
+        </div>
+      `
+    })
+  }
+
+  html += `
+    </div>
+  `
+
+  return html
+}
+
+const toggleDropdownFinalistas = () => {
+  dropdownFinalistasAberto.value = !dropdownFinalistasAberto.value
+}
+
+const fecharModalFinalistas = () => {
+  modalFinalistasAberto.value = false
 }
 
 const gerarPDF = () => {

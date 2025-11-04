@@ -694,6 +694,430 @@
         </div>
       </div>
 
+      <!-- Dropdown de Possíveis Ganhadores -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('possiveisGanhadores')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-yellow-600 to-amber-600 text-white text-left flex items-center justify-between hover:from-yellow-700 hover:to-amber-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🎯</span>
+              <h2 class="text-xl font-semibold">Possíveis Ganhadores</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.possiveisGanhadores ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.possiveisGanhadores" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Seleção de Campeonato -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🎯 Selecionar Campeonato</h3>
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Campeonato
+                  </label>
+                  <select
+                    v-model="campeonatoPossiveisGanhadores"
+                    @change="onCampeonatoPossiveisGanhadoresChange"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  >
+                    <option value="">Selecione um campeonato</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Seleção de Tipo de Rodada -->
+                <div class="mb-4" v-if="campeonatoPossiveisGanhadores">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Rodada
+                  </label>
+                  <select
+                    v-model="tipoRodadaSelecionadoPossiveisGanhadores"
+                    @change="onTipoRodadaPossiveisGanhadoresChange"
+                    :disabled="carregandoTiposPossiveisGanhadores || tiposRodadasPossiveisGanhadores.length === 0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {{ carregandoTiposPossiveisGanhadores ? 'Carregando tipos...' : tiposRodadasPossiveisGanhadores.length === 0 ? 'Nenhum tipo disponível' : 'Selecione um tipo de rodada' }}
+                    </option>
+                    <option v-for="tipo in tiposRodadasPossiveisGanhadores" :key="tipo.id" :value="tipo.id">
+                      {{ tipo.nome }}
+                    </option>
+                  </select>
+                  <div v-if="carregandoTiposPossiveisGanhadores" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                    <span>Carregando tipos de rodadas...</span>
+                  </div>
+                  <div v-if="carregandoRodadaPossiveisGanhadores" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                    <span>Carregando rodada...</span>
+                  </div>
+                </div>
+
+                <!-- Botão para buscar cavalos -->
+                <button 
+                  @click="buscarCavalosPossiveisGanhadores"
+                  :disabled="carregandoCavalosPossiveisGanhadores || !campeonatoPossiveisGanhadores || !tipoRodadaSelecionadoPossiveisGanhadores || !rodadaIdPossiveisGanhadores || carregandoRodadaPossiveisGanhadores"
+                  class="w-full px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg v-if="carregandoCavalosPossiveisGanhadores" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoCavalosPossiveisGanhadores ? 'Buscando...' : 'Selecionar Possíveis Ganhadores' }}</span>
+                </button>
+              </div>
+
+              <!-- Visualizar Possíveis Ganhadores por Campeonato -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Visualizar Possíveis Ganhadores</h3>
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Campeonato
+                  </label>
+                  <select
+                    v-model="campeonatoVisualizarGanhadores"
+                    @change="visualizarGanhadoresPossiveis"
+                    :disabled="carregandoGanhadoresVisualizacao"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">{{ carregandoGanhadoresVisualizacao ? 'Carregando...' : 'Selecione um campeonato' }}</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                  <div v-if="carregandoGanhadoresVisualizacao" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                    <span>Carregando ganhadores possíveis...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Visualização de Possíveis Ganhadores -->
+      <div v-if="modalVisualizacaoGanhadoresOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="fecharModalVisualizacaoGanhadores">
+        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-yellow-600 to-amber-600 text-white p-6">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-4">
+                <div class="bg-white/20 rounded-lg p-2">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-2xl font-bold">POSSÍVEIS GANHADORES</h2>
+                  <p class="text-yellow-100 text-sm">{{ campeonatoVisualizacaoNome }}</p>
+                </div>
+              </div>
+              <button 
+                @click="fecharModalVisualizacaoGanhadores"
+                class="text-white hover:text-gray-200 transition-colors"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+            <div v-if="dadosGanhadoresVisualizacao.length === 0" class="text-center py-12">
+              <p class="text-gray-600">Nenhum ganhador possível encontrado.</p>
+            </div>
+
+            <div v-else class="space-y-6">
+              <!-- Para cada tipo de rodada -->
+              <div v-for="tipoRodada in dadosGanhadoresVisualizacao" :key="tipoRodada.tiporodada" class="mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 bg-yellow-100 px-4 py-2 rounded-lg">
+                  {{ tipoRodada.nometiporodada || `Tipo ${tipoRodada.tiporodada}` }}
+                </h3>
+
+                <!-- Grid de tabelas por cavalo -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div 
+                    v-for="cavalo in obterCavalosDoTipo(tipoRodada)" 
+                    :key="cavalo.id"
+                    class="bg-white border-2 border-yellow-300 rounded-lg overflow-hidden shadow-md"
+                  >
+                    <!-- Header da tabela do cavalo -->
+                    <div class="bg-gradient-to-r from-yellow-400 to-amber-400 text-gray-900 px-4 py-2 font-semibold">
+                      {{ cavalo.nome }}
+                    </div>
+                    
+                    <!-- Tabela de apostadores -->
+                    <div class="bg-black text-white px-4 py-1 text-sm font-semibold">
+                      PRÊMIO
+                    </div>
+                    
+                    <div class="divide-y divide-gray-200">
+                      <div 
+                        v-for="(apostador, index) in cavalo.apostadores" 
+                        :key="index"
+                        class="px-4 py-2 hover:bg-gray-50 transition-colors"
+                      >
+                        <div class="flex justify-between items-center">
+                          <span class="text-sm text-gray-800 font-medium">{{ apostador.nomeapostador }}</span>
+                          <span class="text-sm text-gray-900 font-semibold">{{ formatCurrency(apostador.valorpremio) }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Total do cavalo (opcional) -->
+                    <div v-if="cavalo.apostadores.length > 0" class="bg-gray-100 px-4 py-2 border-t">
+                      <div class="flex justify-between items-center text-sm font-semibold">
+                        <span class="text-gray-700">Total:</span>
+                        <span class="text-gray-900">{{ formatCurrency(cavalo.apostadores.reduce((sum, a) => sum + (a.valorpremio || 0), 0)) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dropdown de Finalistas -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('finalistas')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-left flex items-center justify-between hover:from-purple-700 hover:to-indigo-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🏆</span>
+              <h2 class="text-xl font-semibold">Finalistas</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.finalistas ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.finalistas" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Seleção de Campeonato -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🎯 Selecionar Campeonato</h3>
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Campeonato
+                  </label>
+                  <select
+                    v-model="campeonatoFinalistas"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Selecione um campeonato</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                </div>
+
+                <button 
+                  @click="carregarFinalistas"
+                  :disabled="carregandoFinalistas || !campeonatoFinalistas"
+                  class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg v-if="carregandoFinalistas" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoFinalistas ? 'Buscando...' : 'Carregar Finalistas' }}</span>
+                </button>
+              </div>
+
+              <!-- Ajuda -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📘 Como funciona</h3>
+                <ul class="text-sm text-gray-700 space-y-2 list-disc pl-5">
+                  <li>Seleciona os tipos do campeonato que contêm "FINAL" (case-insensitive).</li>
+                  <li>Busca os pareos e cavalos do campeonato para cada tipo finalista.</li>
+                  <li>Exibe em uma modal agrupado por Tipo → Pareo → Cavalos.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Possíveis Ganhadores -->
+      <div v-if="modalPossiveisGanhadoresOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="fecharModalPossiveisGanhadores">
+        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <!-- Header -->
+          <div class="flex justify-between items-center p-4 border-b">
+            <h2 class="text-xl font-bold text-gray-800">Possíveis Ganhadores</h2>
+            <button 
+              @click="fecharModalPossiveisGanhadores"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+            >
+              Fechar
+            </button>
+          </div>
+          <!-- Conteúdo -->
+          <div class="overflow-auto max-h-[calc(90vh-80px)]">
+            <div v-if="carregandoCavalosPossiveisGanhadores" class="p-6 text-center">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+              <p class="text-gray-600">Carregando cavalos...</p>
+            </div>
+            <div v-else-if="cavalosPossiveisGanhadores.length === 0" class="p-6 text-center text-gray-600">
+              <p>Nenhum cavalo encontrado para esta rodada.</p>
+            </div>
+            <div v-else class="p-6">
+              <div class="mb-4 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800">Cavalos Disponíveis</h3>
+                <button
+                  @click="salvarGanhadoresPossiveis"
+                  :disabled="salvandoGanhadoresPossiveis || cavalosSelecionadosFinalistas.size === 0"
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <svg v-if="salvandoGanhadoresPossiveis" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ salvandoGanhadoresPossiveis ? 'Salvando...' : `Salvar Finalistas (${cavalosSelecionadosFinalistas.size})` }}</span>
+                </button>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div 
+                  v-for="cavalo in cavalosPossiveisGanhadores" 
+                  :key="cavalo.id || cavalo.idcavalo"
+                  @click="toggleCavaloFinalista(cavalo.id || cavalo.idcavalo)"
+                  :class="[
+                    'rounded-lg p-4 hover:shadow-md transition-all cursor-pointer border-2',
+                    cavalosSelecionadosFinalistas.has(cavalo.id || cavalo.idcavalo)
+                      ? 'bg-gradient-to-r from-green-100 to-emerald-100 border-green-500 shadow-lg'
+                      : 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 hover:border-yellow-300'
+                  ]"
+                >
+                  <div class="font-semibold text-gray-800 mb-2">{{ cavalo.nome || cavalo.nomecavalo || `Cavalo ${cavalo.id || cavalo.idcavalo}` }}</div>
+                  <div class="text-sm text-gray-600">
+                    ID: {{ cavalo.id || cavalo.idcavalo }}
+                  </div>
+                  <div v-if="cavalosSelecionadosFinalistas.has(cavalo.id || cavalo.idcavalo)" class="mt-2 text-sm font-medium text-green-700 flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Selecionado</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Finalistas -->
+      <div v-if="modalFinalistasOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="fecharModalFinalistas">
+        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <!-- Header -->
+          <div class="flex justify-between items-center p-4 border-b">
+            <h2 class="text-xl font-bold text-gray-800">Finalistas - {{ nomeCampeonatoFinalistas }}</h2>
+            <button 
+              @click="fecharModalFinalistas"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+            >
+              Fechar
+            </button>
+          </div>
+          <!-- Conteúdo -->
+          <div class="overflow-auto max-h-[calc(90vh-80px)]">
+            <div v-html="htmlFinalistas" class="p-6"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dropdown de Relatório de Pagamentos -->
+      <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+          <!-- Header do Dropdown -->
+          <button
+            @click="toggleDropdown('relatorioPagamentos')"
+            class="w-full px-6 py-4 bg-gradient-to-r from-red-600 to-rose-600 text-white text-left flex items-center justify-between hover:from-red-700 hover:to-rose-700 transition-colors"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🧾</span>
+              <h2 class="text-xl font-semibold">Relatório de Pagamentos</h2>
+            </div>
+            <svg 
+              :class="['w-6 h-6 transition-transform duration-200', dropdownsAbertos.relatorioPagamentos ? 'rotate-180' : '']"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Conteúdo do Dropdown -->
+          <div v-if="dropdownsAbertos.relatorioPagamentos" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Seleção de Campeonato -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🎯 Selecionar Campeonato</h3>
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Campeonato
+                  </label>
+                  <select
+                    v-model="relatorioPagamentosCampeonato"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  >
+                    <option value="">Selecione um campeonato</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                </div>
+
+                <button 
+                  @click="gerarRelatorioPagamentos"
+                  :disabled="carregandoRelatorioPagamentos || !relatorioPagamentosCampeonato"
+                  class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg v-if="carregandoRelatorioPagamentos" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoRelatorioPagamentos ? 'Gerando...' : 'Gerar Relatório' }}</span>
+                </button>
+              </div>
+
+              <!-- Ajuda -->
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📘 Sobre este relatório</h3>
+                <p class="text-sm text-gray-700">Selecione um campeonato para gerar o relatório de pagamentos. Implementaremos a lógica de busca e exibição conforme os endpoints definidos.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Dropdown de Informações -->
       <div class="max-w-7xl mx-auto mb-6">
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -1125,6 +1549,7 @@
 import { useCorridaApi } from '~/composables/useCorridaApi'
 
 const corridaApi = useCorridaApi()
+const { getRodadasCampeonatoDetalhadas } = useApi()
 const loading = ref(false)
 const error = ref('')
 const data = ref(null)
@@ -1191,18 +1616,437 @@ const pareoSelecionado = ref(null)
 // Estados para modal de lista de pareos
 const modalPareosOpen = ref(false)
 
+// Estados Possíveis Ganhadores
+const campeonatoPossiveisGanhadores = ref('')
+const tiposRodadasPossiveisGanhadores = ref([])
+const carregandoTiposPossiveisGanhadores = ref(false)
+const tipoRodadaSelecionadoPossiveisGanhadores = ref('')
+const rodadaIdPossiveisGanhadores = ref('')
+const carregandoRodadaPossiveisGanhadores = ref(false)
+const cavalosPossiveisGanhadores = ref([])
+const carregandoCavalosPossiveisGanhadores = ref(false)
+const modalPossiveisGanhadoresOpen = ref(false)
+const cavalosSelecionadosFinalistas = ref(new Set())
+const cavalosSelecionadosVencedores = ref(new Set())
+const salvandoGanhadoresPossiveis = ref(false)
+const campeonatoVisualizarGanhadores = ref('')
+const carregandoGanhadoresVisualizacao = ref(false)
+const dadosGanhadoresVisualizacao = ref([])
+const modalVisualizacaoGanhadoresOpen = ref(false)
+const campeonatoVisualizacaoNome = ref('')
+
+// Estados Finalistas
+const campeonatoFinalistas = ref('')
+const carregandoFinalistas = ref(false)
+const modalFinalistasOpen = ref(false)
+const htmlFinalistas = ref('')
+
+// Estados Relatório de Pagamentos
+const relatorioPagamentosCampeonato = ref('')
+const carregandoRelatorioPagamentos = ref(false)
+
 // Estados para dropdowns
 const dropdownsAbertos = ref({
   campeonatos: false,
   tiposRodadas: false,
   pareos: false,
   apostas: false,
+  possiveisGanhadores: false,
+  finalistas: false,
+  relatorioPagamentos: false,
   informacoes: false
 })
 
 // Função para alternar dropdowns
 const toggleDropdown = (dropdown) => {
   dropdownsAbertos.value[dropdown] = !dropdownsAbertos.value[dropdown]
+}
+
+// Funções para Possíveis Ganhadores
+const onCampeonatoPossiveisGanhadoresChange = async () => {
+  // Resetar valores quando o campeonato mudar
+  tipoRodadaSelecionadoPossiveisGanhadores.value = ''
+  tiposRodadasPossiveisGanhadores.value = []
+  rodadaIdPossiveisGanhadores.value = ''
+  
+  if (!campeonatoPossiveisGanhadores.value) return
+
+  carregandoTiposPossiveisGanhadores.value = true
+  try {
+    // Buscar tipos de rodadas do campeonato usando getTiposRodadasCampeonato
+    const tiposResp = await corridaApi.getTiposRodadasCampeonato(campeonatoPossiveisGanhadores.value)
+    tiposRodadasPossiveisGanhadores.value = Array.isArray(tiposResp?.tipos) ? tiposResp.tipos : (Array.isArray(tiposResp) ? tiposResp : [])
+  } catch (error) {
+    console.error('Erro ao carregar tipos de rodadas:', error)
+    tiposRodadasPossiveisGanhadores.value = []
+  } finally {
+    carregandoTiposPossiveisGanhadores.value = false
+  }
+}
+
+const onTipoRodadaPossiveisGanhadoresChange = async () => {
+  // Resetar rodada quando o tipo mudar
+  rodadaIdPossiveisGanhadores.value = ''
+  
+  if (!tipoRodadaSelecionadoPossiveisGanhadores.value || !campeonatoPossiveisGanhadores.value) return
+
+  carregandoRodadaPossiveisGanhadores.value = true
+  try {
+    // Buscar rodadas detalhadas do campeonato
+    const rodadas = await getRodadasCampeonatoDetalhadas(parseInt(campeonatoPossiveisGanhadores.value))
+    
+    // Filtrar rodadas pelo tipo selecionado e pegar a primeira (ou a única) rodada
+    const rodadasFiltradas = Array.isArray(rodadas) 
+      ? rodadas.filter(r => r.tipoId === parseInt(tipoRodadaSelecionadoPossiveisGanhadores.value))
+      : []
+    
+    // Pegar o ID da rodada (rodadasId que é o ID da associação rodada-campeonato)
+    if (rodadasFiltradas.length > 0) {
+      rodadaIdPossiveisGanhadores.value = rodadasFiltradas[0].id?.toString() || ''
+    }
+  } catch (error) {
+    console.error('Erro ao carregar rodada:', error)
+    rodadaIdPossiveisGanhadores.value = ''
+  } finally {
+    carregandoRodadaPossiveisGanhadores.value = false
+  }
+}
+
+const buscarCavalosPossiveisGanhadores = async () => {
+  if (!campeonatoPossiveisGanhadores.value || !rodadaIdPossiveisGanhadores.value) return
+
+  carregandoCavalosPossiveisGanhadores.value = true
+  cavalosPossiveisGanhadores.value = []
+  // Limpar seleções anteriores ao carregar novos cavalos
+  cavalosSelecionadosFinalistas.value.clear()
+  cavalosSelecionadosVencedores.value.clear()
+  
+  try {
+    // Buscar cavalos usando o endpoint rodadas-cavalos
+    // O idRodada é o ID da associação rodada-campeonato (rodadasId)
+    const resposta = await corridaApi.getRodadasCavalos(
+      campeonatoPossiveisGanhadores.value,
+      rodadaIdPossiveisGanhadores.value
+    )
+    
+    // O retorno é um array com objetos contendo tiporodada, nomerodada e cavalos
+    // Estrutura: [{ tiporodada: 2, nomerodada: "chave", cavalos: [{ idcavalo: 61, nomecavalo: "..." }, ...] }]
+    if (Array.isArray(resposta) && resposta.length > 0) {
+      // Pegar o primeiro objeto (pode haver múltiplos tipos de rodada, mas geralmente será um)
+      const primeiroResultado = resposta[0]
+      if (primeiroResultado?.cavalos && Array.isArray(primeiroResultado.cavalos)) {
+        // Mapear os cavalos para o formato esperado pela interface
+        cavalosPossiveisGanhadores.value = primeiroResultado.cavalos.map(cavalo => ({
+          id: cavalo.idcavalo,
+          nome: cavalo.nomecavalo,
+          idcavalo: cavalo.idcavalo,
+          nomecavalo: cavalo.nomecavalo
+        }))
+      } else {
+        cavalosPossiveisGanhadores.value = []
+      }
+    } else {
+      cavalosPossiveisGanhadores.value = []
+    }
+    
+    // Buscar ganhadores possíveis já salvos
+    await carregarGanhadoresPossiveis()
+    
+    modalPossiveisGanhadoresOpen.value = true
+  } catch (error) {
+    console.error('Erro ao buscar cavalos:', error)
+    cavalosPossiveisGanhadores.value = []
+    modalPossiveisGanhadoresOpen.value = true
+  } finally {
+    carregandoCavalosPossiveisGanhadores.value = false
+  }
+}
+
+const carregarGanhadoresPossiveis = async () => {
+  if (!campeonatoPossiveisGanhadores.value || !tipoRodadaSelecionadoPossiveisGanhadores.value) return
+
+  try {
+    // Buscar ganhadores possíveis já salvos usando GET
+    const ganhadores = await corridaApi.getGanhadoresPossiveis(
+      campeonatoPossiveisGanhadores.value,
+      tipoRodadaSelecionadoPossiveisGanhadores.value
+    )
+    
+    // O retorno é um array de objetos com a estrutura:
+    // [{ id, campeonatoId, tipoRodadaId, cavaloId, isVencedor, createdAt, updatedAt }, ...]
+    if (Array.isArray(ganhadores) && ganhadores.length > 0) {
+      // Extrair os cavaloIds dos objetos retornados
+      ganhadores.forEach(item => {
+        if (item?.cavaloId !== null && item?.cavaloId !== undefined) {
+          const numId = typeof item.cavaloId === 'number' ? item.cavaloId : parseInt(item.cavaloId)
+          if (!isNaN(numId)) {
+            // Se isVencedor for true, adicionar aos vencedores, senão aos finalistas
+            if (item.isVencedor) {
+              cavalosSelecionadosVencedores.value.add(numId)
+            } else {
+              cavalosSelecionadosFinalistas.value.add(numId)
+            }
+          }
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Erro ao carregar ganhadores possíveis:', error)
+    // Não bloquear a exibição se houver erro ao carregar os salvos
+  }
+}
+
+const fecharModalPossiveisGanhadores = () => {
+  modalPossiveisGanhadoresOpen.value = false
+  // Limpar seleções ao fechar
+  cavalosSelecionadosFinalistas.value.clear()
+  cavalosSelecionadosVencedores.value.clear()
+}
+
+const toggleCavaloFinalista = (cavaloId) => {
+  // Garantir que o ID seja um número válido
+  const id = typeof cavaloId === 'number' ? cavaloId : parseInt(cavaloId)
+  
+  if (isNaN(id) || id === null || id === undefined) {
+    console.warn('ID de cavalo inválido:', cavaloId)
+    return
+  }
+  
+  if (cavalosSelecionadosFinalistas.value.has(id)) {
+    cavalosSelecionadosFinalistas.value.delete(id)
+  } else {
+    cavalosSelecionadosFinalistas.value.add(id)
+  }
+}
+
+const toggleCavaloVencedor = (cavaloId) => {
+  // Por enquanto não faz nada, mas mantém o estado para uso futuro
+  if (cavalosSelecionadosVencedores.value.has(cavaloId)) {
+    cavalosSelecionadosVencedores.value.delete(cavaloId)
+  } else {
+    cavalosSelecionadosVencedores.value.add(cavaloId)
+  }
+}
+
+// Remover função toggleCavaloVencedor não será mais necessária já que removemos os checkboxes
+// Mas mantenho para uso futuro se necessário
+
+const visualizarGanhadoresPossiveis = async () => {
+  if (!campeonatoVisualizarGanhadores.value) {
+    modalVisualizacaoGanhadoresOpen.value = false
+    dadosGanhadoresVisualizacao.value = []
+    return
+  }
+
+  carregandoGanhadoresVisualizacao.value = true
+  dadosGanhadoresVisualizacao.value = []
+
+  try {
+    // Buscar ganhadores possíveis usando GET /ganhadores-possiveis/:idcampeonato
+    const ganhadores = await corridaApi.getGanhadoresPossiveis(campeonatoVisualizarGanhadores.value)
+    
+    // O retorno é um array de objetos com a estrutura:
+    // [{ tiporodada, nometiporodada, cavalo62: [{ nomeapostador, valorpremio }], ... }]
+    if (Array.isArray(ganhadores) && ganhadores.length > 0) {
+      dadosGanhadoresVisualizacao.value = ganhadores
+      
+      // Buscar nome do campeonato
+      const campeonato = campeonatos.value.find(c => c.id === parseInt(campeonatoVisualizarGanhadores.value))
+      campeonatoVisualizacaoNome.value = campeonato?.nome || ''
+      
+      modalVisualizacaoGanhadoresOpen.value = true
+    } else {
+      alert('Nenhum ganhador possível encontrado para este campeonato.')
+    }
+  } catch (error) {
+    console.error('Erro ao buscar ganhadores possíveis:', error)
+    alert('Erro ao carregar ganhadores possíveis. Tente novamente.')
+  } finally {
+    carregandoGanhadoresVisualizacao.value = false
+  }
+}
+
+const fecharModalVisualizacaoGanhadores = () => {
+  modalVisualizacaoGanhadoresOpen.value = false
+}
+
+// Função auxiliar para obter todos os cavalos de um tipo de rodada
+const obterCavalosDoTipo = (tipoRodada) => {
+  const cavalos = []
+  // Iterar sobre todas as propriedades do objeto
+  for (const key in tipoRodada) {
+    // Ignorar propriedades que não são cavalos (tiporodada, nometiporodada)
+    if (key !== 'tiporodada' && key !== 'nometiporodada' && key.startsWith('cavalo')) {
+      const cavaloId = key.replace('cavalo', '')
+      cavalos.push({
+        id: cavaloId,
+        nome: `Cavalo ${cavaloId}`,
+        apostadores: tipoRodada[key] || []
+      })
+    }
+  }
+  return cavalos
+}
+
+const salvarGanhadoresPossiveis = async () => {
+  if (!campeonatoPossiveisGanhadores.value || !tipoRodadaSelecionadoPossiveisGanhadores.value) return
+  if (cavalosSelecionadosFinalistas.value.size === 0) return
+
+  salvandoGanhadoresPossiveis.value = true
+  
+  try {
+    // Converter Set para Array de números válidos, removendo null, undefined e NaN
+    const cavalosIds = Array.from(cavalosSelecionadosFinalistas.value)
+      .map(id => {
+        const numId = typeof id === 'number' ? id : parseInt(id)
+        return isNaN(numId) ? null : numId
+      })
+      .filter(id => id !== null && id !== undefined && !isNaN(id))
+    
+    // Verificar se há IDs válidos após filtragem
+    if (cavalosIds.length === 0) {
+      alert('Nenhum cavalo válido selecionado.')
+      return
+    }
+    
+    // Enviar para o endpoint POST /ganhadores-possiveis/:idcampeonato/:idtiporodada
+    await corridaApi.postGanhadoresPossiveis(
+      campeonatoPossiveisGanhadores.value,
+      tipoRodadaSelecionadoPossiveisGanhadores.value,
+      cavalosIds
+    )
+    
+    // Limpar seleções após salvar
+    cavalosSelecionadosFinalistas.value.clear()
+    
+    // Mostrar mensagem de sucesso (pode usar um toast ou alert)
+    alert('Ganhadores possíveis salvos com sucesso!')
+  } catch (error) {
+    console.error('Erro ao salvar ganhadores possíveis:', error)
+    alert('Erro ao salvar ganhadores possíveis. Tente novamente.')
+  } finally {
+    salvandoGanhadoresPossiveis.value = false
+  }
+}
+
+const nomeCampeonatoFinalistas = computed(() => {
+  const c = (campeonatos.value || []).find(c => c.id === campeonatoFinalistas.value)
+  return c ? c.nome : ''
+})
+
+const carregarFinalistas = async () => {
+  if (!campeonatoFinalistas.value) return
+  carregandoFinalistas.value = true
+  htmlFinalistas.value = ''
+  try {
+    // Buscar tipos de rodadas do campeonato
+    const tiposResp = await corridaApi.getTiposRodadasCampeonato(campeonatoFinalistas.value)
+    const tipos = Array.isArray(tiposResp?.tipos) ? tiposResp.tipos : []
+    const tiposFinais = tipos.filter(t => String(t.nome || '').toLowerCase().includes('final'))
+
+    if (tiposFinais.length === 0) {
+      htmlFinalistas.value = '<div class="p-6 text-center text-gray-600">Nenhum tipo contendo "FINAL" encontrado para este campeonato.</div>'
+      modalFinalistasOpen.value = true
+      return
+    }
+
+    // Buscar pareos+cavalos por tipo finalista
+    const pareosPorTipo = {}
+    for (const tipo of tiposFinais) {
+      try {
+        const pareos = await corridaApi.getPareosCavalos(campeonatoFinalistas.value, tipo.id)
+        if (Array.isArray(pareos) && pareos.length > 0) {
+          pareosPorTipo[tipo.nome] = pareos
+        }
+      } catch (e) {
+        console.error('Erro ao buscar pareos+cavalos do tipo', tipo?.nome, e)
+      }
+    }
+
+    htmlFinalistas.value = gerarHTMLFinalistas(pareosPorTipo)
+    modalFinalistasOpen.value = true
+  } catch (e) {
+    console.error('Erro ao carregar finalistas:', e)
+    htmlFinalistas.value = '<div class="p-6 text-center text-red-600">Erro ao carregar finalistas. Tente novamente.</div>'
+    modalFinalistasOpen.value = true
+  } finally {
+    carregandoFinalistas.value = false
+  }
+}
+
+const gerarHTMLFinalistas = (porTipo) => {
+  let html = `
+    <style>
+      .tipo-title{background:#D4AF37;color:#fff;padding:10px 14px;font-weight:bold;border-radius:4px;margin-bottom:10px}
+      .pareo{border:1px solid #ddd;border-radius:4px;margin-bottom:14px;overflow:hidden}
+      .pareo-h{background:#f5f5f5;padding:10px 14px;font-weight:bold;border-bottom:2px solid #D4AF37}
+      .cavalo{padding:10px 14px;border-bottom:1px solid #eee}
+      .cavalo:last-child{border-bottom:none}
+      .cavalo-n{font-weight:600}
+      .muted{font-size:11px;color:#777}
+      .empty{padding:16px;text-align:center;color:#666}
+    </style>
+  `
+
+  const tiposNomes = Object.keys(porTipo || {})
+  if (tiposNomes.length === 0) {
+    html += `<div class="empty">Nenhuma aposta encontrada para os tipos finalistas.</div>`
+    return html
+  }
+
+  tiposNomes.forEach(tipoNome => {
+    const itens = porTipo[tipoNome] || []
+    html += `<div class="tipo"><div class="tipo-title">${tipoNome.toUpperCase()}</div>`
+
+    // Agrupar por pareo número
+    const mapaPareos = new Map()
+    itens.forEach(a => {
+      const pareoObj = a?.pareo ? a.pareo : a
+      const numero = pareoObj?.numero ?? 'N/A'
+      if (!mapaPareos.has(numero)) {
+        mapaPareos.set(numero, new Set())
+      }
+      ;(pareoObj?.cavalos || []).forEach(c => {
+        mapaPareos.get(numero).add(JSON.stringify({ nome: c?.nome, identificador: c?.identificador, id: c?.id }))
+      })
+    })
+
+    if (mapaPareos.size === 0) {
+      html += `<div class="empty">Nenhum pareo encontrado para este tipo.</div>`
+    } else {
+      mapaPareos.forEach((cavalosSet, numero) => {
+        const cavalos = Array.from(cavalosSet).map(s => JSON.parse(s))
+        const header = `Pareo ${numero} - ${cavalos.map(c=>c.nome).filter(Boolean).join(' / ')}`
+        html += `<div class="pareo"><div class="pareo-h">${header}</div>`
+        cavalos.forEach(c => {
+          html += `<div class="cavalo"><div class="cavalo-n">${c.nome || 'N/A'}</div>`
+          if (c.identificador) html += `<div class="muted">Identificador: ${c.identificador}</div>`
+          if (c.id) html += `<div class="muted">ID: ${c.id}</div>`
+          html += `</div>`
+        })
+        html += `</div>`
+      })
+    }
+
+    html += `</div>`
+  })
+
+  return html
+}
+
+const fecharModalFinalistas = () => {
+  modalFinalistasOpen.value = false
+}
+
+const gerarRelatorioPagamentos = async () => {
+  if (!relatorioPagamentosCampeonato.value) return
+  try {
+    carregandoRelatorioPagamentos.value = true
+    // TODO: Implementar integração do relatório de pagamentos quando o endpoint estiver definido
+    alert('Relatório de Pagamentos: funcionalidade em desenvolvimento.')
+  } finally {
+    carregandoRelatorioPagamentos.value = false
+  }
 }
 
 // Função para carregar campeonatos
@@ -1704,6 +2548,15 @@ const pareosListadosUnicos = computed(() => {
 const formatarData = (data) => {
   if (!data) return 'N/A'
   return new Date(data).toLocaleString('pt-BR')
+}
+
+// Função para formatar moeda
+const formatCurrency = (value) => {
+  if (!value && value !== 0) return 'R$ 0,00'
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(parseFloat(value))
 }
 
 // Funções para editar apostador
