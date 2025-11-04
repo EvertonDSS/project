@@ -312,6 +312,16 @@ export const useCorridaApi = () => {
         console.error('Erro ao salvar ganhadores possíveis:', error)
         throw error
       }
+    },
+
+    async getSaldosCampeonato(campeonatoId: string | number) {
+      try {
+        const response = await api(`/saldos/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar saldos do campeonato:', error)
+        throw error
+      }
     }
   }
 }

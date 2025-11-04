@@ -789,19 +789,31 @@
                   </label>
                   <select
                     v-model="campeonatoVisualizarGanhadores"
-                    @change="visualizarGanhadoresPossiveis"
                     :disabled="carregandoGanhadoresVisualizacao"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <option value="">{{ carregandoGanhadoresVisualizacao ? 'Carregando...' : 'Selecione um campeonato' }}</option>
+                    <option value="">Selecione um campeonato</option>
                     <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
                       {{ campeonato.nome }}
                     </option>
                   </select>
-                  <div v-if="carregandoGanhadoresVisualizacao" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                    <span>Carregando ganhadores possíveis...</span>
-                  </div>
+                </div>
+                
+                <button
+                  @click="visualizarGanhadoresPossiveis"
+                  :disabled="carregandoGanhadoresVisualizacao || !campeonatoVisualizarGanhadores"
+                  class="w-full px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg v-if="carregandoGanhadoresVisualizacao" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoGanhadoresVisualizacao ? 'Buscando...' : 'Buscar Possíveis Ganhadores' }}</span>
+                </button>
+                
+                <div v-if="carregandoGanhadoresVisualizacao" class="mt-2 flex items-center justify-center space-x-2 text-sm text-gray-600">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                  <span>Carregando ganhadores possíveis...</span>
                 </div>
               </div>
             </div>
@@ -889,6 +901,105 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Relatório de Pagamentos -->
+      <div v-if="modalRelatorioPagamentosOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="fecharModalRelatorioPagamentos">
+        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-red-600 to-rose-600 text-white p-6">
+            <div class="flex justify-between items-center">
+              <div>
+                <h2 class="text-2xl font-bold">Relatório de Pagamentos</h2>
+                <p class="text-red-100 text-sm mt-1">{{ dadosRelatorioPagamentos?.campeonato?.nome || '' }}</p>
+              </div>
+              <button 
+                @click="fecharModalRelatorioPagamentos"
+                class="text-white hover:text-gray-200 transition-colors"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+            <div v-if="!dadosRelatorioPagamentos" class="text-center py-12">
+              <p class="text-gray-600">Carregando dados...</p>
+            </div>
+
+            <div v-else>
+              <!-- Informações do Campeonato -->
+              <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-2">
+                  <span class="text-lg font-semibold text-gray-800">Campeonato:</span>
+                  <span class="text-lg text-gray-700">{{ dadosRelatorioPagamentos.campeonato?.nome || 'N/A' }}</span>
+                </div>
+              </div>
+
+              <!-- Tabela de Apostadores -->
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                  <thead>
+                    <tr class="bg-gradient-to-r from-red-100 to-rose-100">
+                      <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800">ID</th>
+                      <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800">Apostador</th>
+                      <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Total Apostado</th>
+                      <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Total Prêmios Vencidos</th>
+                      <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Saldo Final</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="apostador in dadosRelatorioPagamentos.apostadores" 
+                      :key="apostador.id"
+                      class="hover:bg-gray-50 transition-colors"
+                    >
+                      <td class="border border-gray-300 px-4 py-3 text-gray-700">{{ apostador.id }}</td>
+                      <td class="border border-gray-300 px-4 py-3 text-gray-800 font-medium">{{ apostador.nome }}</td>
+                      <td class="border border-gray-300 px-4 py-3 text-right text-gray-700">{{ formatCurrency(apostador.totalApostado) }}</td>
+                      <td class="border border-gray-300 px-4 py-3 text-right text-green-600 font-semibold">{{ formatCurrency(apostador.totalPremiosVencidos) }}</td>
+                      <td 
+                        :class="[
+                          'border border-gray-300 px-4 py-3 text-right font-bold',
+                          apostador.saldoFinal >= 0 ? 'text-green-600' : 'text-red-600'
+                        ]"
+                      >
+                        {{ formatCurrency(apostador.saldoFinal) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot v-if="dadosRelatorioPagamentos.apostadores && dadosRelatorioPagamentos.apostadores.length > 0">
+                    <tr class="bg-gradient-to-r from-gray-100 to-gray-200 font-bold">
+                      <td colspan="2" class="border border-gray-300 px-4 py-3 text-gray-800">TOTAIS</td>
+                      <td class="border border-gray-300 px-4 py-3 text-right text-gray-800">
+                        {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.totalApostado || 0), 0)) }}
+                      </td>
+                      <td class="border border-gray-300 px-4 py-3 text-right text-green-700">
+                        {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.totalPremiosVencidos || 0), 0)) }}
+                      </td>
+                      <td 
+                        :class="[
+                          'border border-gray-300 px-4 py-3 text-right',
+                          dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.saldoFinal || 0), 0) >= 0 ? 'text-green-700' : 'text-red-700'
+                        ]"
+                      >
+                        {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.saldoFinal || 0), 0)) }}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <!-- Mensagem se não houver apostadores -->
+              <div v-if="!dadosRelatorioPagamentos.apostadores || dadosRelatorioPagamentos.apostadores.length === 0" class="text-center py-12">
+                <p class="text-gray-600">Nenhum apostador encontrado para este campeonato.</p>
               </div>
             </div>
           </div>
@@ -1644,6 +1755,8 @@ const htmlFinalistas = ref('')
 // Estados Relatório de Pagamentos
 const relatorioPagamentosCampeonato = ref('')
 const carregandoRelatorioPagamentos = ref(false)
+const dadosRelatorioPagamentos = ref(null)
+const modalRelatorioPagamentosOpen = ref(false)
 
 // Estados para dropdowns
 const dropdownsAbertos = ref({
@@ -2040,13 +2153,31 @@ const fecharModalFinalistas = () => {
 
 const gerarRelatorioPagamentos = async () => {
   if (!relatorioPagamentosCampeonato.value) return
+  
+  carregandoRelatorioPagamentos.value = true
+  dadosRelatorioPagamentos.value = null
+  
   try {
-    carregandoRelatorioPagamentos.value = true
-    // TODO: Implementar integração do relatório de pagamentos quando o endpoint estiver definido
-    alert('Relatório de Pagamentos: funcionalidade em desenvolvimento.')
+    // Buscar saldos do campeonato
+    const dados = await corridaApi.getSaldosCampeonato(relatorioPagamentosCampeonato.value)
+    
+    // Verificar se retornou dados válidos
+    if (dados && dados.campeonato && dados.apostadores) {
+      dadosRelatorioPagamentos.value = dados
+      modalRelatorioPagamentosOpen.value = true
+    } else {
+      alert('Nenhum dado encontrado para este campeonato.')
+    }
+  } catch (error) {
+    console.error('Erro ao gerar relatório de pagamentos:', error)
+    alert('Erro ao carregar relatório de pagamentos. Tente novamente.')
   } finally {
     carregandoRelatorioPagamentos.value = false
   }
+}
+
+const fecharModalRelatorioPagamentos = () => {
+  modalRelatorioPagamentosOpen.value = false
 }
 
 // Função para carregar campeonatos
