@@ -273,9 +273,9 @@ export const useCorridaApi = () => {
       }
     },
 
-    async getRodadasCavalos(campeonatoId: string | number, idRodada: string | number) {
+    async getRodadasCavalos(campeonatoId: string | number) {
       try {
-        const response = await api(`/rodadas-cavalos/${campeonatoId}?idRodada=${idRodada}`)
+        const response = await api(`/rodadas-cavalos/${campeonatoId}`)
         return response
       } catch (error) {
         console.error('Erro ao buscar cavalos da rodada:', error)
@@ -296,9 +296,9 @@ export const useCorridaApi = () => {
       }
     },
 
-    async postGanhadoresPossiveis(campeonatoId: string | number, tipoRodadaId: string | number, cavalosIds: number[]) {
+    async postGanhadoresPossiveis(campeonatoId: string | number, cavalosIds: number[]) {
       try {
-        const response = await api(`/ganhadores-possiveis/${campeonatoId}/${tipoRodadaId}`, {
+        const response = await api(`/ganhadores-possiveis/${campeonatoId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

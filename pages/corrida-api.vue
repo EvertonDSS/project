@@ -738,38 +738,10 @@
                   </select>
                 </div>
 
-                <!-- Seleção de Tipo de Rodada -->
-                <div class="mb-4" v-if="campeonatoPossiveisGanhadores">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Rodada
-                  </label>
-                  <select
-                    v-model="tipoRodadaSelecionadoPossiveisGanhadores"
-                    @change="onTipoRodadaPossiveisGanhadoresChange"
-                    :disabled="carregandoTiposPossiveisGanhadores || tiposRodadasPossiveisGanhadores.length === 0"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {{ carregandoTiposPossiveisGanhadores ? 'Carregando tipos...' : tiposRodadasPossiveisGanhadores.length === 0 ? 'Nenhum tipo disponível' : 'Selecione um tipo de rodada' }}
-                    </option>
-                    <option v-for="tipo in tiposRodadasPossiveisGanhadores" :key="tipo.id" :value="tipo.id">
-                      {{ tipo.nome }}
-                    </option>
-                  </select>
-                  <div v-if="carregandoTiposPossiveisGanhadores" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                    <span>Carregando tipos de rodadas...</span>
-                  </div>
-                  <div v-if="carregandoRodadaPossiveisGanhadores" class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                    <span>Carregando rodada...</span>
-                  </div>
-                </div>
-
                 <!-- Botão para buscar cavalos -->
                 <button 
                   @click="buscarCavalosPossiveisGanhadores"
-                  :disabled="carregandoCavalosPossiveisGanhadores || !campeonatoPossiveisGanhadores || !tipoRodadaSelecionadoPossiveisGanhadores || !rodadaIdPossiveisGanhadores || carregandoRodadaPossiveisGanhadores"
+                  :disabled="carregandoCavalosPossiveisGanhadores || !campeonatoPossiveisGanhadores"
                   class="w-full px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   <svg v-if="carregandoCavalosPossiveisGanhadores" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -1781,52 +1753,10 @@ const onCampeonatoPossiveisGanhadoresChange = async () => {
   tipoRodadaSelecionadoPossiveisGanhadores.value = ''
   tiposRodadasPossiveisGanhadores.value = []
   rodadaIdPossiveisGanhadores.value = ''
-  
-  if (!campeonatoPossiveisGanhadores.value) return
-
-  carregandoTiposPossiveisGanhadores.value = true
-  try {
-    // Buscar tipos de rodadas do campeonato usando getTiposRodadasCampeonato
-    const tiposResp = await corridaApi.getTiposRodadasCampeonato(campeonatoPossiveisGanhadores.value)
-    tiposRodadasPossiveisGanhadores.value = Array.isArray(tiposResp?.tipos) ? tiposResp.tipos : (Array.isArray(tiposResp) ? tiposResp : [])
-  } catch (error) {
-    console.error('Erro ao carregar tipos de rodadas:', error)
-    tiposRodadasPossiveisGanhadores.value = []
-  } finally {
-    carregandoTiposPossiveisGanhadores.value = false
-  }
-}
-
-const onTipoRodadaPossiveisGanhadoresChange = async () => {
-  // Resetar rodada quando o tipo mudar
-  rodadaIdPossiveisGanhadores.value = ''
-  
-  if (!tipoRodadaSelecionadoPossiveisGanhadores.value || !campeonatoPossiveisGanhadores.value) return
-
-  carregandoRodadaPossiveisGanhadores.value = true
-  try {
-    // Buscar rodadas detalhadas do campeonato
-    const rodadas = await getRodadasCampeonatoDetalhadas(parseInt(campeonatoPossiveisGanhadores.value))
-    
-    // Filtrar rodadas pelo tipo selecionado e pegar a primeira (ou a única) rodada
-    const rodadasFiltradas = Array.isArray(rodadas) 
-      ? rodadas.filter(r => r.tipoId === parseInt(tipoRodadaSelecionadoPossiveisGanhadores.value))
-      : []
-    
-    // Pegar o ID da rodada (rodadasId que é o ID da associação rodada-campeonato)
-    if (rodadasFiltradas.length > 0) {
-      rodadaIdPossiveisGanhadores.value = rodadasFiltradas[0].id?.toString() || ''
-    }
-  } catch (error) {
-    console.error('Erro ao carregar rodada:', error)
-    rodadaIdPossiveisGanhadores.value = ''
-  } finally {
-    carregandoRodadaPossiveisGanhadores.value = false
-  }
 }
 
 const buscarCavalosPossiveisGanhadores = async () => {
-  if (!campeonatoPossiveisGanhadores.value || !rodadaIdPossiveisGanhadores.value) return
+  if (!campeonatoPossiveisGanhadores.value) return
 
   carregandoCavalosPossiveisGanhadores.value = true
   cavalosPossiveisGanhadores.value = []
@@ -1836,28 +1766,21 @@ const buscarCavalosPossiveisGanhadores = async () => {
   
   try {
     // Buscar cavalos usando o endpoint rodadas-cavalos
-    // O idRodada é o ID da associação rodada-campeonato (rodadasId)
+    // O retorno é um array direto de objetos com idcavalo e nomecavalo
+    // Estrutura: [{ idcavalo: 184, nomecavalo: "MAXIMO SENATOR HBR" }, ...]
     const resposta = await corridaApi.getRodadasCavalos(
-      campeonatoPossiveisGanhadores.value,
-      rodadaIdPossiveisGanhadores.value
+      campeonatoPossiveisGanhadores.value
     )
     
-    // O retorno é um array com objetos contendo tiporodada, nomerodada e cavalos
-    // Estrutura: [{ tiporodada: 2, nomerodada: "chave", cavalos: [{ idcavalo: 61, nomecavalo: "..." }, ...] }]
+    // O retorno agora é diretamente um array de cavalos
     if (Array.isArray(resposta) && resposta.length > 0) {
-      // Pegar o primeiro objeto (pode haver múltiplos tipos de rodada, mas geralmente será um)
-      const primeiroResultado = resposta[0]
-      if (primeiroResultado?.cavalos && Array.isArray(primeiroResultado.cavalos)) {
-        // Mapear os cavalos para o formato esperado pela interface
-        cavalosPossiveisGanhadores.value = primeiroResultado.cavalos.map(cavalo => ({
-          id: cavalo.idcavalo,
-          nome: cavalo.nomecavalo,
-          idcavalo: cavalo.idcavalo,
-          nomecavalo: cavalo.nomecavalo
-        }))
-      } else {
-        cavalosPossiveisGanhadores.value = []
-      }
+      // Mapear os cavalos para o formato esperado pela interface
+      cavalosPossiveisGanhadores.value = resposta.map(cavalo => ({
+        id: cavalo.idcavalo,
+        nome: cavalo.nomecavalo,
+        idcavalo: cavalo.idcavalo,
+        nomecavalo: cavalo.nomecavalo
+      }))
     } else {
       cavalosPossiveisGanhadores.value = []
     }
@@ -1876,13 +1799,12 @@ const buscarCavalosPossiveisGanhadores = async () => {
 }
 
 const carregarGanhadoresPossiveis = async () => {
-  if (!campeonatoPossiveisGanhadores.value || !tipoRodadaSelecionadoPossiveisGanhadores.value) return
+  if (!campeonatoPossiveisGanhadores.value) return
 
   try {
-    // Buscar ganhadores possíveis já salvos usando GET
+    // Buscar ganhadores possíveis já salvos usando GET (sem tipo de rodada)
     const ganhadores = await corridaApi.getGanhadoresPossiveis(
-      campeonatoPossiveisGanhadores.value,
-      tipoRodadaSelecionadoPossiveisGanhadores.value
+      campeonatoPossiveisGanhadores.value
     )
     
     // O retorno é um array de objetos com a estrutura:
@@ -2002,7 +1924,7 @@ const obterCavalosDoTipo = (tipoRodada) => {
 }
 
 const salvarGanhadoresPossiveis = async () => {
-  if (!campeonatoPossiveisGanhadores.value || !tipoRodadaSelecionadoPossiveisGanhadores.value) return
+  if (!campeonatoPossiveisGanhadores.value) return
   if (cavalosSelecionadosFinalistas.value.size === 0) return
 
   salvandoGanhadoresPossiveis.value = true
@@ -2022,10 +1944,9 @@ const salvarGanhadoresPossiveis = async () => {
       return
     }
     
-    // Enviar para o endpoint POST /ganhadores-possiveis/:idcampeonato/:idtiporodada
+    // Enviar para o endpoint POST /ganhadores-possiveis/:idcampeonato (sem tipo de rodada)
     await corridaApi.postGanhadoresPossiveis(
       campeonatoPossiveisGanhadores.value,
-      tipoRodadaSelecionadoPossiveisGanhadores.value,
       cavalosIds
     )
     
