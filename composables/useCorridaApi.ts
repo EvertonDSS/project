@@ -283,10 +283,15 @@ export const useCorridaApi = () => {
       }
     },
 
-    async getGanhadoresPossiveis(campeonatoId: string | number, tipoRodadaId?: string | number) {
+    async getGanhadoresPossiveis(campeonatoId: string | number, agrupado?: boolean) {
       try {
-        const url = tipoRodadaId 
-          ? `/ganhadores-possiveis/${campeonatoId}/${tipoRodadaId}`
+        const params = new URLSearchParams()
+        if (agrupado !== undefined) {
+          params.append('agrupado', agrupado.toString())
+        }
+        const queryString = params.toString()
+        const url = queryString 
+          ? `/ganhadores-possiveis/${campeonatoId}?${queryString}`
           : `/ganhadores-possiveis/${campeonatoId}`
         const response = await api(url)
         return response
@@ -320,6 +325,24 @@ export const useCorridaApi = () => {
         return response
       } catch (error) {
         console.error('Erro ao buscar saldos do campeonato:', error)
+        throw error
+      }
+    },
+
+    async postVencedor(campeonatoId: string | number, cavaloId: number) {
+      try {
+        const response = await api(`/vencedores/${campeonatoId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: {
+            cavaloId: cavaloId
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao salvar vencedor:', error)
         throw error
       }
     }

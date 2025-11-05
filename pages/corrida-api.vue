@@ -771,6 +771,21 @@
                   </select>
                 </div>
                 
+                <!-- Checkbox para agrupado -->
+                <div class="mb-4">
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      v-model="ganhadoresAgrupados"
+                      class="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+                    />
+                    <span class="text-sm font-medium text-gray-700">Agrupar por tipo de rodada</span>
+                  </label>
+                  <p class="text-xs text-gray-500 mt-1 ml-6">
+                    {{ ganhadoresAgrupados ? 'Mostrar separado por tipo de rodada' : 'Mostrar tudo junto' }}
+                  </p>
+                </div>
+                
                 <button
                   @click="visualizarGanhadoresPossiveis"
                   :disabled="carregandoGanhadoresVisualizacao || !campeonatoVisualizarGanhadores"
@@ -828,10 +843,11 @@
             </div>
 
             <div v-else class="space-y-6">
-              <!-- Para cada tipo de rodada -->
-              <div v-for="tipoRodada in dadosGanhadoresVisualizacao" :key="tipoRodada.tiporodada" class="mb-8">
-                <h3 class="text-xl font-bold text-gray-800 mb-4 bg-yellow-100 px-4 py-2 rounded-lg">
-                  {{ tipoRodada.nometiporodada || `Tipo ${tipoRodada.tiporodada}` }}
+              <!-- Para cada tipo de rodada (quando agrupado) ou objeto direto (quando não agrupado) -->
+              <div v-for="(tipoRodada, index) in dadosGanhadoresVisualizacao" :key="ganhadoresAgrupados && tipoRodada.tiporodada ? tipoRodada.tiporodada : index" class="mb-8">
+                <!-- Título do tipo de rodada (apenas quando agrupado) -->
+                <h3 v-if="ganhadoresAgrupados && tipoRodada.nometiporodada" class="text-xl font-bold text-gray-800 mb-4 bg-yellow-100 px-4 py-2 rounded-lg">
+                  {{ tipoRodada.nometiporodada || `Tipo ${tipoRodada.tiporodada || ''}` }}
                 </h3>
 
                 <!-- Grid de tabelas por cavalo -->
@@ -1119,18 +1135,71 @@
       <div v-if="modalFinalistasOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="fecharModalFinalistas">
         <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden">
           <!-- Header -->
-          <div class="flex justify-between items-center p-4 border-b">
-            <h2 class="text-xl font-bold text-gray-800">Finalistas - {{ nomeCampeonatoFinalistas }}</h2>
+          <div class="flex justify-between items-center p-4 border-b bg-gradient-to-r from-yellow-500 to-amber-500">
+            <h2 class="text-xl font-bold text-white">Finalistas - {{ nomeCampeonatoFinalistas }}</h2>
             <button 
               @click="fecharModalFinalistas"
-              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+              class="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg transition-colors"
             >
               Fechar
             </button>
           </div>
           <!-- Conteúdo -->
-          <div class="overflow-auto max-h-[calc(90vh-80px)]">
-            <div v-html="htmlFinalistas" class="p-6"></div>
+          <div class="overflow-auto max-h-[calc(90vh-120px)] p-6">
+            <div v-if="cavalosFinalistas.length === 0" class="text-center py-12 text-gray-600">
+              Nenhum cavalo finalista encontrado.
+            </div>
+            <div v-else class="space-y-4">
+              <div class="mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Selecione o Cavalo Vencedor:</h3>
+                <p class="text-sm text-gray-600">Clique em um cavalo abaixo para selecioná-lo como vencedor</p>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div 
+                  v-for="cavalo in cavalosFinalistas" 
+                  :key="cavalo.idcavalo || cavalo.id"
+                  @click="vencedorSelecionado = cavalo.idcavalo || cavalo.id"
+                  :class="[
+                    'border-2 rounded-lg p-4 cursor-pointer transition-all',
+                    vencedorSelecionado === (cavalo.idcavalo || cavalo.id)
+                      ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-500'
+                      : 'border-gray-300 hover:border-yellow-400 hover:bg-yellow-50'
+                  ]"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <div class="font-semibold text-gray-800 text-lg mb-1">
+                        {{ cavalo.nomecavalo || cavalo.nome }}
+                      </div>
+                      <div class="text-sm text-gray-600">
+                        ID: {{ cavalo.idcavalo || cavalo.id }}
+                      </div>
+                    </div>
+                    <div v-if="vencedorSelecionado === (cavalo.idcavalo || cavalo.id)" class="ml-2">
+                      <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botão para salvar vencedor -->
+              <div class="mt-6 flex justify-center">
+                <button
+                  @click="salvarVencedor"
+                  :disabled="salvandoVencedor || !vencedorSelecionado"
+                  class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2 font-semibold"
+                >
+                  <svg v-if="salvandoVencedor" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ salvandoVencedor ? 'Salvando...' : 'Salvar Vencedor' }}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1717,12 +1786,16 @@ const carregandoGanhadoresVisualizacao = ref(false)
 const dadosGanhadoresVisualizacao = ref([])
 const modalVisualizacaoGanhadoresOpen = ref(false)
 const campeonatoVisualizacaoNome = ref('')
+const ganhadoresAgrupados = ref(false)
 
 // Estados Finalistas
 const campeonatoFinalistas = ref('')
 const carregandoFinalistas = ref(false)
 const modalFinalistasOpen = ref(false)
 const htmlFinalistas = ref('')
+const cavalosFinalistas = ref([])
+const vencedorSelecionado = ref(null)
+const salvandoVencedor = ref(false)
 
 // Estados Relatório de Pagamentos
 const relatorioPagamentosCampeonato = ref('')
@@ -1877,14 +1950,41 @@ const visualizarGanhadoresPossiveis = async () => {
   dadosGanhadoresVisualizacao.value = []
 
   try {
-    // Buscar ganhadores possíveis usando GET /ganhadores-possiveis/:idcampeonato
-    const ganhadores = await corridaApi.getGanhadoresPossiveis(campeonatoVisualizarGanhadores.value)
+    // Buscar ganhadores possíveis usando GET /ganhadores-possiveis/:idcampeonato?agrupado=true/false
+    const ganhadores = await corridaApi.getGanhadoresPossiveis(
+      campeonatoVisualizarGanhadores.value,
+      ganhadoresAgrupados.value
+    )
     
-    // O retorno é um array de objetos com a estrutura:
-    // [{ tiporodada, nometiporodada, cavalo62: [{ nomeapostador, valorpremio }], ... }]
-    if (Array.isArray(ganhadores) && ganhadores.length > 0) {
-      dadosGanhadoresVisualizacao.value = ganhadores
-      
+    // Quando agrupado: retorno é um array de objetos com a estrutura:
+    // [{ tiporodada, nometiporodada, "NOME CAVALO": [{ nomeapostador, valorpremio }], ... }]
+    // Quando não agrupado: retorno é um objeto direto com a estrutura:
+    // { "NOME CAVALO": [{ nomeapostador, valorpremio }], ... }
+    if (ganhadoresAgrupados.value) {
+      // Formato agrupado: array de objetos
+      if (Array.isArray(ganhadores) && ganhadores.length > 0) {
+        dadosGanhadoresVisualizacao.value = ganhadores
+      } else {
+        dadosGanhadoresVisualizacao.value = []
+      }
+    } else {
+      // Formato não agrupado: objeto direto
+      if (ganhadores && typeof ganhadores === 'object' && Object.keys(ganhadores).length > 0) {
+        // Converter objeto para array compatível com a renderização
+        dadosGanhadoresVisualizacao.value = [ganhadores]
+      } else {
+        dadosGanhadoresVisualizacao.value = []
+      }
+    }
+    
+    // Verificar se há dados válidos
+    const temDados = dadosGanhadoresVisualizacao.value.length > 0 && 
+      dadosGanhadoresVisualizacao.value.some(item => {
+        const cavalos = obterCavalosDoTipo(item)
+        return cavalos.length > 0
+      })
+    
+    if (temDados) {
       // Buscar nome do campeonato
       const campeonato = campeonatos.value.find(c => c.id === parseInt(campeonatoVisualizarGanhadores.value))
       campeonatoVisualizacaoNome.value = campeonato?.nome || ''
@@ -1905,19 +2005,28 @@ const fecharModalVisualizacaoGanhadores = () => {
   modalVisualizacaoGanhadoresOpen.value = false
 }
 
-// Função auxiliar para obter todos os cavalos de um tipo de rodada
-const obterCavalosDoTipo = (tipoRodada) => {
+// Função auxiliar para obter todos os cavalos de um tipo de rodada ou objeto
+const obterCavalosDoTipo = (dados) => {
   const cavalos = []
   // Iterar sobre todas as propriedades do objeto
-  for (const key in tipoRodada) {
+  for (const key in dados) {
     // Ignorar propriedades que não são cavalos (tiporodada, nometiporodada)
-    if (key !== 'tiporodada' && key !== 'nometiporodada' && key.startsWith('cavalo')) {
-      const cavaloId = key.replace('cavalo', '')
-      cavalos.push({
-        id: cavaloId,
-        nome: `Cavalo ${cavaloId}`,
-        apostadores: tipoRodada[key] || []
-      })
+    if (key !== 'tiporodada' && key !== 'nometiporodada') {
+      // Verificar se a chave começa com "cavalo" (formato antigo) ou é diretamente o nome do cavalo
+      let nomeCavalo = key
+      if (key.startsWith('cavalo')) {
+        const cavaloId = key.replace('cavalo', '')
+        nomeCavalo = `Cavalo ${cavaloId}`
+      }
+      
+      // Verificar se o valor é um array (lista de apostadores)
+      if (Array.isArray(dados[key])) {
+        cavalos.push({
+          id: key,
+          nome: nomeCavalo,
+          apostadores: dados[key] || []
+        })
+      }
     }
   }
   return cavalos
@@ -1973,39 +2082,97 @@ const carregarFinalistas = async () => {
   carregandoFinalistas.value = true
   htmlFinalistas.value = ''
   try {
-    // Buscar tipos de rodadas do campeonato
-    const tiposResp = await corridaApi.getTiposRodadasCampeonato(campeonatoFinalistas.value)
-    const tipos = Array.isArray(tiposResp?.tipos) ? tiposResp.tipos : []
-    const tiposFinais = tipos.filter(t => String(t.nome || '').toLowerCase().includes('final'))
-
-    if (tiposFinais.length === 0) {
-      htmlFinalistas.value = '<div class="p-6 text-center text-gray-600">Nenhum tipo contendo "FINAL" encontrado para este campeonato.</div>'
+    // 1. Buscar cavalos do endpoint rodadas-cavalos/idcampeonato
+    const cavalosRodada = await corridaApi.getRodadasCavalos(campeonatoFinalistas.value)
+    
+    if (!Array.isArray(cavalosRodada) || cavalosRodada.length === 0) {
+      cavalosFinalistas.value = []
+      htmlFinalistas.value = '<div class="p-6 text-center text-gray-600">Nenhum cavalo encontrado para este campeonato.</div>'
       modalFinalistasOpen.value = true
       return
     }
 
-    // Buscar pareos+cavalos por tipo finalista
-    const pareosPorTipo = {}
-    for (const tipo of tiposFinais) {
-      try {
-        const pareos = await corridaApi.getPareosCavalos(campeonatoFinalistas.value, tipo.id)
-        if (Array.isArray(pareos) && pareos.length > 0) {
-          pareosPorTipo[tipo.nome] = pareos
+    // 2. Buscar ganhadores possíveis do endpoint ganhadores-possiveis/idcampeonato (não agrupado)
+    const ganhadoresPossiveis = await corridaApi.getGanhadoresPossiveis(
+      campeonatoFinalistas.value,
+      false // não agrupado
+    )
+
+    // 3. Extrair nomes dos cavalos dos ganhadores possíveis
+    const nomesCavalosGanhadores = new Set()
+    
+    // Quando não agrupado, retorna um objeto direto com chaves sendo nomes de cavalos
+    if (ganhadoresPossiveis && typeof ganhadoresPossiveis === 'object') {
+      // Extrair todas as chaves que não são tiporodada ou nometiporodada
+      for (const key in ganhadoresPossiveis) {
+        if (key !== 'tiporodada' && key !== 'nometiporodada') {
+          nomesCavalosGanhadores.add(key)
         }
-      } catch (e) {
-        console.error('Erro ao buscar pareos+cavalos do tipo', tipo?.nome, e)
       }
     }
 
-    htmlFinalistas.value = gerarHTMLFinalistas(pareosPorTipo)
+    // 4. Filtrar cavalos de rodadas-cavalos mantendo apenas os que estão nos ganhadores possíveis
+    const cavalosFiltrados = cavalosRodada.filter(cavalo => {
+      const nomeCavalo = cavalo.nomecavalo || cavalo.nome || ''
+      return nomesCavalosGanhadores.has(nomeCavalo)
+    })
+
+    if (cavalosFiltrados.length === 0) {
+      cavalosFinalistas.value = []
+      htmlFinalistas.value = '<div class="p-6 text-center text-gray-600">Nenhum cavalo finalista encontrado (nenhum cavalo dos ganhadores possíveis está nas rodadas).</div>'
+      modalFinalistasOpen.value = true
+      return
+    }
+
+    // 5. Armazenar cavalos filtrados e gerar HTML
+    cavalosFinalistas.value = cavalosFiltrados
+    htmlFinalistas.value = gerarHTMLFinalistasFiltrados(cavalosFiltrados)
+    vencedorSelecionado.value = null
     modalFinalistasOpen.value = true
   } catch (e) {
     console.error('Erro ao carregar finalistas:', e)
+    cavalosFinalistas.value = []
     htmlFinalistas.value = '<div class="p-6 text-center text-red-600">Erro ao carregar finalistas. Tente novamente.</div>'
     modalFinalistasOpen.value = true
   } finally {
     carregandoFinalistas.value = false
   }
+}
+
+const gerarHTMLFinalistasFiltrados = (cavalos) => {
+  let html = `
+    <style>
+      .tipo-title{background:#D4AF37;color:#fff;padding:10px 14px;font-weight:bold;border-radius:4px;margin-bottom:10px}
+      .cavalo{border:1px solid #ddd;border-radius:4px;margin-bottom:14px;overflow:hidden}
+      .cavalo-h{background:#f5f5f5;padding:10px 14px;font-weight:bold;border-bottom:2px solid #D4AF37}
+      .cavalo-body{padding:10px 14px}
+      .cavalo-n{font-weight:600;font-size:16px;margin-bottom:5px}
+      .muted{font-size:12px;color:#777}
+      .empty{padding:16px;text-align:center;color:#666}
+    </style>
+  `
+
+  if (!Array.isArray(cavalos) || cavalos.length === 0) {
+    html += `<div class="empty">Nenhum cavalo finalista encontrado.</div>`
+    return html
+  }
+
+  html += `<div class="tipo-title">FINALISTAS (${cavalos.length} ${cavalos.length === 1 ? 'cavalo' : 'cavalos'})</div>`
+
+  cavalos.forEach(cavalo => {
+    const nomeCavalo = cavalo.nomecavalo || cavalo.nome || 'N/A'
+    const idCavalo = cavalo.idcavalo || cavalo.id || 'N/A'
+    
+    html += `<div class="cavalo">`
+    html += `<div class="cavalo-h">${nomeCavalo}</div>`
+    html += `<div class="cavalo-body">`
+    html += `<div class="cavalo-n">${nomeCavalo}</div>`
+    html += `<div class="muted">ID: ${idCavalo}</div>`
+    html += `</div>`
+    html += `</div>`
+  })
+
+  return html
 }
 
 const gerarHTMLFinalistas = (porTipo) => {
@@ -2070,6 +2237,29 @@ const gerarHTMLFinalistas = (porTipo) => {
 
 const fecharModalFinalistas = () => {
   modalFinalistasOpen.value = false
+  vencedorSelecionado.value = null
+  cavalosFinalistas.value = []
+}
+
+const salvarVencedor = async () => {
+  if (!vencedorSelecionado.value || !campeonatoFinalistas.value) return
+
+  salvandoVencedor.value = true
+  
+  try {
+    await corridaApi.postVencedor(
+      campeonatoFinalistas.value,
+      vencedorSelecionado.value
+    )
+    
+    alert('Vencedor salvo com sucesso!')
+    fecharModalFinalistas()
+  } catch (error) {
+    console.error('Erro ao salvar vencedor:', error)
+    alert('Erro ao salvar vencedor. Tente novamente.')
+  } finally {
+    salvandoVencedor.value = false
+  }
 }
 
 const gerarRelatorioPagamentos = async () => {
@@ -2688,4 +2878,5 @@ pre {
   word-wrap: break-word;
 }
 </style>
+
 
