@@ -345,6 +345,35 @@ export const useCorridaApi = () => {
         console.error('Erro ao salvar vencedor:', error)
         throw error
       }
+    },
+
+    async getRodadasCampeonato(campeonatoId: string | number) {
+      try {
+        const response = await api(`/rodadas/campeonato/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar rodadas do campeonato:', error)
+        throw error
+      }
+    },
+
+    async postRodadaCasa(campeonatoId: string | number, rodada: string, valorCasa: number) {
+      try {
+        const response = await api(`/rodadas-casa/${campeonatoId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: {
+            Rodada: rodada,
+            ValorCasa: valorCasa
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao salvar rodada-casa:', error)
+        throw error
+      }
     }
   }
 }

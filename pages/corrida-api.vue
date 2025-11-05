@@ -473,6 +473,7 @@
               <select
                 id="campeonatoAposta"
                 v-model="apostaForm.campeonatoId"
+                @change="carregarRodadasCadastradas"
                 required
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
@@ -580,12 +581,44 @@
                 Apostadores
               </label>
               <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                Total: {{ totalApostadores }}
+                Total: {{ totalApostadores }} | Mostrando: {{ apostadoresFiltrados.length }}
               </span>
             </div>
+            
+            <!-- Botão para gerar PDF de todos os apostadores -->
+            <div class="mb-3">
+              <button
+                @click="gerarPDFTodosApostadores"
+                :disabled="gerandoPDFTodos || apostadoresFiltrados.length === 0"
+                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+              >
+                <svg v-if="gerandoPDFTodos" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>{{ gerandoPDFTodos ? 'Gerando PDF...' : 'Gerar PDF de Todos os Apostadores' }}</span>
+              </button>
+            </div>
+            
+            <!-- Campo de Filtro -->
+            <div class="mb-3">
+              <input
+                v-model="filtroApostador"
+                type="text"
+                placeholder="Filtrar por nome do apostador..."
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+            </div>
+            
             <div class="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
+              <div v-if="apostadoresFiltrados.length === 0" class="text-center py-4 text-gray-500 text-sm">
+                Nenhum apostador encontrado com o filtro aplicado
+              </div>
               <div
-                v-for="apostador in apostadores"
+                v-for="apostador in apostadoresFiltrados"
                 :key="apostador.id"
                 @click="carregarDadosPdf(apostador)"
                 :class="[
@@ -687,6 +720,124 @@
               <p>O sistema processará as apostas automaticamente</p>
             </div>
           </div>
+            </div>
+          </div>
+
+          <!-- Card de Rodadas Cadastradas -->
+          <div class="mt-6 bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Rodadas Cadastradas</h3>
+
+            <!-- Loading -->
+            <div v-if="carregandoRodadas" class="text-center py-8">
+              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-3"></div>
+              <p class="text-gray-600 text-sm">Carregando rodadas...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="!apostaForm.campeonatoId || Object.keys(rodadasCadastradas).length === 0" class="text-center py-8">
+              <div class="text-gray-400 mb-3">
+                <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <p class="text-gray-600 text-sm">
+                {{ !apostaForm.campeonatoId ? 'Selecione um campeonato para visualizar as rodadas cadastradas' : 'Nenhuma rodada cadastrada para este campeonato' }}
+              </p>
+            </div>
+
+            <!-- Lista de Rodadas -->
+            <div v-else class="space-y-4">
+              <!-- Lista de Rodadas por Tipo (Exibição) -->
+              <div
+                v-for="(dados, tipoRodadaId) in rodadasCadastradas"
+                :key="tipoRodadaId"
+                class="bg-white rounded-lg p-4 border border-gray-200"
+              >
+                <h4 class="text-md font-semibold text-gray-800 mb-3">
+                  {{ dados.nometiporodada }}
+                </h4>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="rodada in dados.rodadas"
+                    :key="rodada"
+                    :class="[
+                      'px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors',
+                      rodadaCasaForm.rodada === rodada 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-green-100 text-green-800 hover:bg-green-200'
+                    ]"
+                    @click="rodadaCasaForm.rodada = rodada"
+                  >
+                    {{ rodada }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Formulário para enviar rodada-casa (Preenchimento) -->
+              <div class="bg-white rounded-lg p-4 border border-gray-200 mt-4">
+                <h4 class="text-md font-semibold text-gray-800 mb-4">💰 Configurar Rodada-Casa</h4>
+                
+                <form @submit.prevent="enviarRodadaCasa" class="space-y-4">
+                  <!-- Seleção de Rodada -->
+                  <div>
+                    <label for="rodadaSelecionada" class="block text-sm font-medium text-gray-700 mb-2">
+                      Selecionar Rodada
+                    </label>
+                    <select
+                      id="rodadaSelecionada"
+                      v-model="rodadaCasaForm.rodada"
+                      required
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Selecione uma rodada</option>
+                      <template v-for="(dados, tipoRodadaId) in rodadasCadastradas" :key="tipoRodadaId">
+                        <option
+                          v-for="rodada in dados.rodadas"
+                          :key="rodada"
+                          :value="rodada"
+                        >
+                          {{ rodada }} - {{ dados.nometiporodada }}
+                        </option>
+                      </template>
+                    </select>
+                  </div>
+
+                  <!-- Valor da Casa -->
+                  <div>
+                    <label for="valorCasa" class="block text-sm font-medium text-gray-700 mb-2">
+                      Valor da Casa
+                    </label>
+                    <input
+                      id="valorCasa"
+                      v-model="rodadaCasaForm.valorCasa"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      placeholder="Digite o valor da casa"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <!-- Botão de Envio -->
+                  <button
+                    type="submit"
+                    :disabled="enviandoRodadaCasa || !rodadaCasaForm.rodada || !rodadaCasaForm.valorCasa || !apostaForm.campeonatoId"
+                    class="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <svg v-if="enviandoRodadaCasa" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ enviandoRodadaCasa ? 'Enviando...' : 'Enviar Rodada-Casa' }}</span>
+                  </button>
+
+                  <!-- Mensagem de feedback -->
+                  <div v-if="mensagemRodadaCasa" :class="mensagemRodadaCasaTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="text-sm mt-2">
+                    {{ mensagemRodadaCasa }}
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>
@@ -905,14 +1056,26 @@
                 <h2 class="text-2xl font-bold">Relatório de Pagamentos</h2>
                 <p class="text-red-100 text-sm mt-1">{{ dadosRelatorioPagamentos?.campeonato?.nome || '' }}</p>
               </div>
-              <button 
-                @click="fecharModalRelatorioPagamentos"
-                class="text-white hover:text-gray-200 transition-colors"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
+              <div class="flex items-center space-x-3">
+                <button 
+                  @click="gerarPDFRelatorioPagamentos"
+                  :disabled="!dadosRelatorioPagamentos || !dadosRelatorioPagamentos.apostadores || dadosRelatorioPagamentos.apostadores.length === 0"
+                  class="bg-white text-red-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span>Download PDF</span>
+                </button>
+                <button 
+                  @click="fecharModalRelatorioPagamentos"
+                  class="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -936,7 +1099,6 @@
                 <table class="w-full border-collapse">
                   <thead>
                     <tr class="bg-gradient-to-r from-red-100 to-rose-100">
-                      <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800">ID</th>
                       <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800">Apostador</th>
                       <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Total Apostado</th>
                       <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Total Prêmios Vencidos</th>
@@ -949,7 +1111,6 @@
                       :key="apostador.id"
                       class="hover:bg-gray-50 transition-colors"
                     >
-                      <td class="border border-gray-300 px-4 py-3 text-gray-700">{{ apostador.id }}</td>
                       <td class="border border-gray-300 px-4 py-3 text-gray-800 font-medium">{{ apostador.nome }}</td>
                       <td class="border border-gray-300 px-4 py-3 text-right text-gray-700">{{ formatCurrency(apostador.totalApostado) }}</td>
                       <td class="border border-gray-300 px-4 py-3 text-right text-green-600 font-semibold">{{ formatCurrency(apostador.totalPremiosVencidos) }}</td>
@@ -965,7 +1126,7 @@
                   </tbody>
                   <tfoot v-if="dadosRelatorioPagamentos.apostadores && dadosRelatorioPagamentos.apostadores.length > 0">
                     <tr class="bg-gradient-to-r from-gray-100 to-gray-200 font-bold">
-                      <td colspan="2" class="border border-gray-300 px-4 py-3 text-gray-800">TOTAIS</td>
+                      <td class="border border-gray-300 px-4 py-3 text-gray-800">TOTAIS</td>
                       <td class="border border-gray-300 px-4 py-3 text-right text-gray-800">
                         {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.totalApostado || 0), 0)) }}
                       </td>
@@ -1742,6 +1903,14 @@ const enviandoApostas = ref(false)
 const mensagemApostas = ref('')
 const mensagemApostasTipo = ref('')
 
+// Estados para rodadas cadastradas
+const rodadasCadastradas = ref({})
+const carregandoRodadas = ref(false)
+const rodadaCasaForm = ref({ rodada: '', valorCasa: '' })
+const enviandoRodadaCasa = ref(false)
+const mensagemRodadaCasa = ref('')
+const mensagemRodadaCasaTipo = ref('')
+
 // Estados para apostadores e PDF
 const campeonatoSelecionado = ref('')
 const apostadores = ref([])
@@ -1753,6 +1922,19 @@ const carregandoApostadores = ref(false)
 const carregandoPdf = ref(false)
 const gerandoPDF = ref(false)
 const componentePDF = ref(null)
+const filtroApostador = ref('')
+const gerandoPDFTodos = ref(false)
+
+// Computed para filtrar apostadores
+const apostadoresFiltrados = computed(() => {
+  if (!filtroApostador.value.trim()) {
+    return apostadores.value
+  }
+  const termoFiltro = filtroApostador.value.toLowerCase().trim()
+  return apostadores.value.filter(apostador => 
+    apostador.nome?.toLowerCase().includes(termoFiltro)
+  )
+})
 
 // Estados para editar apostador
 const modalEditarApostador = ref(false)
@@ -2291,6 +2473,90 @@ const fecharModalRelatorioPagamentos = () => {
   modalRelatorioPagamentosOpen.value = false
 }
 
+// Função para gerar PDF do relatório de pagamentos
+const gerarPDFRelatorioPagamentos = () => {
+  if (!dadosRelatorioPagamentos.value || !dadosRelatorioPagamentos.value.apostadores || dadosRelatorioPagamentos.value.apostadores.length === 0) {
+    return
+  }
+
+  const dados = dadosRelatorioPagamentos.value
+  const campeonatoNome = dados.campeonato?.nome || 'N/A'
+  
+  // Calcular totais
+  const totalApostado = dados.apostadores.reduce((sum, a) => sum + (a.totalApostado || 0), 0)
+  const totalPremios = dados.apostadores.reduce((sum, a) => sum + (a.totalPremiosVencidos || 0), 0)
+  const totalSaldo = dados.apostadores.reduce((sum, a) => sum + (a.saldoFinal || 0), 0)
+
+  // Criar conteúdo HTML para o PDF
+  const content = `
+    <html>
+      <head>
+        <title>Relatório de Pagamentos - ${campeonatoNome}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #dc2626; padding-bottom: 15px; }
+          .title { font-size: 24px; font-weight: bold; color: #dc2626; }
+          .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background-color: #fef2f2; font-weight: bold; color: #991b1b; }
+          tfoot th, tfoot td { background-color: #f3f4f6; font-weight: bold; }
+          .text-right { text-align: right; }
+          .text-green { color: #059669; }
+          .text-red { color: #dc2626; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">Relatório de Pagamentos</div>
+          <div class="subtitle">${campeonatoNome}</div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Apostador</th>
+              <th class="text-right">Total Apostado</th>
+              <th class="text-right">Total Prêmios Vencidos</th>
+              <th class="text-right">Saldo Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dados.apostadores.map(apostador => `
+              <tr>
+                <td>${apostador.nome || 'N/A'}</td>
+                <td class="text-right">${formatCurrency(apostador.totalApostado || 0)}</td>
+                <td class="text-right text-green">${formatCurrency(apostador.totalPremiosVencidos || 0)}</td>
+                <td class="text-right ${apostador.saldoFinal >= 0 ? 'text-green' : 'text-red'}" style="font-weight: bold;">
+                  ${formatCurrency(apostador.saldoFinal || 0)}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>TOTAIS</th>
+              <th class="text-right">${formatCurrency(totalApostado)}</th>
+              <th class="text-right text-green">${formatCurrency(totalPremios)}</th>
+              <th class="text-right ${totalSaldo >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(totalSaldo)}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </body>
+    </html>
+  `
+
+  // Criar nova janela para impressão
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(content)
+  printWindow.document.close()
+  
+  // Aguardar carregamento e imprimir
+  printWindow.onload = () => {
+    printWindow.print()
+  }
+}
+
 // Função para carregar campeonatos
 const loadCampeonatos = async () => {
   carregando.value = true
@@ -2673,6 +2939,75 @@ const enviarApostas = async () => {
   }
 }
 
+// Função para carregar rodadas cadastradas
+const carregarRodadasCadastradas = async () => {
+  if (!apostaForm.value.campeonatoId) {
+    rodadasCadastradas.value = {}
+    rodadaCasaForm.value = { rodada: '', valorCasa: '' }
+    return
+  }
+
+  carregandoRodadas.value = true
+  rodadasCadastradas.value = {}
+  
+  try {
+    const response = await corridaApi.getRodadasCampeonato(apostaForm.value.campeonatoId)
+    rodadasCadastradas.value = response || {}
+    console.log('Rodadas carregadas:', response)
+  } catch (err) {
+    console.error('Erro ao carregar rodadas:', err)
+    rodadasCadastradas.value = {}
+  } finally {
+    carregandoRodadas.value = false
+  }
+}
+
+// Função para enviar rodada-casa
+const enviarRodadaCasa = async () => {
+  if (!apostaForm.value.campeonatoId || !rodadaCasaForm.value.rodada || !rodadaCasaForm.value.valorCasa) {
+    mensagemRodadaCasa.value = 'Por favor, preencha todos os campos'
+    mensagemRodadaCasaTipo.value = 'erro'
+    return
+  }
+
+  const valorCasa = parseFloat(rodadaCasaForm.value.valorCasa)
+  if (isNaN(valorCasa) || valorCasa < 0) {
+    mensagemRodadaCasa.value = 'Por favor, insira um valor válido'
+    mensagemRodadaCasaTipo.value = 'erro'
+    return
+  }
+
+  enviandoRodadaCasa.value = true
+  mensagemRodadaCasa.value = ''
+  
+  try {
+    const response = await corridaApi.postRodadaCasa(
+      apostaForm.value.campeonatoId,
+      rodadaCasaForm.value.rodada,
+      valorCasa
+    )
+    
+    mensagemRodadaCasa.value = 'Rodada-casa enviada com sucesso!'
+    mensagemRodadaCasaTipo.value = 'sucesso'
+    
+    // Limpar formulário
+    rodadaCasaForm.value = { rodada: '', valorCasa: '' }
+    
+    // Limpar mensagem após 3 segundos
+    setTimeout(() => {
+      mensagemRodadaCasa.value = ''
+    }, 3000)
+    
+    console.log('Rodada-casa enviada:', response)
+  } catch (err) {
+    mensagemRodadaCasa.value = 'Erro ao enviar rodada-casa. Verifique se a API está online.'
+    mensagemRodadaCasaTipo.value = 'erro'
+    console.error('Erro ao enviar rodada-casa:', err)
+  } finally {
+    enviandoRodadaCasa.value = false
+  }
+}
+
 // Função para carregar apostadores
 const carregarApostadores = async () => {
   if (!campeonatoSelecionado.value) {
@@ -2692,11 +3027,13 @@ const carregarApostadores = async () => {
     totalApostadores.value = response.totalApostadores || 0
     apostadorSelecionado.value = null // Limpar apostador selecionado
     dadosPdf.value = null // Limpar dados do PDF anterior
+    filtroApostador.value = '' // Limpar filtro ao carregar novos apostadores
     console.log('Apostadores carregados:', response)
   } catch (err) {
     console.error('Erro ao carregar apostadores:', err)
     apostadores.value = []
     totalApostadores.value = 0
+    filtroApostador.value = '' // Limpar filtro em caso de erro
   } finally {
     carregandoApostadores.value = false
   }
@@ -2744,6 +3081,347 @@ const gerarPDF = async () => {
     alert('Erro ao gerar PDF')
   } finally {
     gerandoPDF.value = false
+  }
+}
+
+// Função auxiliar para gerar HTML de um apostador
+const gerarHTMLApostador = (dados) => {
+  let totalApostado = 0
+  let apostasPorTipo = new Map()
+  
+  const formatarNumeroBrasileiro = (numero) => {
+    const valorNumerico = typeof numero === 'string' ? parseFloat(numero) : numero
+    return valorNumerico.toLocaleString('pt-BR', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })
+  }
+  
+  // Processar dados
+  dados.apostasPorRodada?.forEach(rodada => {
+    rodada.apostas?.forEach((aposta) => {
+      const cavalos = aposta.pareo?.cavalos?.map(cavalo => cavalo.nome).join(' / ') || ''
+      const chave = `${aposta.pareo?.numero || ''}- ${cavalos}`
+      
+      totalApostado += aposta.valor || 0
+      
+      const tipoRodada = rodada.tipoRodada?.nome || ''
+      if (!apostasPorTipo.has(tipoRodada)) {
+        apostasPorTipo.set(tipoRodada, new Map())
+      }
+      
+      if (apostasPorTipo.get(tipoRodada).has(chave)) {
+        const valorAtual = apostasPorTipo.get(tipoRodada).get(chave)
+        apostasPorTipo.get(tipoRodada).set(chave, valorAtual + (aposta.valorPremio || 0))
+      } else {
+        apostasPorTipo.get(tipoRodada).set(chave, aposta.valorPremio || 0)
+      }
+    })
+  })
+  
+  // Gerar linhas da tabela
+  const linhasTabela = dados.apostasPorRodada?.map(rodada => 
+    rodada.apostas?.map((aposta) => {
+      const cavalos = aposta.pareo?.cavalos?.map(cavalo => cavalo.nome).join(' / ') || ''
+      return `
+        <tr>
+          <td>${rodada.nomeRodada || ''}</td>
+          <td>${aposta.pareo?.numero || ''}- ${cavalos}</td>
+          <td class="valor">R$ ${(aposta.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td class="porcentagem">${aposta.porcentagemAposta || 0}%</td>
+          <td class="premio">R$ ${(aposta.valorPremio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td class="total-rodada">R$ ${formatarNumeroBrasileiro(aposta.valorOriginalPremio || 0)}</td>
+        </tr>
+      `
+    }).join('') || ''
+  ).join('') || ''
+  
+  // Gerar seções de resumo
+  const secoesResumo = Array.from(apostasPorTipo.entries()).map(([tipoRodada, apostasMap]) => `
+    <div class="summary-section">
+      <div class="summary-title">${tipoRodada.toUpperCase()}</div>
+      <table class="summary-table">
+        <tbody>
+          ${Array.from(apostasMap.entries()).map(([chave, valor]) => `
+            <tr>
+              <td>${chave}</td>
+              <td>R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `).join('')
+  
+  return `
+    <div class="page-break">
+      <div class="relatorio-container">
+        <div class="header">
+          <div class="logo">
+            <div class="logo-icon">🐎</div>
+            <div class="logo-text">JOGOS ONLINE</div>
+          </div>
+          <div class="apostador-name">${dados.apostador?.nome || 'N/A'}</div>
+        </div>
+
+        <div class="title">RELATÓRIO DE APOSTAS</div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>RODADA</th>
+              <th>CHAVE</th>
+              <th>VALOR DA APOSTA</th>
+              <th>%</th>
+              <th>PRÊMIO INDIVIDUAL</th>
+              <th>TOTAL DA RODADA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linhasTabela}
+          </tbody>
+        </table>
+
+        <div class="summary">
+          <div class="summary-section">
+            <div class="summary-title">VALOR TOTAL DA APOSTA:</div>
+            <div class="summary-value">R$ ${totalApostado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          </div>
+
+          ${secoesResumo}
+        </div>
+      </div>
+    </div>
+  `
+}
+
+// Função para gerar PDF de todos os apostadores
+const gerarPDFTodosApostadores = async () => {
+  if (!campeonatoSelecionado.value || apostadoresFiltrados.value.length === 0) {
+    return
+  }
+
+  gerandoPDFTodos.value = true
+  
+  try {
+    // Buscar dados de todos os apostadores
+    const dadosApostadores = []
+    for (const apostador of apostadoresFiltrados.value) {
+      try {
+        const response = await corridaApi.getPdfDados(campeonatoSelecionado.value, apostador.id)
+        dadosApostadores.push(response)
+      } catch (err) {
+        console.error(`Erro ao buscar dados do apostador ${apostador.nome}:`, err)
+      }
+    }
+
+    if (dadosApostadores.length === 0) {
+      alert('Não foi possível carregar dados dos apostadores')
+      return
+    }
+
+    // Gerar HTML para cada apostador
+    const htmlApostadores = dadosApostadores.map(dados => gerarHTMLApostador(dados)).join('')
+
+    // HTML completo com estilos
+    const htmlCompleto = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Relatório de Apostas - Todos os Apostadores</title>
+        <style>
+          @media print {
+            .page-break {
+              page-break-after: always;
+              page-break-inside: avoid;
+            }
+            .page-break:last-child {
+              page-break-after: avoid;
+            }
+          }
+          
+          body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: white;
+          }
+
+          .relatorio-container {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+            margin-bottom: 40px;
+          }
+
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #D4AF37;
+          }
+
+          .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: #D4AF37;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+          }
+
+          .logo-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #D4AF37;
+          }
+
+          .apostador-name {
+            background: #D4AF37;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 14px;
+          }
+
+          .title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #D4AF37;
+            margin-bottom: 30px;
+          }
+
+          .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+          }
+
+          .table th {
+            background: #D4AF37;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #B8941F;
+          }
+
+          .table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            background: white;
+          }
+
+          .table tr:nth-child(even) td {
+            background: #f9f9f9;
+          }
+
+          .valor {
+            font-weight: bold;
+            color: #2E7D32;
+          }
+
+          .porcentagem {
+            color: #1976D2;
+            font-weight: bold;
+          }
+
+          .premio {
+            color: #D4AF37;
+            font-weight: bold;
+          }
+
+          .total-rodada {
+            background: #E8F5E8 !important;
+            font-weight: bold;
+            color: #2E7D32;
+          }
+
+          .summary {
+            margin-top: 30px;
+          }
+
+          .summary-section {
+            margin-bottom: 20px;
+          }
+
+          .summary-title {
+            background: #D4AF37;
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+
+          .summary-value {
+            background: #D4AF37;
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 16px;
+          }
+
+          .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+
+          .summary-table th {
+            background: #D4AF37;
+            color: white;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: bold;
+          }
+
+          .summary-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+          }
+        </style>
+      </head>
+      <body>
+        ${htmlApostadores}
+      </body>
+      </html>
+    `
+
+    // Criar nova janela para impressão
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(htmlCompleto)
+    printWindow.document.close()
+    
+    // Aguardar carregamento e imprimir
+    printWindow.onload = () => {
+      printWindow.print()
+    }
+    
+  } catch (err) {
+    console.error('Erro ao gerar PDF de todos os apostadores:', err)
+    alert('Erro ao gerar PDF. Verifique se a API está online.')
+  } finally {
+    gerandoPDFTodos.value = false
   }
 }
 
