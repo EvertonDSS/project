@@ -974,16 +974,30 @@
                 <div>
                   <h2 class="text-2xl font-bold">POSSÍVEIS GANHADORES</h2>
                   <p class="text-yellow-100 text-sm">{{ campeonatoVisualizacaoNome }}</p>
+                
                 </div>
+                
               </div>
-              <button 
-                @click="fecharModalVisualizacaoGanhadores"
-                class="text-white hover:text-gray-200 transition-colors"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
+              <div class="flex items-center space-x-2">
+                <button 
+                  @click="gerarPDFGanhadoresVisualizacao"
+                  :disabled="!dadosGanhadoresVisualizacao || dadosGanhadoresVisualizacao.length === 0"
+                  class="bg-white text-yellow-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span>Download PDF</span>
+                </button>
+                <button 
+                  @click="fecharModalVisualizacaoGanhadores"
+                  class="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1211,14 +1225,36 @@
                 </button>
               </div>
 
-              <!-- Ajuda -->
+              <!-- Card de Vencedores -->
               <div class="bg-gray-50 rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">📘 Como funciona</h3>
-                <ul class="text-sm text-gray-700 space-y-2 list-disc pl-5">
-                  <li>Seleciona os tipos do campeonato que contêm "FINAL" (case-insensitive).</li>
-                  <li>Busca os pareos e cavalos do campeonato para cada tipo finalista.</li>
-                  <li>Exibe em uma modal agrupado por Tipo → Pareo → Cavalos.</li>
-                </ul>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🏆 Vencedores do Campeonato</h3>
+                
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Campeonato
+                  </label>
+                  <select
+                    v-model="campeonatoVencedores"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Selecione um campeonato</option>
+                    <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
+                      {{ campeonato.nome }}
+                    </option>
+                  </select>
+                </div>
+
+                <button 
+                  @click="carregarVencedores"
+                  :disabled="carregandoVencedores || !campeonatoVencedores"
+                  class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg v-if="carregandoVencedores" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoVencedores ? 'Buscando...' : 'Buscar Vencedores' }}</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1231,12 +1267,24 @@
           <!-- Header -->
           <div class="flex justify-between items-center p-4 border-b">
             <h2 class="text-xl font-bold text-gray-800">Possíveis Ganhadores</h2>
-            <button 
-              @click="fecharModalPossiveisGanhadores"
-              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
-            >
-              Fechar
-            </button>
+            <div class="flex items-center space-x-2">
+              <button 
+                @click="gerarPDFGanhadoresPossiveis"
+                :disabled="!cavalosPossiveisGanhadores || cavalosPossiveisGanhadores.length === 0"
+                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Download PDF</span>
+              </button>
+              <button 
+                @click="fecharModalPossiveisGanhadores"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
           <!-- Conteúdo -->
           <div class="overflow-auto max-h-[calc(90vh-80px)]">
@@ -1250,17 +1298,28 @@
             <div v-else class="p-6">
               <div class="mb-4 flex justify-between items-center">
                 <h3 class="text-lg font-semibold text-gray-800">Cavalos Disponíveis</h3>
-                <button
-                  @click="salvarGanhadoresPossiveis"
-                  :disabled="salvandoGanhadoresPossiveis || cavalosSelecionadosFinalistas.size === 0"
-                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  <svg v-if="salvandoGanhadoresPossiveis" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>{{ salvandoGanhadoresPossiveis ? 'Salvando...' : `Salvar Finalistas (${cavalosSelecionadosFinalistas.size})` }}</span>
-                </button>
+                <div class="flex items-center space-x-2">
+                  <button
+                    @click="gerarPDFGanhadoresPossiveis"
+                    class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center space-x-2"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Download PDF</span>
+                  </button>
+                  <button
+                    @click="salvarGanhadoresPossiveis"
+                    :disabled="salvandoGanhadoresPossiveis || cavalosSelecionadosFinalistas.size === 0"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    <svg v-if="salvandoGanhadoresPossiveis" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ salvandoGanhadoresPossiveis ? 'Salvando...' : `Salvar Finalistas (${cavalosSelecionadosFinalistas.size})` }}</span>
+                  </button>
+                </div>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1359,6 +1418,88 @@
                   </svg>
                   <span>{{ salvandoVencedor ? 'Salvando...' : 'Salvar Vencedor' }}</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Vencedores -->
+      <div v-if="modalVencedoresOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="fecharModalVencedores">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <!-- Header -->
+          <div class="flex justify-between items-center p-4 border-b bg-gradient-to-r from-purple-600 to-indigo-600">
+            <h2 class="text-xl font-bold text-white">Vencedores - {{ nomeCampeonatoVencedores }}</h2>
+            <div class="flex items-center space-x-2">
+              <button 
+                v-if="dadosVencedores && dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0"
+                @click="gerarPDFVencedores"
+                class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center space-x-2"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Download PDF</span>
+              </button>
+              <button 
+                @click="fecharModalVencedores"
+                class="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+          <!-- Conteúdo -->
+          <div class="overflow-auto max-h-[calc(90vh-80px)]">
+            <div v-if="carregandoVencedores" class="p-6 text-center">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p class="text-gray-600">Carregando vencedores...</p>
+            </div>
+            <div v-else-if="!dadosVencedores" class="p-6 text-center text-gray-600">
+              <p>Nenhum dado de vencedores disponível.</p>
+            </div>
+            <div v-else class="p-6">
+              <div class="mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">🐎 Cavalo Vencedor</h3>
+                <div class="bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg p-3 border border-green-300">
+                  <p class="text-base font-bold text-green-800">{{ dadosVencedores.nomecavalovencedor }}</p>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">👥 Vencedores ({{ dadosVencedores.vencedores?.length || 0 }})</h3>
+                
+                <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div
+                    v-for="(vencedor, index) in dadosVencedores.vencedores"
+                    :key="index"
+                    class="rounded-lg p-3 border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <div class="flex justify-between items-center">
+                      <div class="flex items-center space-x-2">
+                        <span class="text-sm font-semibold text-purple-700">#{{ index + 1 }}</span>
+                        <span class="text-sm font-medium text-gray-800">{{ vencedor.nomeapostador }}</span>
+                      </div>
+                      <div class="text-sm font-bold text-green-700">
+                        R$ {{ vencedor.valorpremio?.toFixed(2) || '0.00' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Total de Prêmios -->
+                <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="mt-4 pt-4 border-t border-gray-300">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm font-semibold text-gray-800">Total de Prêmios:</span>
+                    <span class="text-base font-bold text-green-700">
+                      R$ {{ totalPremios.toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div v-else class="text-center py-8 text-gray-500 text-sm">
+                  Nenhum vencedor encontrado
+                </div>
               </div>
             </div>
           </div>
@@ -1979,6 +2120,12 @@ const cavalosFinalistas = ref([])
 const vencedorSelecionado = ref(null)
 const salvandoVencedor = ref(false)
 
+// Estados Vencedores
+const campeonatoVencedores = ref('')
+const carregandoVencedores = ref(false)
+const dadosVencedores = ref(null)
+const modalVencedoresOpen = ref(false)
+
 // Estados Relatório de Pagamentos
 const relatorioPagamentosCampeonato = ref('')
 const carregandoRelatorioPagamentos = ref(false)
@@ -2259,6 +2406,20 @@ const nomeCampeonatoFinalistas = computed(() => {
   return c ? c.nome : ''
 })
 
+const nomeCampeonatoVencedores = computed(() => {
+  const c = (campeonatos.value || []).find(c => c.id === campeonatoVencedores.value)
+  return c ? c.nome : ''
+})
+
+const totalPremios = computed(() => {
+  if (!dadosVencedores.value?.vencedores || !Array.isArray(dadosVencedores.value.vencedores)) {
+    return 0
+  }
+  return dadosVencedores.value.vencedores.reduce((total, vencedor) => {
+    return total + (vencedor.valorpremio || 0)
+  }, 0)
+})
+
 const carregarFinalistas = async () => {
   if (!campeonatoFinalistas.value) return
   carregandoFinalistas.value = true
@@ -2319,6 +2480,31 @@ const carregarFinalistas = async () => {
   } finally {
     carregandoFinalistas.value = false
   }
+}
+
+const carregarVencedores = async () => {
+  if (!campeonatoVencedores.value) {
+    dadosVencedores.value = null
+    return
+  }
+  
+  carregandoVencedores.value = true
+  dadosVencedores.value = null
+  modalVencedoresOpen.value = true
+  
+  try {
+    const response = await corridaApi.getVencedoresCampeonato(campeonatoVencedores.value)
+    dadosVencedores.value = response
+  } catch (error) {
+    console.error('Erro ao carregar vencedores:', error)
+    dadosVencedores.value = null
+  } finally {
+    carregandoVencedores.value = false
+  }
+}
+
+const fecharModalVencedores = () => {
+  modalVencedoresOpen.value = false
 }
 
 const gerarHTMLFinalistasFiltrados = (cavalos) => {
@@ -2542,6 +2728,251 @@ const gerarPDFRelatorioPagamentos = () => {
             </tr>
           </tfoot>
         </table>
+      </body>
+    </html>
+  `
+
+  // Criar nova janela para impressão
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(content)
+  printWindow.document.close()
+  
+  // Aguardar carregamento e imprimir
+  printWindow.onload = () => {
+    printWindow.print()
+  }
+}
+
+const gerarPDFVencedores = () => {
+  if (!dadosVencedores.value || !dadosVencedores.value.vencedores || dadosVencedores.value.vencedores.length === 0) {
+    return
+  }
+
+  const dados = dadosVencedores.value
+  const campeonatoNome = nomeCampeonatoVencedores.value || 'N/A'
+  const totalPremios = dados.vencedores.reduce((sum, v) => sum + (v.valorpremio || 0), 0)
+
+  // Criar conteúdo HTML para o PDF
+  const content = `
+    <html>
+      <head>
+        <title>Vencedores - ${campeonatoNome}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #7c3aed; padding-bottom: 15px; }
+          .title { font-size: 24px; font-weight: bold; color: #7c3aed; }
+          .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
+          .cavalo-vencedor { background-color: #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #10b981; }
+          .cavalo-vencedor h3 { margin: 0 0 10px 0; color: #065f46; font-size: 18px; }
+          .cavalo-vencedor p { margin: 0; font-size: 22px; font-weight: bold; color: #047857; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #f3e8ff; font-weight: bold; color: #6b21a8; }
+          tbody tr:nth-child(even) { background-color: #f9fafb; }
+          tfoot th, tfoot td { background-color: #f3f4f6; font-weight: bold; }
+          .text-right { text-align: right; }
+          .text-green { color: #059669; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">Vencedores do Campeonato</div>
+          <div class="subtitle">${campeonatoNome}</div>
+        </div>
+        
+        <div class="cavalo-vencedor">
+          <h3>🐎 Cavalo Vencedor</h3>
+          <p>${dados.nomecavalovencedor || 'N/A'}</p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Apostador</th>
+              <th class="text-right">Prêmio</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${dados.vencedores.map((vencedor, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${vencedor.nomeapostador || 'N/A'}</td>
+                <td class="text-right text-green">${formatCurrency(vencedor.valorpremio || 0)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="2">TOTAL DE PRÊMIOS</th>
+              <th class="text-right text-green">${formatCurrency(totalPremios)}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </body>
+    </html>
+  `
+
+  // Criar nova janela para impressão
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(content)
+  printWindow.document.close()
+  
+  // Aguardar carregamento e imprimir
+  printWindow.onload = () => {
+    printWindow.print()
+  }
+}
+
+const gerarPDFGanhadoresPossiveis = () => {
+  if (!cavalosPossiveisGanhadores.value || cavalosPossiveisGanhadores.value.length === 0) {
+    return
+  }
+
+  const campeonatoNome = campeonatoPossiveisGanhadores.value ? 
+    (campeonatos.value || []).find(c => c.id === campeonatoPossiveisGanhadores.value)?.nome || 'N/A' 
+    : 'N/A'
+
+  // Criar conteúdo HTML para o PDF
+  const content = `
+    <html>
+      <head>
+        <title>Possíveis Ganhadores - ${campeonatoNome}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eab308; padding-bottom: 15px; }
+          .title { font-size: 24px; font-weight: bold; color: #ca8a04; }
+          .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
+          .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+          .cavalo-card { border: 2px solid #fde047; border-radius: 8px; padding: 15px; background-color: #fefce8; }
+          .cavalo-card.selected { border-color: #10b981; background-color: #d1fae5; }
+          .cavalo-nome { font-weight: bold; font-size: 16px; color: #713f12; margin-bottom: 5px; }
+          .cavalo-id { font-size: 12px; color: #78716c; }
+          .selected-badge { color: #059669; font-size: 12px; margin-top: 5px; font-weight: bold; }
+          .total { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #eab308; }
+          .total-text { font-size: 18px; font-weight: bold; color: #ca8a04; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">Possíveis Ganhadores</div>
+          <div class="subtitle">${campeonatoNome}</div>
+        </div>
+        
+        <div class="grid">
+          ${cavalosPossiveisGanhadores.value.map(cavalo => {
+            const isSelected = cavalosSelecionadosFinalistas.value.has(cavalo.id || cavalo.idcavalo)
+            return `
+              <div class="cavalo-card ${isSelected ? 'selected' : ''}">
+                <div class="cavalo-nome">${cavalo.nome || cavalo.nomecavalo || `Cavalo ${cavalo.id || cavalo.idcavalo}`}</div>
+                <div class="cavalo-id">ID: ${cavalo.id || cavalo.idcavalo}</div>
+                ${isSelected ? '<div class="selected-badge">✓ Selecionado</div>' : ''}
+              </div>
+            `
+          }).join('')}
+        </div>
+        
+        <div class="total">
+          <div class="total-text">Total de Cavalos: ${cavalosPossiveisGanhadores.value.length}</div>
+          <div class="total-text">Selecionados: ${cavalosSelecionadosFinalistas.value.size}</div>
+        </div>
+      </body>
+    </html>
+  `
+
+  // Criar nova janela para impressão
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(content)
+  printWindow.document.close()
+  
+  // Aguardar carregamento e imprimir
+  printWindow.onload = () => {
+    printWindow.print()
+  }
+}
+
+const gerarPDFGanhadoresVisualizacao = () => {
+  if (!dadosGanhadoresVisualizacao.value || dadosGanhadoresVisualizacao.value.length === 0) {
+    return
+  }
+
+  const campeonatoNome = campeonatoVisualizacaoNome.value || 'N/A'
+  
+  // Construir HTML do PDF
+  let htmlContent = ''
+  
+  dadosGanhadoresVisualizacao.value.forEach((tipoRodada, tipoIndex) => {
+    const cavalos = obterCavalosDoTipo(tipoRodada)
+    
+    if (cavalos.length === 0) return
+    
+    // Título do tipo de rodada (se agrupado)
+    if (ganhadoresAgrupados.value && tipoRodada.nometiporodada) {
+      htmlContent += `
+        <div style="margin-top: ${tipoIndex > 0 ? '40px' : '0'}; margin-bottom: 20px; page-break-after: avoid;">
+          <h3 style="background-color: #fef3c7; color: #713f12; padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold;">
+            ${tipoRodada.nometiporodada || `Tipo ${tipoRodada.tiporodada || ''}`}
+          </h3>
+        </div>
+      `
+    }
+    
+    // Grid de cavalos
+    htmlContent += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px;">'
+    
+    cavalos.forEach(cavalo => {
+      const totalPremio = cavalo.apostadores.reduce((sum, a) => sum + (a.valorpremio || 0), 0)
+      
+      htmlContent += `
+        <div style="border: 2px solid #fde047; border-radius: 8px; overflow: hidden; background-color: #fefce8; page-break-inside: avoid;">
+          <div style="background: linear-gradient(to right, #facc15, #fbbf24); color: #1f2937; padding: 12px; font-weight: bold; font-size: 16px;">
+            ${cavalo.nome}
+          </div>
+          <div style="background-color: #000; color: #fff; padding: 8px; font-size: 12px; font-weight: bold;">
+            PRÊMIO
+          </div>
+          <div style="padding: 0;">
+            ${cavalo.apostadores.length > 0 ? cavalo.apostadores.map(apostador => `
+              <div style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 500; color: #1f2937;">${apostador.nomeapostador || 'N/A'}</span>
+                <span style="font-size: 13px; font-weight: 600; color: #1f2937;">${formatCurrency(apostador.valorpremio || 0)}</span>
+              </div>
+            `).join('') : '<div style="padding: 12px; color: #6b7280; text-align: center;">Nenhum apostador</div>'}
+          </div>
+          ${cavalo.apostadores.length > 0 ? `
+            <div style="background-color: #f3f4f6; padding: 10px 12px; border-top: 1px solid #d1d5db; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 12px; font-weight: bold; color: #374151;">Total:</span>
+              <span style="font-size: 12px; font-weight: bold; color: #1f2937;">${formatCurrency(totalPremio)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `
+    })
+    
+    htmlContent += '</div>'
+  })
+
+  // Criar conteúdo HTML completo para o PDF
+  const content = `
+    <html>
+      <head>
+        <title>Possíveis Ganhadores - ${campeonatoNome}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eab308; padding-bottom: 15px; }
+          .title { font-size: 24px; font-weight: bold; color: #ca8a04; }
+          .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
+          @media print {
+            .page-break { page-break-after: always; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">Possíveis Ganhadores</div>
+          <div class="subtitle">${campeonatoNome}</div>
+        </div>
+        ${htmlContent}
       </body>
     </html>
   `

@@ -374,6 +374,16 @@ export const useCorridaApi = () => {
         console.error('Erro ao salvar rodada-casa:', error)
         throw error
       }
+    },
+
+    async getVencedoresCampeonato(campeonatoId: string | number) {
+      try {
+        const response = await api(`/vencedores/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar vencedores do campeonato:', error)
+        throw error
+      }
     }
   }
 }
