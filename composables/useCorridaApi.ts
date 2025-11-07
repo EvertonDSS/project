@@ -376,6 +376,28 @@ export const useCorridaApi = () => {
       }
     },
 
+    async postRodadaAposta(
+      campeonatoId: string | number,
+      tipoRodadaId: string | number,
+      nomeRodada: string
+    ) {
+      try {
+        const response = await api(`/apostas/rodadas/${campeonatoId}/${tipoRodadaId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: {
+            nomeRodada
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao enviar rodada para apostas:', error)
+        throw error
+      }
+    },
+
     async getVencedoresCampeonato(campeonatoId: string | number) {
       try {
         const response = await api(`/vencedores/${campeonatoId}`)

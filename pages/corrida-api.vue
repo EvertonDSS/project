@@ -759,18 +759,29 @@
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="rodada in dados.rodadas"
-                    :key="rodada"
+                    :key="`${tipoRodadaId}-${rodada}`"
                     :class="[
                       'px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors',
-                      rodadaCasaForm.rodada === rodada 
+                      rodadaCasaForm.tipoRodadaId === tipoRodadaId && rodadaCasaForm.rodada === rodada 
                         ? 'bg-green-600 text-white' 
                         : 'bg-green-100 text-green-800 hover:bg-green-200'
                     ]"
-                    @click="rodadaCasaForm.rodada = rodada"
+                    @click="selecionarRodada(tipoRodadaId, rodada)"
+                    @dblclick="handleRodadaDblClick(tipoRodadaId, rodada)"
                   >
                     {{ rodada }}
                   </span>
                 </div>
+              </div>
+
+              <div
+                v-if="mensagemRodadaAposta"
+                :class="[
+                  'bg-white rounded-lg p-4 border border-gray-200 text-sm',
+                  mensagemRodadaApostaTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                ]"
+              >
+                {{ mensagemRodadaAposta }}
               </div>
 
               <!-- Formulário para enviar rodada-casa (Preenchimento) -->
@@ -785,7 +796,7 @@
                     </label>
                     <select
                       id="rodadaSelecionada"
-                      v-model="rodadaCasaForm.rodada"
+                      v-model="rodadaSelecionadaKey"
                       required
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
@@ -793,8 +804,8 @@
                       <template v-for="(dados, tipoRodadaId) in rodadasCadastradas" :key="tipoRodadaId">
                         <option
                           v-for="rodada in dados.rodadas"
-                          :key="rodada"
-                          :value="rodada"
+                          :key="`${tipoRodadaId}-${rodada}`"
+                          :value="`${tipoRodadaId}||${rodada}`"
                         >
                           {{ rodada }} - {{ dados.nometiporodada }}
                         </option>
@@ -844,6 +855,80 @@
       </div>
         </div>
       </div>
+
+      <!-- Modal Apostas por Rodada -->
+      <transition name="fade">
+        <div
+          v-if="modalApostasRodadaOpen"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+        >
+          <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[85vh] overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 class="text-xl font-semibold text-gray-800">Apostas da Rodada</h3>
+                <p class="text-sm text-gray-500">
+                  {{ rodadaCasaForm.rodada }} - {{ rodadasCadastradas[rodadaCasaForm.tipoRodadaId]?.nometiporodada || '' }}
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="fecharModalApostasRodada"
+                class="text-gray-500 hover:text-gray-700"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="overflow-auto">
+              <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">Páreo</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">Apostador</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">Valor</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">Valor Original</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">% Aposta</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">% Prêmio</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">Valor Prêmio</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">Valor Original Prêmio</th>
+                    <th scope="col" class="px-6 py-3 font-semibold text-gray-700">% Retirada</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                  <tr v-if="!apostasRodadaSelecionada.length">
+                    <td colspan="9" class="px-6 py-6 text-center text-gray-500">
+                      Nenhuma aposta encontrada para esta rodada.
+                    </td>
+                  </tr>
+                  <tr v-for="aposta in apostasRodadaSelecionada" :key="aposta.id">
+                    <td class="px-6 py-3 text-gray-700">{{ aposta.numeroPareo }}</td>
+                    <td class="px-6 py-3 text-gray-700">{{ aposta.apostador?.nome || '-' }}</td>
+                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valor) }}</td>
+                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valorOriginal) }}</td>
+                    <td class="px-6 py-3 text-gray-700">{{ aposta.porcentagemAposta }}%</td>
+                    <td class="px-6 py-3 text-gray-700">{{ aposta.porcentagemPremio }}%</td>
+                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valorPremio) }}</td>
+                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valorOriginalPremio) }}</td>
+                    <td class="px-6 py-3 text-gray-700">{{ aposta.porcentagemRetirada }}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="px-6 py-4 border-t bg-gray-50 text-right">
+              <button
+                type="button"
+                @click="fecharModalApostasRodada"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
 
       <!-- Dropdown de Possíveis Ganhadores -->
       <div class="max-w-7xl mx-auto mb-6">
@@ -2047,10 +2132,99 @@ const mensagemApostasTipo = ref('')
 // Estados para rodadas cadastradas
 const rodadasCadastradas = ref({})
 const carregandoRodadas = ref(false)
-const rodadaCasaForm = ref({ rodada: '', valorCasa: '' })
+const rodadaCasaForm = ref({ tipoRodadaId: '', rodada: '', valorCasa: '' })
 const enviandoRodadaCasa = ref(false)
 const mensagemRodadaCasa = ref('')
 const mensagemRodadaCasaTipo = ref('')
+const enviandoRodadaAposta = ref(false)
+const mensagemRodadaAposta = ref('')
+const mensagemRodadaApostaTipo = ref('')
+const modalApostasRodadaOpen = ref(false)
+const apostasRodadaSelecionada = ref([])
+
+const rodadaSelecionadaKey = computed({
+  get() {
+    const { tipoRodadaId, rodada } = rodadaCasaForm.value
+    if (!tipoRodadaId || !rodada) {
+      return ''
+    }
+    return `${tipoRodadaId}||${rodada}`
+  },
+  set(value) {
+    if (!value) {
+      rodadaCasaForm.value.tipoRodadaId = ''
+      rodadaCasaForm.value.rodada = ''
+      mensagemRodadaAposta.value = ''
+      return
+    }
+
+    const [tipoRodadaId, rodada] = value.split('||')
+    rodadaCasaForm.value.tipoRodadaId = tipoRodadaId || ''
+    rodadaCasaForm.value.rodada = rodada || ''
+    mensagemRodadaAposta.value = ''
+  }
+})
+
+const selecionarRodada = (tipoRodadaId, rodada) => {
+  rodadaCasaForm.value.tipoRodadaId = tipoRodadaId
+  rodadaCasaForm.value.rodada = rodada
+  mensagemRodadaAposta.value = ''
+}
+
+const handleRodadaDblClick = async (tipoRodadaId, rodada) => {
+  selecionarRodada(tipoRodadaId, rodada)
+  await enviarRodadaAposta()
+}
+
+const enviarRodadaAposta = async () => {
+  if (
+    !apostaForm.value.campeonatoId ||
+    !rodadaCasaForm.value.tipoRodadaId ||
+    !rodadaCasaForm.value.rodada
+  ) {
+    mensagemRodadaAposta.value = 'Selecione um campeonato e uma rodada antes de enviar'
+    mensagemRodadaApostaTipo.value = 'erro'
+    return
+  }
+
+  enviandoRodadaAposta.value = true
+  mensagemRodadaAposta.value = ''
+
+  try {
+    const response = await corridaApi.postRodadaAposta(
+      apostaForm.value.campeonatoId,
+      rodadaCasaForm.value.tipoRodadaId,
+      rodadaCasaForm.value.rodada
+    )
+
+    mensagemRodadaAposta.value = 'Rodada enviada para apostas com sucesso!'
+    mensagemRodadaApostaTipo.value = 'sucesso'
+
+    const apostas = Array.isArray(response) ? [...response] : []
+    apostas.sort((a, b) => {
+      const numeroA = Number(a?.numeroPareo) || 0
+      const numeroB = Number(b?.numeroPareo) || 0
+      return numeroA - numeroB
+    })
+
+    apostasRodadaSelecionada.value = apostas
+    modalApostasRodadaOpen.value = true
+
+    setTimeout(() => {
+      mensagemRodadaAposta.value = ''
+    }, 3000)
+  } catch (error) {
+    mensagemRodadaAposta.value = 'Erro ao enviar rodada para apostas. Verifique se a API está online.'
+    mensagemRodadaApostaTipo.value = 'erro'
+    console.error('Erro ao enviar rodada para apostas:', error)
+  } finally {
+    enviandoRodadaAposta.value = false
+  }
+}
+
+const fecharModalApostasRodada = () => {
+  modalApostasRodadaOpen.value = false
+}
 
 // Estados para apostadores e PDF
 const campeonatoSelecionado = ref('')
@@ -3374,7 +3548,8 @@ const enviarApostas = async () => {
 const carregarRodadasCadastradas = async () => {
   if (!apostaForm.value.campeonatoId) {
     rodadasCadastradas.value = {}
-    rodadaCasaForm.value = { rodada: '', valorCasa: '' }
+    rodadaCasaForm.value = { tipoRodadaId: '', rodada: '', valorCasa: '' }
+    mensagemRodadaAposta.value = ''
     return
   }
 
@@ -3385,6 +3560,7 @@ const carregarRodadasCadastradas = async () => {
     const response = await corridaApi.getRodadasCampeonato(apostaForm.value.campeonatoId)
     rodadasCadastradas.value = response || {}
     console.log('Rodadas carregadas:', response)
+    mensagemRodadaAposta.value = ''
   } catch (err) {
     console.error('Erro ao carregar rodadas:', err)
     rodadasCadastradas.value = {}
@@ -3422,7 +3598,7 @@ const enviarRodadaCasa = async () => {
     mensagemRodadaCasaTipo.value = 'sucesso'
     
     // Limpar formulário
-    rodadaCasaForm.value = { rodada: '', valorCasa: '' }
+    rodadaCasaForm.value = { tipoRodadaId: '', rodada: '', valorCasa: '' }
     
     // Limpar mensagem após 3 segundos
     setTimeout(() => {
