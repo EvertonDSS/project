@@ -329,7 +329,10 @@ export const useCorridaApi = () => {
       }
     },
 
-    async postVencedor(campeonatoId: string | number, cavaloId: number) {
+    async postVencedor(
+      campeonatoId: string | number,
+      cavalosIds: Array<number | string>
+    ) {
       try {
         const response = await api(`/vencedores/${campeonatoId}`, {
           method: 'POST',
@@ -337,7 +340,7 @@ export const useCorridaApi = () => {
             'Content-Type': 'application/json',
           },
           body: {
-            cavaloId: cavaloId
+            cavalosIds
           }
         })
         return response

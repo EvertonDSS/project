@@ -1353,16 +1353,7 @@
           <div class="flex justify-between items-center p-4 border-b">
             <h2 class="text-xl font-bold text-gray-800">Possíveis Ganhadores</h2>
             <div class="flex items-center space-x-2">
-              <button 
-                @click="gerarPDFGanhadoresPossiveis"
-                :disabled="!cavalosPossiveisGanhadores || cavalosPossiveisGanhadores.length === 0"
-                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <span>Download PDF</span>
-              </button>
+
               <button 
                 @click="fecharModalPossiveisGanhadores"
                 class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
@@ -1385,15 +1376,6 @@
                 <h3 class="text-lg font-semibold text-gray-800">Cavalos Disponíveis</h3>
                 <div class="flex items-center space-x-2">
                   <button
-                    @click="gerarPDFGanhadoresPossiveis"
-                    class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center space-x-2"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span>Download PDF</span>
-                  </button>
-                  <button
                     @click="salvarGanhadoresPossiveis"
                     :disabled="salvandoGanhadoresPossiveis || cavalosSelecionadosFinalistas.size === 0"
                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
@@ -1404,6 +1386,39 @@
                     </svg>
                     <span>{{ salvandoGanhadoresPossiveis ? 'Salvando...' : `Salvar Finalistas (${cavalosSelecionadosFinalistas.size})` }}</span>
                   </button>
+                </div>
+              </div>
+
+              <div
+                v-if="mensagemGanhadoresPossiveis"
+                :class="[
+                  'mb-4 text-sm font-medium',
+                  mensagemGanhadoresPossiveisTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                ]"
+              >
+                {{ mensagemGanhadoresPossiveis }}
+              </div>
+
+              <div
+                v-if="cavalosSelecionadosFinalistasDetalhes.length"
+                class="mb-4 p-3 border border-green-200 bg-green-50 rounded-lg"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-sm font-semibold text-green-700">
+                    Selecionados atualmente ({{ cavalosSelecionadosFinalistasDetalhes.length }})
+                  </h4>
+                  <span class="text-xs text-green-600 font-medium">
+                    Clique novamente para remover
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="cavalo in cavalosSelecionadosFinalistasDetalhes"
+                    :key="cavalo.id"
+                    class="px-3 py-1 bg-white border border-green-300 text-green-700 rounded-full text-xs font-medium"
+                  >
+                    {{ cavalo.nome }} (ID: {{ cavalo.id }})
+                  </span>
                 </div>
               </div>
               
@@ -1456,18 +1471,18 @@
             </div>
             <div v-else class="space-y-4">
               <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">Selecione o Cavalo Vencedor:</h3>
-                <p class="text-sm text-gray-600">Clique em um cavalo abaixo para selecioná-lo como vencedor</p>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Selecione o(s) Cavalo(s) Vencedor(es):</h3>
+                <p class="text-sm text-gray-600">Clique para selecionar ou desmarcar. É possível escolher mais de um cavalo.</p>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div 
                   v-for="cavalo in cavalosFinalistas" 
                   :key="cavalo.idcavalo || cavalo.id"
-                  @click="vencedorSelecionado = cavalo.idcavalo || cavalo.id"
+                  @click="toggleVencedorSelecionado(cavalo.idcavalo || cavalo.id)"
                   :class="[
                     'border-2 rounded-lg p-4 cursor-pointer transition-all',
-                    vencedorSelecionado === (cavalo.idcavalo || cavalo.id)
+                    vencedoresSelecionados.has(cavalo.idcavalo || cavalo.id)
                       ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-500'
                       : 'border-gray-300 hover:border-yellow-400 hover:bg-yellow-50'
                   ]"
@@ -1481,7 +1496,7 @@
                         ID: {{ cavalo.idcavalo || cavalo.id }}
                       </div>
                     </div>
-                    <div v-if="vencedorSelecionado === (cavalo.idcavalo || cavalo.id)" class="ml-2">
+                    <div v-if="vencedoresSelecionados.has(cavalo.idcavalo || cavalo.id)" class="ml-2">
                       <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                       </svg>
@@ -1494,7 +1509,7 @@
               <div class="mt-6 flex justify-center">
                 <button
                   @click="salvarVencedor"
-                  :disabled="salvandoVencedor || !vencedorSelecionado"
+                  :disabled="salvandoVencedor || !vencedoresSelecionados.size"
                   class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2 font-semibold"
                 >
                   <svg v-if="salvandoVencedor" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -1544,47 +1559,70 @@
               <p>Nenhum dado de vencedores disponível.</p>
             </div>
             <div v-else class="p-6">
-              <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">🐎 Cavalo Vencedor</h3>
-                <div class="bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg p-3 border border-green-300">
-                  <p class="text-base font-bold text-green-800">{{ dadosVencedores.nomecavalovencedor }}</p>
+              <div class="mb-5">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">📊 Resumo dos Vencedores</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <p class="text-xs uppercase text-purple-600 font-semibold tracking-wide">Cavalos vencedores</p>
+                    <p class="text-2xl font-bold text-purple-700">{{ dadosVencedores.vencedores?.length || 0 }}</p>
+                  </div>
+                  <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p class="text-xs uppercase text-green-600 font-semibold tracking-wide">Total de prêmios pagos</p>
+                    <p class="text-2xl font-bold text-green-700">{{ formatCurrency(totalPremios) }}</p>
+                  </div>
                 </div>
               </div>
 
-              <div class="mb-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">👥 Vencedores ({{ dadosVencedores.vencedores?.length || 0 }})</h3>
-                
-                <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div
-                    v-for="(vencedor, index) in dadosVencedores.vencedores"
-                    :key="index"
-                    class="rounded-lg p-3 border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                  >
-                    <div class="flex justify-between items-center">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-sm font-semibold text-purple-700">#{{ index + 1 }}</span>
-                        <span class="text-sm font-medium text-gray-800">{{ vencedor.nomeapostador }}</span>
+              <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="space-y-5">
+                <div
+                  v-for="(cavalo, index) in dadosVencedores.vencedores"
+                  :key="cavalo.cavaloId || index"
+                  class="border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+                >
+                  <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-sm font-semibold text-purple-600">#{{ index + 1 }}</span>
+                      <div>
+                        <h4 class="text-lg font-semibold text-gray-800">
+                          {{ cavalo.nomecavalovencedor || 'Cavalo não informado' }}
+                        </h4>
+                        <p class="text-xs text-gray-500">ID: {{ cavalo.cavaloId || 'N/A' }}</p>
                       </div>
-                      <div class="text-sm font-bold text-green-700">
-                        R$ {{ vencedor.valorpremio?.toFixed(2) || '0.00' }}
+                    </div>
+                    <div class="text-sm font-semibold text-emerald-600">
+                      {{ formatCurrency(calcularTotalPremiosCavalo(cavalo)) }}
+                    </div>
+                  </div>
+
+                  <div class="p-4">
+                    <div v-if="Array.isArray(cavalo.vencedores) && cavalo.vencedores.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div
+                        v-for="(apostador, apostadorIndex) in cavalo.vencedores"
+                        :key="`${cavalo.cavaloId || index}-${apostadorIndex}`"
+                        class="rounded-lg p-3 border-2 border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <div class="flex justify-between items-center">
+                          <div class="flex flex-col">
+                            <span class="text-xs font-semibold text-purple-600 uppercase tracking-wide">Apostador</span>
+                            <span class="text-sm font-medium text-gray-800">{{ apostador.nomeapostador || 'Não informado' }}</span>
+                          </div>
+                          <span class="text-xs font-semibold text-gray-500">#{{ apostadorIndex + 1 }}</span>
+                        </div>
+                        <div class="mt-3">
+                          <span class="text-xs uppercase text-green-600 font-semibold tracking-wide">Prêmio</span>
+                          <p class="text-base font-bold text-green-700">{{ formatCurrency(apostador.valorpremio) }}</p>
+                        </div>
                       </div>
+                    </div>
+                    <div v-else class="text-center py-6 text-sm text-gray-500">
+                      Nenhum apostador vencedor registrado para este cavalo.
                     </div>
                   </div>
                 </div>
-                
-                <!-- Total de Prêmios -->
-                <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="mt-4 pt-4 border-t border-gray-300">
-                  <div class="flex justify-between items-center">
-                    <span class="text-sm font-semibold text-gray-800">Total de Prêmios:</span>
-                    <span class="text-base font-bold text-green-700">
-                      R$ {{ totalPremios.toFixed(2) }}
-                    </span>
-                  </div>
-                </div>
-                
-                <div v-else class="text-center py-8 text-gray-500 text-sm">
-                  Nenhum vencedor encontrado
-                </div>
+              </div>
+
+              <div v-else class="text-center py-8 text-gray-500 text-sm">
+                Nenhum vencedor encontrado.
               </div>
             </div>
           </div>
@@ -2278,6 +2316,67 @@ const modalPossiveisGanhadoresOpen = ref(false)
 const cavalosSelecionadosFinalistas = ref(new Set())
 const cavalosSelecionadosVencedores = ref(new Set())
 const salvandoGanhadoresPossiveis = ref(false)
+const mensagemGanhadoresPossiveis = ref('')
+const mensagemGanhadoresPossiveisTipo = ref('')
+
+const cavalosSelecionadosFinalistasDetalhes = computed(() => {
+  if (!Array.isArray(cavalosPossiveisGanhadores.value) || cavalosPossiveisGanhadores.value.length === 0) {
+    return []
+  }
+
+  const selecionados = []
+  const idsSelecionados = cavalosSelecionadosFinalistas.value
+
+  cavalosPossiveisGanhadores.value.forEach(cavalo => {
+    const rawId = cavalo.id ?? cavalo.idcavalo
+    const idNumerico = typeof rawId === 'number' ? rawId : parseInt(rawId)
+
+    if (!Number.isNaN(idNumerico) && idsSelecionados.has(idNumerico)) {
+      selecionados.push({
+        id: idNumerico,
+        nome: cavalo.nome ?? cavalo.nomecavalo ?? `Cavalo ${rawId}`
+      })
+    }
+  })
+
+  return selecionados
+})
+
+const normalizarTexto = (texto) => {
+  if (!texto && texto !== 0) return ''
+  return texto
+    .toString()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim()
+}
+
+const mapaCavalosPorNome = computed(() => {
+  const mapa = new Map()
+
+  if (!Array.isArray(cavalosPossiveisGanhadores.value)) {
+    return mapa
+  }
+
+  cavalosPossiveisGanhadores.value.forEach(cavalo => {
+    const rawId = cavalo.id ?? cavalo.idcavalo
+    const idNumerico = typeof rawId === 'number' ? rawId : parseInt(rawId)
+    if (Number.isNaN(idNumerico)) {
+      return
+    }
+
+    const nomesPossiveis = [cavalo.nome, cavalo.nomecavalo, `Cavalo ${rawId}`]
+    nomesPossiveis.forEach(nome => {
+      const chave = normalizarTexto(nome)
+      if (chave) {
+        mapa.set(chave, idNumerico)
+      }
+    })
+  })
+
+  return mapa
+})
 const campeonatoVisualizarGanhadores = ref('')
 const carregandoGanhadoresVisualizacao = ref(false)
 const dadosGanhadoresVisualizacao = ref([])
@@ -2291,7 +2390,7 @@ const carregandoFinalistas = ref(false)
 const modalFinalistasOpen = ref(false)
 const htmlFinalistas = ref('')
 const cavalosFinalistas = ref([])
-const vencedorSelecionado = ref(null)
+const vencedoresSelecionados = ref(new Set())
 const salvandoVencedor = ref(false)
 
 // Estados Vencedores
@@ -2334,11 +2433,13 @@ const onCampeonatoPossiveisGanhadoresChange = async () => {
 const buscarCavalosPossiveisGanhadores = async () => {
   if (!campeonatoPossiveisGanhadores.value) return
 
+  mensagemGanhadoresPossiveis.value = ''
+  mensagemGanhadoresPossiveisTipo.value = ''
   carregandoCavalosPossiveisGanhadores.value = true
   cavalosPossiveisGanhadores.value = []
   // Limpar seleções anteriores ao carregar novos cavalos
-  cavalosSelecionadosFinalistas.value.clear()
-  cavalosSelecionadosVencedores.value.clear()
+  cavalosSelecionadosFinalistas.value = new Set()
+  cavalosSelecionadosVencedores.value = new Set()
   
   try {
     // Buscar cavalos usando o endpoint rodadas-cavalos
@@ -2378,29 +2479,48 @@ const carregarGanhadoresPossiveis = async () => {
   if (!campeonatoPossiveisGanhadores.value) return
 
   try {
+    const novosFinalistas = new Set()
+    const novosVencedores = new Set()
+
     // Buscar ganhadores possíveis já salvos usando GET (sem tipo de rodada)
     const ganhadores = await corridaApi.getGanhadoresPossiveis(
       campeonatoPossiveisGanhadores.value
     )
     
-    // O retorno é um array de objetos com a estrutura:
-    // [{ id, campeonatoId, tipoRodadaId, cavaloId, isVencedor, createdAt, updatedAt }, ...]
-    if (Array.isArray(ganhadores) && ganhadores.length > 0) {
-      // Extrair os cavaloIds dos objetos retornados
-      ganhadores.forEach(item => {
-        if (item?.cavaloId !== null && item?.cavaloId !== undefined) {
-          const numId = typeof item.cavaloId === 'number' ? item.cavaloId : parseInt(item.cavaloId)
-          if (!isNaN(numId)) {
-            // Se isVencedor for true, adicionar aos vencedores, senão aos finalistas
-            if (item.isVencedor) {
-              cavalosSelecionadosVencedores.value.add(numId)
-            } else {
-              cavalosSelecionadosFinalistas.value.add(numId)
-            }
+    const mapaNomesParaId = mapaCavalosPorNome.value
+
+    if (Array.isArray(ganhadores)) {
+      ganhadores.forEach(grupo => {
+        if (!grupo || typeof grupo !== 'object') return
+
+        Object.entries(grupo).forEach(([chave, valor]) => {
+          if (['tiporodada', 'nometiporodada'].includes(chave)) {
+            return
           }
+
+          const nomeNormalizado = normalizarTexto(chave)
+          const cavaloId = mapaNomesParaId.get(nomeNormalizado)
+
+          if (cavaloId !== undefined) {
+            novosFinalistas.add(cavaloId)
+          }
+        })
+      })
+    } else if (ganhadores && typeof ganhadores === 'object') {
+      Object.entries(ganhadores).forEach(([nomeCavalo, _valor]) => {
+        if (['tiporodada', 'nometiporodada'].includes(nomeCavalo)) {
+          return
+        }
+
+        const cavaloId = mapaNomesParaId.get(normalizarTexto(nomeCavalo))
+        if (cavaloId !== undefined) {
+          novosFinalistas.add(cavaloId)
         }
       })
     }
+
+    cavalosSelecionadosFinalistas.value = novosFinalistas
+    cavalosSelecionadosVencedores.value = novosVencedores
   } catch (error) {
     console.error('Erro ao carregar ganhadores possíveis:', error)
     // Não bloquear a exibição se houver erro ao carregar os salvos
@@ -2410,11 +2530,16 @@ const carregarGanhadoresPossiveis = async () => {
 const fecharModalPossiveisGanhadores = () => {
   modalPossiveisGanhadoresOpen.value = false
   // Limpar seleções ao fechar
-  cavalosSelecionadosFinalistas.value.clear()
-  cavalosSelecionadosVencedores.value.clear()
+  cavalosSelecionadosFinalistas.value = new Set()
+  cavalosSelecionadosVencedores.value = new Set()
+  mensagemGanhadoresPossiveis.value = ''
+  mensagemGanhadoresPossiveisTipo.value = ''
 }
 
 const toggleCavaloFinalista = (cavaloId) => {
+  mensagemGanhadoresPossiveis.value = ''
+  mensagemGanhadoresPossiveisTipo.value = ''
+
   // Garantir que o ID seja um número válido
   const id = typeof cavaloId === 'number' ? cavaloId : parseInt(cavaloId)
   
@@ -2423,11 +2548,15 @@ const toggleCavaloFinalista = (cavaloId) => {
     return
   }
   
-  if (cavalosSelecionadosFinalistas.value.has(id)) {
-    cavalosSelecionadosFinalistas.value.delete(id)
+  const novoSet = new Set(cavalosSelecionadosFinalistas.value)
+
+  if (novoSet.has(id)) {
+    novoSet.delete(id)
   } else {
-    cavalosSelecionadosFinalistas.value.add(id)
+    novoSet.add(id)
   }
+
+  cavalosSelecionadosFinalistas.value = novoSet
 }
 
 const toggleCavaloVencedor = (cavaloId) => {
@@ -2540,6 +2669,8 @@ const salvarGanhadoresPossiveis = async () => {
   if (cavalosSelecionadosFinalistas.value.size === 0) return
 
   salvandoGanhadoresPossiveis.value = true
+  mensagemGanhadoresPossiveis.value = ''
+  mensagemGanhadoresPossiveisTipo.value = ''
   
   try {
     // Converter Set para Array de números válidos, removendo null, undefined e NaN
@@ -2552,7 +2683,8 @@ const salvarGanhadoresPossiveis = async () => {
     
     // Verificar se há IDs válidos após filtragem
     if (cavalosIds.length === 0) {
-      alert('Nenhum cavalo válido selecionado.')
+      mensagemGanhadoresPossiveis.value = 'Nenhum cavalo válido selecionado.'
+      mensagemGanhadoresPossiveisTipo.value = 'erro'
       return
     }
     
@@ -2563,13 +2695,14 @@ const salvarGanhadoresPossiveis = async () => {
     )
     
     // Limpar seleções após salvar
-    cavalosSelecionadosFinalistas.value.clear()
-    
-    // Mostrar mensagem de sucesso (pode usar um toast ou alert)
-    alert('Ganhadores possíveis salvos com sucesso!')
+    await carregarGanhadoresPossiveis()
+
+    mensagemGanhadoresPossiveis.value = 'Ganhadores possíveis salvos com sucesso!'
+    mensagemGanhadoresPossiveisTipo.value = 'sucesso'
   } catch (error) {
     console.error('Erro ao salvar ganhadores possíveis:', error)
-    alert('Erro ao salvar ganhadores possíveis. Tente novamente.')
+    mensagemGanhadoresPossiveis.value = 'Erro ao salvar ganhadores possíveis. Tente novamente.'
+    mensagemGanhadoresPossiveisTipo.value = 'erro'
   } finally {
     salvandoGanhadoresPossiveis.value = false
   }
@@ -2589,10 +2722,29 @@ const totalPremios = computed(() => {
   if (!dadosVencedores.value?.vencedores || !Array.isArray(dadosVencedores.value.vencedores)) {
     return 0
   }
-  return dadosVencedores.value.vencedores.reduce((total, vencedor) => {
-    return total + (vencedor.valorpremio || 0)
+
+  return dadosVencedores.value.vencedores.reduce((accTotal, vencedor) => {
+    if (!Array.isArray(vencedor.vencedores)) {
+      return accTotal
+    }
+
+    const subtotal = vencedor.vencedores.reduce((acc, vencedorApostador) => {
+      return acc + (Number(vencedorApostador.valorpremio) || 0)
+    }, 0)
+
+    return accTotal + subtotal
   }, 0)
 })
+
+const calcularTotalPremiosCavalo = (cavalo) => {
+  if (!cavalo || !Array.isArray(cavalo.vencedores)) {
+    return 0
+  }
+
+  return cavalo.vencedores.reduce((acc, vencedor) => {
+    return acc + (Number(vencedor.valorpremio) || 0)
+  }, 0)
+}
 
 const carregarFinalistas = async () => {
   if (!campeonatoFinalistas.value) return
@@ -2644,7 +2796,34 @@ const carregarFinalistas = async () => {
     // 5. Armazenar cavalos filtrados e gerar HTML
     cavalosFinalistas.value = cavalosFiltrados
     htmlFinalistas.value = gerarHTMLFinalistasFiltrados(cavalosFiltrados)
-    vencedorSelecionado.value = null
+
+    // 6. Buscar vencedores atuais para pré-selecionar
+    const idsDisponiveis = new Set(
+      cavalosFiltrados
+        .map(c => c.idcavalo ?? c.id)
+        .map(rawId => (typeof rawId === 'number' ? rawId : parseInt(rawId)))
+        .filter(id => !Number.isNaN(id))
+    )
+
+    const vencedoresSet = new Set()
+
+    try {
+      const vencedoresAtuais = await corridaApi.getVencedoresCampeonato(campeonatoFinalistas.value)
+
+      if (vencedoresAtuais && Array.isArray(vencedoresAtuais.vencedores)) {
+        vencedoresAtuais.vencedores.forEach(item => {
+          const rawId = item?.cavaloId
+          const id = typeof rawId === 'number' ? rawId : parseInt(rawId)
+          if (!Number.isNaN(id) && idsDisponiveis.has(id)) {
+            vencedoresSet.add(id)
+          }
+        })
+      }
+    } catch (erroVencedores) {
+      console.error('Erro ao carregar vencedores atuais:', erroVencedores)
+    }
+
+    vencedoresSelecionados.value = vencedoresSet
     modalFinalistasOpen.value = true
   } catch (e) {
     console.error('Erro ao carregar finalistas:', e)
@@ -2779,26 +2958,39 @@ const gerarHTMLFinalistas = (porTipo) => {
 
 const fecharModalFinalistas = () => {
   modalFinalistasOpen.value = false
-  vencedorSelecionado.value = null
+  vencedoresSelecionados.value = new Set()
   cavalosFinalistas.value = []
 }
 
+const toggleVencedorSelecionado = (cavaloId) => {
+  if (cavaloId === undefined || cavaloId === null) return
+
+  const novoSet = new Set(vencedoresSelecionados.value)
+
+  if (novoSet.has(cavaloId)) {
+    novoSet.delete(cavaloId)
+  } else {
+    novoSet.add(cavaloId)
+  }
+
+  vencedoresSelecionados.value = novoSet
+}
+
 const salvarVencedor = async () => {
-  if (!vencedorSelecionado.value || !campeonatoFinalistas.value) return
+  if (!vencedoresSelecionados.value.size || !campeonatoFinalistas.value) return
 
   salvandoVencedor.value = true
   
   try {
+    const cavalosIds = Array.from(vencedoresSelecionados.value)
+
     await corridaApi.postVencedor(
       campeonatoFinalistas.value,
-      vencedorSelecionado.value
+      cavalosIds
     )
-    
-    alert('Vencedor salvo com sucesso!')
     fecharModalFinalistas()
   } catch (error) {
     console.error('Erro ao salvar vencedor:', error)
-    alert('Erro ao salvar vencedor. Tente novamente.')
   } finally {
     salvandoVencedor.value = false
   }
@@ -2923,8 +3115,16 @@ const gerarPDFVencedores = () => {
   }
 
   const dados = dadosVencedores.value
-  const campeonatoNome = nomeCampeonatoVencedores.value || 'N/A'
-  const totalPremios = dados.vencedores.reduce((sum, v) => sum + (v.valorpremio || 0), 0)
+  const campeonatoNome = nomeCampeonatoVencedores.value || dados.nomeCampeonato || 'N/A'
+  const totalPremiosCampeonato = dados.vencedores.reduce((sum, cavalo) => {
+    if (!Array.isArray(cavalo.vencedores)) {
+      return sum
+    }
+    const premiosCavalo = cavalo.vencedores.reduce((acc, apostador) => {
+      return acc + (Number(apostador.valorpremio) || 0)
+    }, 0)
+    return sum + premiosCavalo
+  }, 0)
 
   // Criar conteúdo HTML para o PDF
   const content = `
@@ -2936,16 +3136,23 @@ const gerarPDFVencedores = () => {
           .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #7c3aed; padding-bottom: 15px; }
           .title { font-size: 24px; font-weight: bold; color: #7c3aed; }
           .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
-          .cavalo-vencedor { background-color: #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #10b981; }
-          .cavalo-vencedor h3 { margin: 0 0 10px 0; color: #065f46; font-size: 18px; }
-          .cavalo-vencedor p { margin: 0; font-size: 22px; font-weight: bold; color: #047857; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-          th { background-color: #f3e8ff; font-weight: bold; color: #6b21a8; }
+          .resumo { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+          .card { flex: 1 1 220px; border: 1px solid #e0e7ff; background: #f5f3ff; padding: 14px; border-radius: 8px; }
+          .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #5b21b6; margin-bottom: 6px; }
+          .card-value { font-size: 20px; font-weight: bold; color: #4338ca; }
+          .cavalo-section { border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.08); }
+          .cavalo-header { background: linear-gradient(90deg, #ede9fe, #e0f2fe); padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+          .cavalo-header h3 { margin: 0; font-size: 18px; color: #312e81; }
+          .cavalo-header p { margin: 4px 0 0; font-size: 13px; color: #4c1d95; }
+          .cavalo-total { font-weight: bold; color: #047857; font-size: 18px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #e5e7eb; padding: 12px 14px; text-align: left; }
+          th { background-color: #ede9fe; font-weight: bold; color: #4c1d95; }
           tbody tr:nth-child(even) { background-color: #f9fafb; }
           tfoot th, tfoot td { background-color: #f3f4f6; font-weight: bold; }
           .text-right { text-align: right; }
           .text-green { color: #059669; font-weight: bold; }
+          .empty-row { text-align: center; color: #6b7280; font-style: italic; }
         </style>
       </head>
       <body>
@@ -2953,36 +3160,60 @@ const gerarPDFVencedores = () => {
           <div class="title">Vencedores do Campeonato</div>
           <div class="subtitle">${campeonatoNome}</div>
         </div>
-        
-        <div class="cavalo-vencedor">
-          <h3>🐎 Cavalo Vencedor</h3>
-          <p>${dados.nomecavalovencedor || 'N/A'}</p>
+
+        <div class="resumo">
+          <div class="card">
+            <div class="card-title">Cavalos vencedores</div>
+            <div class="card-value">${dados.vencedores.length}</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Total de prêmios pagos</div>
+            <div class="card-value">${formatCurrency(totalPremiosCampeonato)}</div>
+          </div>
         </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Apostador</th>
-              <th class="text-right">Prêmio</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${dados.vencedores.map((vencedor, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${vencedor.nomeapostador || 'N/A'}</td>
-                <td class="text-right text-green">${formatCurrency(vencedor.valorpremio || 0)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th colspan="2">TOTAL DE PRÊMIOS</th>
-              <th class="text-right text-green">${formatCurrency(totalPremios)}</th>
-            </tr>
-          </tfoot>
-        </table>
+
+        ${dados.vencedores.map((cavalo, index) => {
+          const premiosCavalo = calcularTotalPremiosCavalo(cavalo)
+          const linhas = Array.isArray(cavalo.vencedores) && cavalo.vencedores.length > 0
+            ? cavalo.vencedores.map((apostador, apostadorIndex) => `
+                <tr>
+                  <td>${apostadorIndex + 1}</td>
+                  <td>${apostador.nomeapostador || 'N/A'}</td>
+                  <td class="text-right text-green">${formatCurrency(apostador.valorpremio)}</td>
+                </tr>
+              `).join('')
+            : '<tr><td class="empty-row" colspan="3">Nenhum apostador vencedor registrado para este cavalo.</td></tr>'
+
+          return `
+            <div class="cavalo-section">
+              <div class="cavalo-header">
+                <div>
+                  <h3>🐎 Cavalo ${index + 1}: ${cavalo.nomecavalovencedor || 'N/A'}</h3>
+                  <p>ID: ${cavalo.cavaloId || 'N/A'}</p>
+                </div>
+                <div class="cavalo-total">${formatCurrency(premiosCavalo)}</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Apostador</th>
+                    <th class="text-right">Prêmio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${linhas}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th colspan="2">TOTAL DO CAVALO</th>
+                    <th class="text-right text-green">${formatCurrency(premiosCavalo)}</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          `
+        }).join('')}
       </body>
     </html>
   `
