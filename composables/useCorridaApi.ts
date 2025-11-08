@@ -125,7 +125,7 @@ export const useCorridaApi = () => {
       payload: { nomeRodada: string; cavaloId: number | string }
     ) {
       try {
-        const response = await api(`/vencedores-rodadas/${campeonatoId}`, {
+        const response = await api(`/vencedores-rodada/${campeonatoId}`, {
           method: 'POST',
           body: payload
         })
