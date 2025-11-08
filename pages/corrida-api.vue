@@ -225,11 +225,53 @@
                     class="p-4 bg-white rounded-lg border border-purple-100 hover:shadow-md transition-shadow"
                   >
                     <div class="flex items-center justify-between">
-                      <div>
+                      <div class="flex-1">
+                        <div v-if="tipoRodadaEditandoId === tipoRodada.id" class="space-y-2">
+                          <input
+                            v-model="tipoRodadaNomeEdicao"
+                            type="text"
+                            class="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Novo nome do tipo de rodada"
+                          />
+                          <p class="text-xs text-gray-500">ID: {{ tipoRodada.id }}</p>
+                        </div>
+                        <div v-else>
                         <h4 class="font-semibold text-gray-800">{{ tipoRodada.nome }}</h4>
                         <p class="text-sm text-gray-600">ID: {{ tipoRodada.id }}</p>
                       </div>
+                      </div>
+                      <div class="flex items-center space-x-3">
+                        <template v-if="tipoRodadaEditandoId === tipoRodada.id">
                       <button
+                            type="button"
+                            @click="salvarEdicaoTipoRodada()"
+                            :disabled="atualizandoTipoRodadaId === tipoRodada.id || !tipoRodadaNomeEdicao.trim()"
+                            class="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            title="Salvar alterações"
+                          >
+                            {{ atualizandoTipoRodadaId === tipoRodada.id ? 'Salvando...' : 'Salvar' }}
+                          </button>
+                          <button
+                            type="button"
+                            @click="cancelarEdicaoTipoRodada"
+                            :disabled="atualizandoTipoRodadaId === tipoRodada.id"
+                            class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium disabled:bg-gray-200 disabled:text-gray-400"
+                            title="Cancelar edição"
+                          >
+                            Cancelar
+                          </button>
+                        </template>
+                        <template v-else>
+                          <button
+                            type="button"
+                            @click="iniciarEdicaoTipoRodada(tipoRodada)"
+                            class="text-purple-600 hover:text-purple-800 transition-colors text-sm font-medium"
+                            title="Editar"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
                         @click="deletarTipoRodada(tipoRodada.id)"
                         class="text-red-600 hover:text-red-800 transition-colors"
                         title="Excluir"
@@ -238,6 +280,8 @@
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
                       </button>
+                        </template>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -862,8 +906,8 @@
           v-if="modalApostasRodadaOpen"
           class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
         >
-          <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[85vh] overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-4 border-b">
+          <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
               <div>
                 <h3 class="text-xl font-semibold text-gray-800">Apostas da Rodada</h3>
                 <p class="text-sm text-gray-500">
@@ -881,7 +925,40 @@
               </button>
             </div>
 
-            <div class="overflow-auto">
+            <div v-if="editandoApostasRodada" class="px-6 py-4 border-t border-b bg-indigo-50 flex flex-wrap gap-4">
+              <div class="flex flex-col space-y-1">
+                <span class="text-sm font-semibold text-indigo-800">Valor Original do Prêmio (global)</span>
+                <input
+                  v-model="valorOriginalPremioGlobal"
+                  type="text"
+                  class="w-40 px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  placeholder="Ex: 10000.00"
+                />
+              </div>
+              <div class="flex flex-col space-y-1">
+                <span class="text-sm font-semibold text-indigo-800">Valor Prêmio (global)</span>
+                <input
+                  :value="valorPremioGlobal"
+                  type="text"
+                  class="w-40 px-3 py-2 border border-indigo-200 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed"
+                  readonly
+                />
+              </div>
+              <div class="flex flex-col space-y-1">
+                <span class="text-sm font-semibold text-indigo-800">% Retirada (global)</span>
+                <input
+                  v-model="porcentagemRetiradaGlobal"
+                  type="text"
+                  class="w-32 px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  placeholder="Ex: 10.00"
+                />
+              </div>
+              <div class="flex-1 min-w-[200px] bg-white border border-indigo-200 rounded-lg p-3 text-sm text-indigo-700">
+                Os campos <strong>Valor Original Prêmio</strong> e <strong>% Retirada</strong> serão aplicados a todas as apostas desta rodada.
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-auto">
               <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
                 <thead class="bg-gray-50">
                   <tr>
@@ -902,29 +979,188 @@
                       Nenhuma aposta encontrada para esta rodada.
                     </td>
                   </tr>
-                  <tr v-for="aposta in apostasRodadaSelecionada" :key="aposta.id">
-                    <td class="px-6 py-3 text-gray-700">{{ aposta.numeroPareo }}</td>
-                    <td class="px-6 py-3 text-gray-700">{{ aposta.apostador?.nome || '-' }}</td>
-                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valor) }}</td>
-                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valorOriginal) }}</td>
-                    <td class="px-6 py-3 text-gray-700">{{ aposta.porcentagemAposta }}%</td>
-                    <td class="px-6 py-3 text-gray-700">{{ aposta.porcentagemPremio }}%</td>
-                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valorPremio) }}</td>
-                    <td class="px-6 py-3 text-gray-700">{{ formatCurrency(aposta.valorOriginalPremio) }}</td>
-                    <td class="px-6 py-3 text-gray-700">{{ aposta.porcentagemRetirada }}%</td>
+                  <tr v-for="(aposta, index) in apostasRodadaParaExibicao" :key="aposta.id || index">
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <input
+                          v-model="aposta.numeroPareo"
+                          type="text"
+                          class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </template>
+                      <template v-else>
+                        {{ aposta.numeroPareo }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <div class="space-y-2">
+                          <input
+                            v-model="aposta.apostador.nome"
+                            type="text"
+                            placeholder="Nome do apostador"
+                            class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                          />
+                          <input
+                            v-model="aposta.apostador.id"
+                            type="text"
+                            placeholder="ID do apostador"
+                            class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                          />
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="flex flex-col">
+                          <span>{{ aposta.apostador?.nome || '-' }}</span>
+                          <span v-if="aposta.apostador?.id" class="text-xs text-gray-500">
+                            ID: {{ aposta.apostador.id }}
+                          </span>
+                        </div>
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <input
+                          v-model="aposta.valor"
+                          type="text"
+                          class="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </template>
+                      <template v-else>
+                        {{ formatCurrency(aposta.valor) }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <input
+                          v-model="aposta.valorOriginal"
+                          type="text"
+                          class="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </template>
+                      <template v-else>
+                        {{ formatCurrency(aposta.valorOriginal) }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <div class="flex items-center space-x-2">
+                          <input
+                            v-model="aposta.porcentagemAposta"
+                            type="text"
+                            class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                          />
+                          <span class="text-sm text-gray-500">%</span>
+                        </div>
+                      </template>
+                      <template v-else>
+                        {{ formatPercent(aposta.porcentagemAposta) }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <div class="flex items-center space-x-2">
+                          <input
+                            v-model="aposta.porcentagemPremio"
+                            type="text"
+                            class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                          />
+                          <span class="text-sm text-gray-500">%</span>
+                        </div>
+                      </template>
+                      <template v-else>
+                        {{ formatPercent(aposta.porcentagemPremio) }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        <input
+                          v-model="aposta.valorPremio"
+                          type="text"
+                          class="w-32 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </template>
+                      <template v-else>
+                        {{ formatCurrency(aposta.valorPremio) }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        {{ formatCurrency(valorOriginalPremioGlobal || aposta.valorOriginalPremio) }}
+                      </template>
+                      <template v-else>
+                        {{ formatCurrency(aposta.valorOriginalPremio) }}
+                      </template>
+                    </td>
+                    <td class="px-6 py-3 text-gray-700">
+                      <template v-if="editandoApostasRodada">
+                        {{ formatPercent(porcentagemRetiradaGlobal || aposta.porcentagemRetirada) }}
+                      </template>
+                      <template v-else>
+                        {{ formatPercent(aposta.porcentagemRetirada) }}
+                      </template>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div class="px-6 py-4 border-t bg-gray-50 text-right">
+            <div class="px-6 py-4 border-t bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
+              <div
+                v-if="mensagemEdicaoApostasRodada"
+                :class="[
+                  'text-sm font-medium',
+                  mensagemEdicaoApostasRodadaTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                ]"
+              >
+                {{ mensagemEdicaoApostasRodada }}
+              </div>
+              <div class="flex flex-wrap items-center justify-end gap-3">
+                <button
+                  v-if="!editandoApostasRodada"
+                  type="button"
+                  @click="habilitarEdicaoApostasRodada"
+                  :disabled="!apostasRodadaSelecionada.length"
+                  class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:text-gray-500"
+                >
+                  Editar Apostas
+                </button>
+                <template v-else>
+                  <button
+                    type="button"
+                    @click="cancelarEdicaoApostasRodada"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    :disabled="salvandoApostasRodada"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    @click="salvarEdicaoApostasRodada"
+                    :disabled="salvandoApostasRodada"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    <svg
+                      v-if="salvandoApostasRodada"
+                      class="animate-spin h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ salvandoApostasRodada ? 'Salvando...' : 'Salvar Alterações' }}</span>
+                  </button>
+                </template>
               <button
                 type="button"
                 @click="fecharModalApostasRodada"
                 class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  :disabled="salvandoApostasRodada"
               >
                 Fechar
               </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1153,7 +1389,7 @@
             <div class="flex justify-between items-center">
               <div>
                 <h2 class="text-2xl font-bold">Relatório de Pagamentos</h2>
-                <p class="text-red-100 text-sm mt-1">{{ dadosRelatorioPagamentos?.campeonato?.nome || '' }}</p>
+                <p class="text-red-100 text-sm mt-1">{{ descricaoRelatorioPagamentos }}</p>
               </div>
               <div class="flex items-center space-x-3">
                 <button 
@@ -1188,8 +1424,8 @@
               <!-- Informações do Campeonato -->
               <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                 <div class="flex items-center space-x-2">
-                  <span class="text-lg font-semibold text-gray-800">Campeonato:</span>
-                  <span class="text-lg text-gray-700">{{ dadosRelatorioPagamentos.campeonato?.nome || 'N/A' }}</span>
+                  <span class="text-lg font-semibold text-gray-800">{{ tituloResumoRelatorioPagamentos }}</span>
+                  <span class="text-lg text-gray-700">{{ descricaoRelatorioPagamentos || 'N/A' }}</span>
                 </div>
               </div>
 
@@ -1206,8 +1442,8 @@
                   </thead>
                   <tbody>
                     <tr 
-                      v-for="apostador in dadosRelatorioPagamentos.apostadores" 
-                      :key="apostador.id"
+                      v-for="(apostador, index) in dadosRelatorioPagamentos.apostadores" 
+                      :key="apostador.id ?? `${apostador.nome}-${index}`"
                       class="hover:bg-gray-50 transition-colors"
                     >
                       <td class="border border-gray-300 px-4 py-3 text-gray-800 font-medium">{{ apostador.nome }}</td>
@@ -1250,6 +1486,62 @@
                 <p class="text-gray-600">Nenhum apostador encontrado para este campeonato.</p>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Texto Copiável -->
+      <div
+        v-if="modalTextoRelatorioOpen"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="fecharModalTextoRelatorio"
+      >
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+          <div class="flex justify-between items-center p-4 border-b bg-gray-900 text-white">
+            <div>
+              <h2 class="text-xl font-bold">Relatório de Pagamentos - Formato Copiável</h2>
+              <p class="text-sm text-gray-300 mt-1">{{ descricaoRelatorioPagamentos }}</p>
+            </div>
+            <button
+              @click="fecharModalTextoRelatorio"
+              class="text-gray-300 hover:text-white transition-colors"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="p-6 bg-gray-50">
+            <p class="text-sm text-gray-600 mb-4">
+              Copie o conteúdo abaixo (já estruturado em colunas) e cole na planilha ou editor desejado.
+            </p>
+            <button
+              @click="copiarRelatorioTexto"
+              class="mb-4 inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16h8M8 12h8m-2-8h3a1 1 0 011 1v14a1 1 0 01-1 1H7a1 1 0 01-1-1V5a1 1 0 011-1h3"></path>
+              </svg>
+              Copiar texto
+            </button>
+            <p v-if="mensagemTextoCopiado" class="mb-3 text-sm" :class="mensagemTextoCopiado.includes('não') ? 'text-red-600' : 'text-green-600'">
+              {{ mensagemTextoCopiado }}
+            </p>
+            <textarea
+              :value="relatorioTextoCopiavel"
+              readonly
+              class="w-full h-64 border border-gray-300 rounded-lg p-4 font-mono text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            ></textarea>
+          </div>
+
+          <div class="flex justify-end space-x-3 p-4 border-t bg-gray-100">
+            <button
+              @click="fecharModalTextoRelatorio"
+              class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       </div>
@@ -1308,6 +1600,42 @@
                   </svg>
                   <span>{{ carregandoFinalistas ? 'Buscando...' : 'Carregar Finalistas' }}</span>
                 </button>
+
+                <button
+                  @click="abrirModalSelecionarCampeao"
+                  :disabled="carregandoSelecaoCampeao || !campeonatoFinalistas"
+                  class="mt-3 w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2 disabled:bg-gray-400 disabled:hover:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    v-if="!carregandoSelecaoCampeao"
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 2c-2.21 0-4 1.567-4 3.5V18h8v-1.5c0-1.933-1.79-3.5-4-3.5z"></path>
+                  </svg>
+                  <svg
+                    v-else
+                    class="animate-spin w-5 h-5 -ml-1 mr-2 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoSelecaoCampeao ? 'Carregando dados...' : 'Selecionar Campeão de Rodada' }}</span>
+                </button>
+
+                <div
+                  v-if="mensagemSelecaoCampeao"
+                  :class="[
+                    'mt-3 text-sm font-medium',
+                    mensagemSelecaoCampeaoTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                  ]"
+                >
+                  {{ mensagemSelecaoCampeao }}
+                </div>
               </div>
 
               <!-- Card de Vencedores -->
@@ -1342,6 +1670,132 @@
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Selecionar Campeão -->
+      <div
+        v-if="modalSelecionarCampeaoOpen"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="fecharModalSelecionarCampeao"
+      >
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+          <div class="flex justify-between items-center p-4 border-b">
+            <h2 class="text-xl font-bold text-gray-800">Selecionar Campeão</h2>
+            <button
+              @click="fecharModalSelecionarCampeao"
+              class="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-4">
+            <div v-if="carregandoSelecaoCampeao" class="py-12 text-center text-gray-600 space-y-3">
+              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto"></div>
+              <p>Carregando dados para seleção...</p>
+            </div>
+            <template v-else>
+              <p class="text-sm text-gray-600">
+                Escolha o cavalo e a rodada para definir o campeão específico deste campeonato.
+              </p>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Campeonato
+                </label>
+                <input
+                  type="text"
+                  :value="nomeCampeonatoFinalistas || 'Nenhum campeonato selecionado'"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                  disabled
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Rodada
+                </label>
+                <select
+                  v-model="rodadaSelecionadaCampeao"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="" disabled>Selecione uma rodada</option>
+                  <option
+                    v-for="rodada in rodadasDisponiveisCampeao"
+                    :key="rodada.valor"
+                    :value="rodada.valor"
+                  >
+                    {{ rodada.rotulo }}
+                  </option>
+                </select>
+                <p v-if="!rodadasDisponiveisCampeao.length" class="mt-2 text-sm text-gray-500">
+                  Nenhuma rodada encontrada. Carregue os dados de rodadas do campeonato.
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Cavalo
+                </label>
+                <select
+                  v-model="campeaoSelecionado"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="" disabled>Selecione um cavalo</option>
+                  <option
+                    v-for="cavalo in cavalosDisponiveisCampeao"
+                    :key="cavalo.id"
+                    :value="cavalo.id"
+                  >
+                    {{ cavalo.nome }}
+                  </option>
+                </select>
+                <p v-if="!cavalosDisponiveisCampeao.length" class="mt-2 text-sm text-gray-500">
+                  Nenhum cavalo encontrado. Verifique se os finalistas foram carregados para este campeonato.
+                </p>
+              </div>
+
+              
+
+              <div
+                v-if="mensagemModalCampeao"
+                :class="[
+                  'text-sm font-medium',
+                  mensagemModalCampeaoTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                ]"
+              >
+                {{ mensagemModalCampeao }}
+              </div>
+            </template>
+          </div>
+
+          <div class="flex justify-end space-x-3 p-4 border-t bg-gray-50">
+            <button
+              @click="fecharModalSelecionarCampeao"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="confirmarSelecaoCampeao"
+              :disabled="salvandoSelecaoCampeao || !campeaoSelecionado || !rodadaSelecionadaCampeao || carregandoSelecaoCampeao"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <svg
+                v-if="salvandoSelecaoCampeao"
+                class="animate-spin h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ salvandoSelecaoCampeao ? 'Salvando...' : 'Confirmar Seleção' }}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1672,6 +2126,52 @@
                   </select>
                 </div>
 
+                <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label class="inline-flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      v-model="filtrarSaldosNegativos"
+                      :disabled="filtrarSaldosPositivos"
+                      class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <span class="text-sm text-gray-700">Mostrar apenas saldos negativos</span>
+                  </label>
+
+                  <label class="inline-flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      v-model="filtrarSaldosPositivos"
+                      :disabled="filtrarSaldosNegativos"
+                      class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <span class="text-sm text-gray-700">Mostrar apenas saldos positivos</span>
+                  </label>
+                </div>
+
+                <div class="mb-4">
+                  <span class="block text-sm font-medium text-gray-700 mb-2">
+                    Selecionar múltiplos campeonatos
+                  </span>
+                  <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                    <label
+                      v-for="campeonato in campeonatos"
+                      :key="`multi-${campeonato.id}`"
+                      class="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-50"
+                    >
+                      <span class="text-sm text-gray-700">{{ campeonato.nome }}</span>
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                        :value="campeonato.id"
+                        v-model="relatorioPagamentosCampeonatosSelecionados"
+                      />
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">
+                    Marque os campeonatos desejados para gerar um relatório consolidado.
+                  </p>
+                </div>
+
                 <button 
                   @click="gerarRelatorioPagamentos"
                   :disabled="carregandoRelatorioPagamentos || !relatorioPagamentosCampeonato"
@@ -1682,6 +2182,43 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   <span>{{ carregandoRelatorioPagamentos ? 'Gerando...' : 'Gerar Relatório' }}</span>
+                </button>
+
+                <button
+                  @click="gerarRelatorioPagamentosMultiplo"
+                  :disabled="carregandoRelatorioPagamentos || relatorioPagamentosCampeonatosSelecionados.length === 0"
+                  class="mt-3 w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg
+                    v-if="!carregandoRelatorioPagamentos"
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a3 3 0 00-6 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zM9 9V7a1 1 0 012 0v2"></path>
+                  </svg>
+                  <svg
+                    v-else
+                    class="animate-spin w-5 h-5 -ml-1 mr-2 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ carregandoRelatorioPagamentos ? 'Gerando...' : 'Gerar Relatório (Múltiplos)' }}</span>
+                </button>
+
+                <button
+                  @click="abrirModalTextoRelatorio"
+                  :disabled="!dadosRelatorioPagamentos || !dadosRelatorioPagamentos.apostadores || dadosRelatorioPagamentos.apostadores.length === 0"
+                  class="mt-3 w-full px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M5 11h14M5 15h14M5 19h14"></path>
+                  </svg>
+                  <span>Ver formato copiável</span>
                 </button>
               </div>
 
@@ -2146,6 +2683,9 @@ const criandoTipoRodada = ref(false)
 const novoTipoRodada = ref({ nome: '' })
 const mensagemTipoRodada = ref('')
 const mensagemTipoRodadaTipo = ref('')
+const atualizandoTipoRodadaId = ref(null)
+const tipoRodadaEditandoId = ref(null)
+const tipoRodadaNomeEdicao = ref('')
 
 // Estados para criar pareo
 const pareoFormCriar = ref({ campeonatoId: '', tipoRodadaId: '', texto: '' })
@@ -2179,6 +2719,14 @@ const mensagemRodadaAposta = ref('')
 const mensagemRodadaApostaTipo = ref('')
 const modalApostasRodadaOpen = ref(false)
 const apostasRodadaSelecionada = ref([])
+const editandoApostasRodada = ref(false)
+const apostasRodadaEditaveis = ref([])
+const salvandoApostasRodada = ref(false)
+const mensagemEdicaoApostasRodada = ref('')
+const mensagemEdicaoApostasRodadaTipo = ref('')
+const valorOriginalPremioGlobal = ref('')
+const valorPremioGlobal = ref('')
+const porcentagemRetiradaGlobal = ref('')
 
 const rodadaSelecionadaKey = computed({
   get() {
@@ -2208,6 +2756,12 @@ const selecionarRodada = (tipoRodadaId, rodada) => {
   rodadaCasaForm.value.rodada = rodada
   mensagemRodadaAposta.value = ''
 }
+
+const apostasRodadaParaExibicao = computed(() => {
+  return editandoApostasRodada.value
+    ? apostasRodadaEditaveis.value
+    : apostasRodadaSelecionada.value
+})
 
 const handleRodadaDblClick = async (tipoRodadaId, rodada) => {
   selecionarRodada(tipoRodadaId, rodada)
@@ -2246,6 +2800,10 @@ const enviarRodadaAposta = async () => {
     })
 
     apostasRodadaSelecionada.value = apostas
+    apostasRodadaEditaveis.value = apostas.map(aposta => prepararApostaParaEdicao(aposta))
+    editandoApostasRodada.value = false
+    mensagemEdicaoApostasRodada.value = ''
+    mensagemEdicaoApostasRodadaTipo.value = ''
     modalApostasRodadaOpen.value = true
 
     setTimeout(() => {
@@ -2262,6 +2820,10 @@ const enviarRodadaAposta = async () => {
 
 const fecharModalApostasRodada = () => {
   modalApostasRodadaOpen.value = false
+  editandoApostasRodada.value = false
+  salvandoApostasRodada.value = false
+  mensagemEdicaoApostasRodada.value = ''
+  mensagemEdicaoApostasRodadaTipo.value = ''
 }
 
 // Estados para apostadores e PDF
@@ -2392,6 +2954,17 @@ const htmlFinalistas = ref('')
 const cavalosFinalistas = ref([])
 const vencedoresSelecionados = ref(new Set())
 const salvandoVencedor = ref(false)
+const modalSelecionarCampeaoOpen = ref(false)
+const campeaoSelecionado = ref('')
+const rodadaSelecionadaCampeao = ref('')
+const cavalosDisponiveisCampeao = ref([])
+const rodadasDisponiveisCampeao = ref([])
+const carregandoSelecaoCampeao = ref(false)
+const salvandoSelecaoCampeao = ref(false)
+const mensagemSelecaoCampeao = ref('')
+const mensagemSelecaoCampeaoTipo = ref('')
+const mensagemModalCampeao = ref('')
+const mensagemModalCampeaoTipo = ref('')
 
 // Estados Vencedores
 const campeonatoVencedores = ref('')
@@ -2404,6 +2977,39 @@ const relatorioPagamentosCampeonato = ref('')
 const carregandoRelatorioPagamentos = ref(false)
 const dadosRelatorioPagamentos = ref(null)
 const modalRelatorioPagamentosOpen = ref(false)
+const modalTextoRelatorioOpen = ref(false)
+const filtrarSaldosNegativos = ref(false)
+const filtrarSaldosPositivos = ref(false)
+const relatorioPagamentosCampeonatosSelecionados = ref([])
+const mensagemTextoCopiado = ref('')
+
+const descricaoRelatorioPagamentos = computed(() => {
+  if (!dadosRelatorioPagamentos.value) {
+    return ''
+  }
+
+  const dados = dadosRelatorioPagamentos.value
+
+  if (Array.isArray(dados.campeonatos) && dados.campeonatos.length > 0) {
+    return dados.campeonatos.map((c) => c?.nome || `ID ${c?.id ?? ''}`).join(', ')
+  }
+
+  return dados.campeonato?.nome || ''
+})
+
+const tituloResumoRelatorioPagamentos = computed(() => {
+  if (!dadosRelatorioPagamentos.value) {
+    return 'Campeonato:'
+  }
+
+  const dados = dadosRelatorioPagamentos.value
+
+  if (Array.isArray(dados.campeonatos) && dados.campeonatos.length > 0) {
+    return 'Campeonatos:'
+  }
+
+  return 'Campeonato:'
+})
 
 // Estados para dropdowns
 const dropdownsAbertos = ref({
@@ -2962,6 +3568,146 @@ const fecharModalFinalistas = () => {
   cavalosFinalistas.value = []
 }
 
+const abrirModalSelecionarCampeao = async () => {
+  if (!campeonatoFinalistas.value) {
+    mensagemSelecaoCampeao.value = 'Selecione um campeonato antes de escolher o campeão da rodada.'
+    mensagemSelecaoCampeaoTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemSelecaoCampeao.value = ''
+    }, 3000)
+    return
+  }
+
+  mensagemSelecaoCampeao.value = ''
+  mensagemSelecaoCampeaoTipo.value = ''
+  campeaoSelecionado.value = ''
+  rodadaSelecionadaCampeao.value = ''
+  mensagemModalCampeao.value = ''
+  mensagemModalCampeaoTipo.value = ''
+  cavalosDisponiveisCampeao.value = []
+  rodadasDisponiveisCampeao.value = []
+
+  modalSelecionarCampeaoOpen.value = true
+  carregandoSelecaoCampeao.value = true
+
+  try {
+    const [cavalosResponse, rodadasResponse] = await Promise.all([
+      corridaApi.getRodadasCavalos(campeonatoFinalistas.value),
+      corridaApi.getRodadasCampeonato(campeonatoFinalistas.value)
+    ])
+
+    const cavalosLista = Array.isArray(cavalosResponse)
+      ? cavalosResponse
+        .map((cavalo) => {
+          const rawId = cavalo.id ?? cavalo.idcavalo
+          if (rawId === undefined || rawId === null) {
+            return null
+          }
+          const idNumerico = typeof rawId === 'number' ? rawId : parseInt(rawId, 10)
+          if (Number.isNaN(idNumerico)) {
+            return null
+          }
+          const nome =
+            cavalo.nome ??
+            cavalo.nomecavalo ??
+            `Cavalo ${idNumerico}`
+          return {
+            id: idNumerico.toString(),
+            nome
+          }
+        })
+        .filter(Boolean)
+      : []
+
+    const rodadasLista = []
+
+    if (rodadasResponse && typeof rodadasResponse === 'object') {
+      Object.values(rodadasResponse).forEach((dados) => {
+        const nomeTipo = dados?.nometiporodada ?? ''
+        if (Array.isArray(dados?.rodadas)) {
+          dados.rodadas.forEach((rodada) => {
+            const valor = rodada !== undefined && rodada !== null ? String(rodada) : ''
+            if (valor) {
+              rodadasLista.push({
+                valor,
+                rotulo: nomeTipo ? `${valor} - ${nomeTipo}` : valor
+              })
+            }
+          })
+        }
+      })
+    }
+
+    cavalosDisponiveisCampeao.value = cavalosLista
+    rodadasDisponiveisCampeao.value = rodadasLista
+
+    if (!cavalosLista.length || !rodadasLista.length) {
+      mensagemModalCampeao.value = 'Carregue os finalistas e rodadas do campeonato para selecionar o campeão.'
+      mensagemModalCampeaoTipo.value = 'erro'
+    }
+  } catch (error) {
+    console.error('Erro ao carregar dados para seleção de campeão:', error)
+    mensagemModalCampeao.value = 'Erro ao carregar dados para seleção. Tente novamente.'
+    mensagemModalCampeaoTipo.value = 'erro'
+  } finally {
+    carregandoSelecaoCampeao.value = false
+  }
+}
+
+const fecharModalSelecionarCampeao = () => {
+  modalSelecionarCampeaoOpen.value = false
+  campeaoSelecionado.value = ''
+  rodadaSelecionadaCampeao.value = ''
+  mensagemModalCampeao.value = ''
+  mensagemModalCampeaoTipo.value = ''
+  carregandoSelecaoCampeao.value = false
+  salvandoSelecaoCampeao.value = false
+}
+
+const confirmarSelecaoCampeao = async () => {
+  if (!campeonatoFinalistas.value) {
+    mensagemModalCampeao.value = 'Selecione um campeonato válido.'
+    mensagemModalCampeaoTipo.value = 'erro'
+    return
+  }
+
+  if (!campeaoSelecionado.value || !rodadaSelecionadaCampeao.value) {
+    mensagemModalCampeao.value = 'Escolha o cavalo e a rodada antes de confirmar.'
+    mensagemModalCampeaoTipo.value = 'erro'
+    return
+  }
+
+  salvandoSelecaoCampeao.value = true
+  mensagemModalCampeao.value = ''
+
+  try {
+    const cavaloIdNumerico = Number(campeaoSelecionado.value)
+    const cavaloIdPayload = Number.isNaN(cavaloIdNumerico)
+      ? campeaoSelecionado.value
+      : cavaloIdNumerico
+
+    await corridaApi.postVencedorRodada(campeonatoFinalistas.value, {
+      nomeRodada: rodadaSelecionadaCampeao.value,
+      cavaloId: cavaloIdPayload
+    })
+
+    mensagemSelecaoCampeao.value = 'Campeão da rodada atualizado com sucesso!'
+    mensagemSelecaoCampeaoTipo.value = 'sucesso'
+
+    setTimeout(() => {
+      mensagemSelecaoCampeao.value = ''
+    }, 3000)
+
+    fecharModalSelecionarCampeao()
+  } catch (error) {
+    console.error('Erro ao salvar campeão da rodada:', error)
+    mensagemModalCampeao.value = 'Erro ao salvar campeão da rodada. Tente novamente.'
+    mensagemModalCampeaoTipo.value = 'erro'
+  } finally {
+    salvandoSelecaoCampeao.value = false
+  }
+}
+
 const toggleVencedorSelecionado = (cavaloId) => {
   if (cavaloId === undefined || cavaloId === null) return
 
@@ -3003,11 +3749,20 @@ const gerarRelatorioPagamentos = async () => {
   dadosRelatorioPagamentos.value = null
   
   try {
-    // Buscar saldos do campeonato
-    const dados = await corridaApi.getSaldosCampeonato(relatorioPagamentosCampeonato.value)
+    let dados = null
+
+    if (filtrarSaldosNegativos.value) {
+      dados = await corridaApi.getSaldosCampeonatoNegativados(relatorioPagamentosCampeonato.value)
+    } else if (filtrarSaldosPositivos.value) {
+      dados = await corridaApi.getSaldosCampeonatoPositivados(relatorioPagamentosCampeonato.value)
+    } else {
+      dados = await corridaApi.getSaldosCampeonato(relatorioPagamentosCampeonato.value)
+    }
+
+    dados = aplicarFiltroLocalSaldos(dados)
     
     // Verificar se retornou dados válidos
-    if (dados && dados.campeonato && dados.apostadores) {
+    if (dados && dados.apostadores) {
       dadosRelatorioPagamentos.value = dados
       modalRelatorioPagamentosOpen.value = true
     } else {
@@ -3025,6 +3780,517 @@ const fecharModalRelatorioPagamentos = () => {
   modalRelatorioPagamentosOpen.value = false
 }
 
+const abrirModalTextoRelatorio = () => {
+  if (!dadosRelatorioPagamentos.value) {
+    return
+  }
+  modalTextoRelatorioOpen.value = true
+}
+
+const fecharModalTextoRelatorio = () => {
+  modalTextoRelatorioOpen.value = false
+}
+
+const gerarRelatorioPagamentosMultiplo = async () => {
+  if (!relatorioPagamentosCampeonatosSelecionados.value.length) {
+    return
+  }
+
+  carregandoRelatorioPagamentos.value = true
+  dadosRelatorioPagamentos.value = null
+
+  try {
+    const ids = relatorioPagamentosCampeonatosSelecionados.value.map((id) => {
+      const numero = Number(id)
+      return Number.isNaN(numero) ? id : numero
+    })
+
+    let dados = await corridaApi.postSaldosCampeonatos({
+      campeonatosIds: ids
+    })
+
+    dados = aplicarFiltroLocalSaldos(dados)
+
+    if (dados && dados.apostadores) {
+      dadosRelatorioPagamentos.value = dados
+      modalRelatorioPagamentosOpen.value = true
+    } else {
+      alert('Nenhum dado encontrado para os campeonatos selecionados.')
+    }
+  } catch (error) {
+    console.error('Erro ao gerar relatório de múltiplos campeonatos:', error)
+    alert('Erro ao carregar relatório dos campeonatos selecionados. Tente novamente.')
+  } finally {
+    carregandoRelatorioPagamentos.value = false
+  }
+}
+
+const aplicarFiltroLocalSaldos = (dados) => {
+  if (!dados || !Array.isArray(dados.apostadores)) {
+    return dados
+  }
+
+  if (filtrarSaldosNegativos.value) {
+    return {
+      ...dados,
+      apostadores: dados.apostadores.filter((apostador) => (apostador?.saldoFinal ?? 0) < 0)
+    }
+  }
+
+  if (filtrarSaldosPositivos.value) {
+    return {
+      ...dados,
+      apostadores: dados.apostadores.filter((apostador) => (apostador?.saldoFinal ?? 0) >= 0)
+    }
+  }
+
+  return dados
+}
+
+const prepararApostaParaEdicao = (aposta) => {
+  const copia = JSON.parse(JSON.stringify(aposta || {}))
+
+  const camposString = [
+    'numeroPareo',
+    'valor',
+    'valorOriginal',
+    'porcentagemAposta',
+    'porcentagemPremio',
+    'valorPremio',
+    'valorOriginalPremio',
+    'porcentagemRetirada'
+  ]
+
+  camposString.forEach((campo) => {
+    if (copia[campo] === undefined || copia[campo] === null) {
+      copia[campo] = ''
+    } else {
+      copia[campo] = String(copia[campo])
+    }
+  })
+
+  if (!copia.apostador || typeof copia.apostador !== 'object') {
+    copia.apostador = { id: '', nome: '' }
+  } else {
+    const apostador = { ...copia.apostador }
+    if (apostador.id === undefined || apostador.id === null) {
+      apostador.id = ''
+    } else {
+      apostador.id = String(apostador.id)
+    }
+    if (apostador.nome === undefined || apostador.nome === null) {
+      apostador.nome = ''
+    }
+    copia.apostador = apostador
+  }
+
+  copia._valorOriginalBase = copia.valorOriginal
+  copia._valorPremioBase = copia.valorPremio
+  copia._valorOriginalPremioBase = copia.valorOriginalPremio
+  copia._porcentagemRetiradaBase = copia.porcentagemRetirada
+
+  return copia
+}
+
+const atualizarValorPremioGlobal = () => {
+  const valorOriginal = normalizarNumero(valorOriginalPremioGlobal.value)
+  const retirada = normalizarNumero(porcentagemRetiradaGlobal.value)
+
+  if (valorOriginal === '' || retirada === '') {
+    valorPremioGlobal.value = ''
+    return
+  }
+
+  const calculado = Number(valorOriginal) * (1 - Number(retirada) / 100)
+  valorPremioGlobal.value = calculado.toFixed(2)
+}
+
+watch(valorOriginalPremioGlobal, (novo) => {
+  if (!editandoApostasRodada.value) return
+  const valor = normalizarNumero(novo)
+  if (valor === '') {
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      if (aposta._valorOriginalPremioBase !== undefined) {
+        const base = normalizarNumero(aposta._valorOriginalPremioBase)
+        if (base !== '') {
+          aposta.valorOriginalPremio = Number(base).toFixed(2)
+        }
+      }
+    })
+    valorPremioGlobal.value = ''
+    return
+  }
+  const valorFormatado = Number(valor).toFixed(2)
+  apostasRodadaEditaveis.value.forEach((aposta) => {
+    aposta.valorOriginalPremio = valorFormatado
+    aposta._valorOriginalPremioBase = valorFormatado
+  })
+
+  atualizarValorPremioGlobal()
+})
+
+watch(porcentagemRetiradaGlobal, (novo) => {
+  if (!editandoApostasRodada.value) return
+  const valor = normalizarNumero(novo)
+  if (valor === '') {
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      if (aposta._porcentagemRetiradaBase !== undefined) {
+        const base = normalizarNumero(aposta._porcentagemRetiradaBase)
+        if (base !== '') {
+          aposta.porcentagemRetirada = Number(base).toFixed(2)
+        }
+      }
+    })
+    atualizarValorPremioGlobal()
+    return
+  }
+  const valorFormatado = Number(valor).toFixed(2)
+  apostasRodadaEditaveis.value.forEach((aposta) => {
+    aposta.porcentagemRetirada = valorFormatado
+    aposta._porcentagemRetiradaBase = valorFormatado
+  })
+
+  atualizarValorPremioGlobal()
+})
+
+watch(valorPremioGlobal, (novo) => {
+  if (!editandoApostasRodada.value) return
+  const valor = normalizarNumero(novo)
+  if (valor === '') {
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      if (aposta._valorPremioBase !== undefined) {
+        const base = normalizarNumero(aposta._valorPremioBase)
+        if (base !== '') {
+          aposta.valorPremio = Number(base).toFixed(2)
+        }
+      }
+    })
+    return
+  }
+  const valorFormatado = Number(valor).toFixed(2)
+  apostasRodadaEditaveis.value.forEach((aposta) => {
+    aposta.valorPremio = valorFormatado
+    aposta._valorPremioBase = valorFormatado
+  })
+})
+
+watch(
+  apostasRodadaEditaveis,
+  () => {
+    if (!editandoApostasRodada.value) return
+
+    const grupos = new Map()
+
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      const chave = aposta.numeroPareo || ''
+      if (!grupos.has(chave)) {
+        grupos.set(chave, [])
+      }
+      grupos.get(chave).push(aposta)
+    })
+
+    grupos.forEach((apostasGrupo) => {
+      if (!apostasGrupo.length) {
+        return
+      }
+
+      const baseValorOriginal = normalizarNumero(
+        apostasGrupo[0]?._valorOriginalBase ?? apostasGrupo[0]?.valorOriginal
+      )
+      const valorOriginalPadrao =
+        baseValorOriginal === '' ? null : Number(baseValorOriginal)
+
+      const retiradaGlobal = normalizarNumero(porcentagemRetiradaGlobal.value)
+
+      const primeiraAposta = apostasGrupo[0]
+      const percApostaPrimeira =
+        normalizarNumero(primeiraAposta.porcentagemAposta) === ''
+          ? 0
+          : Number(normalizarNumero(primeiraAposta.porcentagemAposta))
+
+      const resto = Math.max(0, 100 - percApostaPrimeira)
+      const partes = apostasGrupo.length - 1
+      const valoresPercentuais = [percApostaPrimeira]
+
+      if (partes === 1) {
+        valoresPercentuais.push(resto)
+      } else if (partes > 1) {
+        let restante = resto
+        for (let i = 0; i < partes; i++) {
+          let valorAtual = restante / (partes - i)
+          valorAtual = parseFloat(valorAtual.toFixed(2))
+          if (i === partes - 1) {
+            valorAtual = parseFloat((restante).toFixed(2))
+          }
+          valoresPercentuais.push(Math.max(0, valorAtual))
+          restante = Math.max(0, restante - valorAtual)
+        }
+      }
+
+      apostasGrupo.forEach((aposta, indice) => {
+        const percentualAtual =
+          valoresPercentuais[indice] !== undefined
+            ? Number(valoresPercentuais[indice])
+            : 0
+
+        aposta.porcentagemAposta = percentualAtual.toFixed(2)
+        aposta.porcentagemPremio = percentualAtual.toFixed(2)
+
+        if (valorOriginalPadrao !== null) {
+          aposta.valorOriginal = valorOriginalPadrao.toFixed(2)
+        }
+
+        const retiradaLocalNumero =
+          retiradaGlobal === '' ? normalizarNumero(aposta._porcentagemRetiradaBase ?? aposta.porcentagemRetirada) : retiradaGlobal
+        const retiradaPercent =
+          retiradaLocalNumero === '' ? 0 : Number(retiradaLocalNumero)
+        aposta.porcentagemRetirada = retiradaPercent.toFixed(2)
+
+        const valorPremioBase = normalizarNumero(
+          aposta._valorPremioBase ?? aposta.valorPremio
+        )
+        if (valorPremioBase !== '' && valorPremioBase !== null) {
+          aposta.valorPremio = Number(valorPremioBase).toFixed(2)
+        }
+
+        if (valorOriginalPremioGlobal.value) {
+          const valorPremioOriginalNumero = normalizarNumero(
+            valorOriginalPremioGlobal.value
+          )
+          if (valorPremioOriginalNumero !== '') {
+            aposta.valorOriginalPremio = Number(
+              valorPremioOriginalNumero
+            ).toFixed(2)
+          }
+        } else if (aposta._valorOriginalPremioBase !== undefined) {
+          const base = normalizarNumero(aposta._valorOriginalPremioBase)
+          if (base !== '') {
+            aposta.valorOriginalPremio = Number(base).toFixed(2)
+          }
+        }
+      })
+    })
+  },
+  { deep: true }
+)
+
+const habilitarEdicaoApostasRodada = () => {
+  if (!apostasRodadaSelecionada.value.length) {
+    mensagemEdicaoApostasRodada.value = 'Nenhuma aposta disponível para edição.'
+    mensagemEdicaoApostasRodadaTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemEdicaoApostasRodada.value = ''
+    }, 3000)
+    return
+  }
+
+  apostasRodadaEditaveis.value = apostasRodadaSelecionada.value.map((aposta) => prepararApostaParaEdicao(aposta))
+  valorOriginalPremioGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.valorOriginalPremio)?.valorOriginalPremio || ''
+  valorPremioGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.valorPremio)?.valorPremio || ''
+  porcentagemRetiradaGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.porcentagemRetirada)?.porcentagemRetirada || ''
+  if (valorOriginalPremioGlobal.value) {
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      aposta.valorOriginalPremio = valorOriginalPremioGlobal.value
+      aposta._valorOriginalPremioBase = valorOriginalPremioGlobal.value
+    })
+  }
+  if (valorPremioGlobal.value) {
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      aposta.valorPremio = valorPremioGlobal.value
+      aposta._valorPremioBase = valorPremioGlobal.value
+    })
+  }
+  if (porcentagemRetiradaGlobal.value) {
+    apostasRodadaEditaveis.value.forEach((aposta) => {
+      aposta.porcentagemRetirada = porcentagemRetiradaGlobal.value
+      aposta._porcentagemRetiradaBase = porcentagemRetiradaGlobal.value
+    })
+  }
+  atualizarValorPremioGlobal()
+  editandoApostasRodada.value = true
+  mensagemEdicaoApostasRodada.value = ''
+  mensagemEdicaoApostasRodadaTipo.value = ''
+}
+
+const cancelarEdicaoApostasRodada = () => {
+  editandoApostasRodada.value = false
+  salvandoApostasRodada.value = false
+  mensagemEdicaoApostasRodada.value = ''
+  mensagemEdicaoApostasRodadaTipo.value = ''
+  apostasRodadaEditaveis.value = apostasRodadaSelecionada.value.map((aposta) => prepararApostaParaEdicao(aposta))
+  valorOriginalPremioGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.valorOriginalPremio)?.valorOriginalPremio || ''
+  valorPremioGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.valorPremio)?.valorPremio || ''
+  porcentagemRetiradaGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.porcentagemRetirada)?.porcentagemRetirada || ''
+}
+
+const salvarEdicaoApostasRodada = async () => {
+  if (!apostaForm.value.campeonatoId || !rodadaCasaForm.value.tipoRodadaId || !rodadaCasaForm.value.rodada) {
+    mensagemEdicaoApostasRodada.value = 'Informe o campeonato e a rodada antes de salvar.'
+    mensagemEdicaoApostasRodadaTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemEdicaoApostasRodada.value = ''
+    }, 3000)
+    return
+  }
+
+  let valorOriginalPremioGlobalPayload = ''
+  let porcentagemRetiradaGlobalPayload = ''
+
+  apostasRodadaEditaveis.value.forEach((aposta) => {
+    if (!valorOriginalPremioGlobalPayload && aposta?.valorOriginalPremio) {
+      valorOriginalPremioGlobalPayload = aposta.valorOriginalPremio
+    }
+    if (!porcentagemRetiradaGlobalPayload && aposta?.porcentagemRetirada) {
+      porcentagemRetiradaGlobalPayload = aposta.porcentagemRetirada
+    }
+  })
+
+  const apostasPayload = apostasRodadaEditaveis.value.map((aposta) => {
+    const apostadorIdRaw = aposta?.apostador?.id ?? ''
+    let apostadorId = apostadorIdRaw
+    if (apostadorIdRaw !== '' && apostadorIdRaw !== null && apostadorIdRaw !== undefined) {
+      const parsedId = Number(apostadorIdRaw)
+      apostadorId = Number.isNaN(parsedId) ? apostadorIdRaw : parsedId
+    }
+
+    const campos = {
+      valor: aposta?.valor ?? '',
+      valorOriginal: normalizarNumero(aposta?.valorOriginal ?? ''),
+      porcentagemAposta: normalizarNumero(aposta?.porcentagemAposta ?? ''),
+      porcentagemPremio: normalizarNumero(aposta?.porcentagemPremio ?? ''),
+      valorPremio: normalizarNumero(aposta?.valorPremio ?? ''),
+      valorOriginalPremio: aposta?.valorOriginalPremio ?? '',
+      porcentagemRetirada: aposta?.porcentagemRetirada ?? ''
+    }
+
+    Object.keys(campos).forEach((campo) => {
+      const valorCampo = campos[campo]
+      if (valorCampo === '' || valorCampo === null || valorCampo === undefined) {
+        campos[campo] = ''
+        return
+      }
+
+      if (typeof valorCampo === 'number') {
+        campos[campo] = valorCampo.toFixed(2)
+      } else {
+        const normalizado = normalizarNumero(valorCampo)
+        campos[campo] =
+          normalizado === '' ? String(valorCampo) : Number(normalizado).toFixed(2)
+      }
+    })
+
+    return {
+      id: aposta?.id,
+      numeroPareo: aposta?.numeroPareo ?? '',
+      apostador: {
+        id: apostadorId === '' ? null : apostadorId,
+        nome: aposta?.apostador?.nome ?? ''
+      },
+      ...campos,
+      valorOriginalPremio: valorOriginalPremioGlobalPayload || campos.valorOriginalPremio || '',
+      porcentagemRetirada: porcentagemRetiradaGlobalPayload || campos.porcentagemRetirada || ''
+    }
+  })
+
+  salvandoApostasRodada.value = true
+  mensagemEdicaoApostasRodada.value = ''
+  mensagemEdicaoApostasRodadaTipo.value = ''
+
+  try {
+    const response = await corridaApi.updateApostasRodada(
+      apostaForm.value.campeonatoId,
+      rodadaCasaForm.value.tipoRodadaId,
+      {
+        nomeRodada: rodadaCasaForm.value.rodada,
+        apostas: apostasPayload
+      }
+    )
+
+    let apostasAtualizadas = []
+
+    if (Array.isArray(response)) {
+      apostasAtualizadas = response
+    } else if (response && Array.isArray(response.apostas)) {
+      apostasAtualizadas = response.apostas
+    } else {
+      apostasAtualizadas = apostasPayload
+    }
+
+    apostasAtualizadas.sort((a, b) => {
+      const numeroA = Number(a?.numeroPareo) || 0
+      const numeroB = Number(b?.numeroPareo) || 0
+      return numeroA - numeroB
+    })
+
+    apostasRodadaSelecionada.value = apostasAtualizadas
+    apostasRodadaEditaveis.value = apostasAtualizadas.map((aposta) => prepararApostaParaEdicao(aposta))
+    valorOriginalPremioGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.valorOriginalPremio)?.valorOriginalPremio || ''
+    porcentagemRetiradaGlobal.value = apostasRodadaEditaveis.value.find((aposta) => aposta.porcentagemRetirada)?.porcentagemRetirada || ''
+    editandoApostasRodada.value = false
+
+    mensagemEdicaoApostasRodada.value = 'Apostas atualizadas com sucesso!'
+    mensagemEdicaoApostasRodadaTipo.value = 'sucesso'
+
+    setTimeout(() => {
+      mensagemEdicaoApostasRodada.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('Erro ao salvar apostas da rodada:', error)
+    mensagemEdicaoApostasRodada.value = 'Erro ao salvar alterações. Tente novamente.'
+    mensagemEdicaoApostasRodadaTipo.value = 'erro'
+  } finally {
+    salvandoApostasRodada.value = false
+  }
+}
+
+const relatorioTextoCopiavel = computed(() => {
+  if (!dadosRelatorioPagamentos.value || !Array.isArray(dadosRelatorioPagamentos.value.apostadores)) {
+    return ''
+  }
+
+  const header = ['Apostador', 'Total Apostado', 'Total Prêmios', 'Saldo Final']
+  const linhas = [header]
+
+  dadosRelatorioPagamentos.value.apostadores.forEach((apostador) => {
+    linhas.push([
+      apostador?.nome ?? '',
+      formatCurrency(apostador?.totalApostado ?? 0),
+      formatCurrency(apostador?.totalPremiosVencidos ?? 0),
+      formatCurrency(apostador?.saldoFinal ?? 0)
+    ])
+  })
+
+  const totais = [
+    'TOTAL',
+    formatCurrency(dadosRelatorioPagamentos.value.apostadores.reduce((sum, a) => sum + (a?.totalApostado ?? 0), 0)),
+    formatCurrency(dadosRelatorioPagamentos.value.apostadores.reduce((sum, a) => sum + (a?.totalPremiosVencidos ?? 0), 0)),
+    formatCurrency(dadosRelatorioPagamentos.value.apostadores.reduce((sum, a) => sum + (a?.saldoFinal ?? 0), 0))
+  ]
+  linhas.push(totais)
+
+  return linhas.map((linha) => `| ${linha.join(' | ')} |`).join('\n')
+})
+
+const copiarRelatorioTexto = async () => {
+  const texto = relatorioTextoCopiavel.value
+
+  if (!texto) {
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(texto)
+    mensagemTextoCopiado.value = 'Texto copiado para a área de transferência!'
+  } catch (error) {
+    console.error('Erro ao copiar texto:', error)
+    mensagemTextoCopiado.value = 'Não foi possível copiar automaticamente. Selecione o texto manualmente.'
+  } finally {
+    setTimeout(() => {
+      mensagemTextoCopiado.value = ''
+    }, 3000)
+  }
+}
+
 // Função para gerar PDF do relatório de pagamentos
 const gerarPDFRelatorioPagamentos = () => {
   if (!dadosRelatorioPagamentos.value || !dadosRelatorioPagamentos.value.apostadores || dadosRelatorioPagamentos.value.apostadores.length === 0) {
@@ -3032,7 +4298,7 @@ const gerarPDFRelatorioPagamentos = () => {
   }
 
   const dados = dadosRelatorioPagamentos.value
-  const campeonatoNome = dados.campeonato?.nome || 'N/A'
+  const campeonatoNome = descricaoRelatorioPagamentos.value || 'N/A'
   
   // Calcular totais
   const totalApostado = dados.apostadores.reduce((sum, a) => sum + (a.totalApostado || 0), 0)
@@ -3552,6 +4818,70 @@ const criarTipoRodada = async () => {
     console.error('Erro ao criar tipo de rodada:', err)
   } finally {
     criandoTipoRodada.value = false
+  }
+}
+
+const iniciarEdicaoTipoRodada = (tipoRodada) => {
+  tipoRodadaEditandoId.value = tipoRodada.id
+  tipoRodadaNomeEdicao.value = tipoRodada.nome || ''
+  mensagemTipoRodada.value = ''
+}
+
+const cancelarEdicaoTipoRodada = () => {
+  tipoRodadaEditandoId.value = null
+  tipoRodadaNomeEdicao.value = ''
+  atualizandoTipoRodadaId.value = null
+}
+
+const salvarEdicaoTipoRodada = async () => {
+  const id = tipoRodadaEditandoId.value
+  if (!id) {
+    return
+  }
+
+  const tipoAtual = tiposRodadas.value.find((tipo) => tipo.id === id)
+  const nomeAtual = (tipoAtual?.nome || '').trim()
+  const nomeLimpo = (tipoRodadaNomeEdicao.value || '').trim()
+
+  if (!nomeLimpo) {
+    mensagemTipoRodada.value = 'O nome não pode ser vazio.'
+    mensagemTipoRodadaTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemTipoRodada.value = ''
+    }, 3000)
+    return
+  }
+
+  if (nomeLimpo === nomeAtual) {
+    mensagemTipoRodada.value = 'Nenhuma alteração realizada.'
+    mensagemTipoRodadaTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemTipoRodada.value = ''
+    }, 3000)
+    return
+  }
+
+  atualizandoTipoRodadaId.value = id
+  mensagemTipoRodada.value = ''
+
+  try {
+    await corridaApi.updateTipoRodada(id, { nome: nomeLimpo })
+
+    mensagemTipoRodada.value = 'Tipo de rodada atualizado com sucesso!'
+    mensagemTipoRodadaTipo.value = 'sucesso'
+
+    await loadTiposRodadas()
+    cancelarEdicaoTipoRodada()
+
+    setTimeout(() => {
+      mensagemTipoRodada.value = ''
+    }, 3000)
+  } catch (err) {
+    mensagemTipoRodada.value = 'Erro ao atualizar tipo de rodada.'
+    mensagemTipoRodadaTipo.value = 'erro'
+    console.error('Erro ao atualizar tipo de rodada:', err)
+  } finally {
+    atualizandoTipoRodadaId.value = null
   }
 }
 
@@ -4315,6 +5645,32 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'BRL'
   }).format(parseFloat(value))
+}
+
+const formatPercent = (value) => {
+  if (value === undefined || value === null || value === '') {
+    return '0%'
+  }
+  const str = String(value).trim()
+  return str.endsWith('%') ? str : `${str}%`
+}
+
+const normalizarNumero = (valor) => {
+  if (valor === null || valor === undefined || valor === '') {
+    return ''
+  }
+
+  const str = String(valor).replace(',', '.').replace(/[^0-9.-]/g, '')
+  if (!str) {
+    return ''
+  }
+
+  const parsed = parseFloat(str)
+  if (Number.isNaN(parsed)) {
+    return ''
+  }
+
+  return parsed
 }
 
 // Funções para editar apostador

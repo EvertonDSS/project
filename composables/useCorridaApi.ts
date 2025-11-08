@@ -110,6 +110,32 @@ export const useCorridaApi = () => {
       }
     },
 
+    async updateTipoRodada(id: string | number, payload: { nome: string }) {
+      try {
+        const response = await api(`/tipos-rodada/${id}`, { method: 'PATCH', body: payload })
+        return response
+      } catch (error) {
+        console.error('Erro ao atualizar tipo de rodada:', error)
+        throw error
+      }
+    },
+
+    async postVencedorRodada(
+      campeonatoId: string | number,
+      payload: { nomeRodada: string; cavaloId: number | string }
+    ) {
+      try {
+        const response = await api(`/vencedores-rodadas/${campeonatoId}`, {
+          method: 'POST',
+          body: payload
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao salvar campeão da rodada:', error)
+        throw error
+      }
+    },
+
     async deleteTipoRodada(id: string | number) {
       try {
         const response = await api(`/tipos-rodada/${id}`, { method: 'DELETE' })
@@ -329,6 +355,39 @@ export const useCorridaApi = () => {
       }
     },
 
+    async getSaldosCampeonatoNegativados(campeonatoId: string | number) {
+      try {
+        const response = await api(`/saldos/campeonato/${campeonatoId}/negativados`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar saldos negativados do campeonato:', error)
+        throw error
+      }
+    },
+
+    async getSaldosCampeonatoPositivados(campeonatoId: string | number) {
+      try {
+        const response = await api(`/saldos/campeonato/${campeonatoId}/positivados`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar saldos positivados do campeonato:', error)
+        throw error
+      }
+    },
+
+    async postSaldosCampeonatos(payload: { campeonatosIds: Array<number | string> }) {
+      try {
+        const response = await api(`/saldos/campeonatos`, {
+          method: 'POST',
+          body: payload
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar saldos de múltiplos campeonatos:', error)
+        throw error
+      }
+    },
+
     async postVencedor(
       campeonatoId: string | number,
       cavalosIds: Array<number | string>
@@ -397,6 +456,26 @@ export const useCorridaApi = () => {
         return response
       } catch (error) {
         console.error('Erro ao enviar rodada para apostas:', error)
+        throw error
+      }
+    },
+
+    async updateApostasRodada(
+      campeonatoId: string | number,
+      tipoRodadaId: string | number,
+      payload: {
+        nomeRodada: string
+        apostas: Array<any>
+      }
+    ) {
+      try {
+        const response = await api(`/apostas/rodadas/${campeonatoId}/${tipoRodadaId}`, {
+          method: 'PUT',
+          body: payload
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao atualizar apostas da rodada:', error)
         throw error
       }
     },
