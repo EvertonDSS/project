@@ -3134,8 +3134,13 @@ const buscarCavalosPossiveisGanhadores = async () => {
     
     // O retorno agora é diretamente um array de cavalos
     if (Array.isArray(resposta) && resposta.length > 0) {
+      const respostaFiltrada = resposta.filter(cavalo => {
+        const nomeTipoRodada = cavalo?.nometiporodada ?? cavalo?.nomeTipoRodada ?? cavalo?.tiporodada ?? ''
+        return !String(nomeTipoRodada).toLowerCase().includes('final')
+      })
+
       // Mapear os cavalos para o formato esperado pela interface
-      cavalosPossiveisGanhadores.value = resposta.map(cavalo => ({
+      cavalosPossiveisGanhadores.value = respostaFiltrada.map(cavalo => ({
         id: cavalo.idcavalo,
         nome: cavalo.nomecavalo,
         idcavalo: cavalo.idcavalo,
@@ -3275,18 +3280,30 @@ const visualizarGanhadoresPossiveis = async () => {
     // [{ tiporodada, nometiporodada, "NOME CAVALO": [{ nomeapostador, valorpremio }], ... }]
     // Quando não agrupado: retorno é um objeto direto com a estrutura:
     // { "NOME CAVALO": [{ nomeapostador, valorpremio }], ... }
+    const deveIgnorarTipo = (dados) => {
+      const nomeTipo = dados?.nometiporodada ?? dados?.nomeTipoRodada ?? dados?.tiporodada ?? ''
+      if (typeof nomeTipo !== 'string') {
+        return false
+      }
+      return nomeTipo.toLowerCase().includes('final')
+    }
+
     if (ganhadoresAgrupados.value) {
       // Formato agrupado: array de objetos
       if (Array.isArray(ganhadores) && ganhadores.length > 0) {
-        dadosGanhadoresVisualizacao.value = ganhadores
+        dadosGanhadoresVisualizacao.value = ganhadores.filter(item => !deveIgnorarTipo(item))
       } else {
         dadosGanhadoresVisualizacao.value = []
       }
     } else {
       // Formato não agrupado: objeto direto
       if (ganhadores && typeof ganhadores === 'object' && Object.keys(ganhadores).length > 0) {
-        // Converter objeto para array compatível com a renderização
-        dadosGanhadoresVisualizacao.value = [ganhadores]
+        if (deveIgnorarTipo(ganhadores)) {
+          dadosGanhadoresVisualizacao.value = []
+        } else {
+          // Converter objeto para array compatível com a renderização
+          dadosGanhadoresVisualizacao.value = [ganhadores]
+        }
       } else {
         dadosGanhadoresVisualizacao.value = []
       }
@@ -3326,7 +3343,7 @@ const obterCavalosDoTipo = (dados) => {
   // Iterar sobre todas as propriedades do objeto
   for (const key in dados) {
     // Ignorar propriedades que não são cavalos (tiporodada, nometiporodada)
-    if (key !== 'tiporodada' && key !== 'nometiporodada') {
+    if (key !== 'tiporodada' && key !== 'nometiporodada' && key !== 'nomeTipoRodada') {
       // Verificar se a chave começa com "cavalo" (formato antigo) ou é diretamente o nome do cavalo
       let nomeCavalo = key
       if (key.startsWith('cavalo')) {
