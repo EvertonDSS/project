@@ -771,6 +771,19 @@
           <div class="mt-6 bg-gray-50 rounded-lg p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Rodadas Cadastradas</h3>
 
+            <div class="flex justify-end mb-4">
+              <button
+                @click="carregarTextoRodadaSelecionada(apostaForm.campeonatoId, rodadaCasaForm.tipoRodadaId, rodadaCasaForm.rodada)"
+                :disabled="!apostaForm.campeonatoId || !rodadaCasaForm.rodada || !rodadaCasaForm.tipoRodadaId"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>Preencher texto da rodada selecionada</span>
+              </button>
+            </div>
+
             <!-- Loading -->
             <div v-if="carregandoRodadas" class="text-center py-8">
               <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-3"></div>
@@ -1513,9 +1526,7 @@
           </div>
 
           <div class="p-6 bg-gray-50">
-            <p class="text-sm text-gray-600 mb-4">
-              Copie o conteúdo abaixo (já estruturado em colunas) e cole na planilha ou editor desejado.
-            </p>
+
             <button
               @click="copiarRelatorioTexto"
               class="mb-4 inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
@@ -2134,7 +2145,7 @@
                       :disabled="filtrarSaldosPositivos"
                       class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                     />
-                    <span class="text-sm text-gray-700">Mostrar apenas saldos negativos</span>
+                    <span class="text-sm text-gray-700">Mostrar apenas saldos devedores</span>
                   </label>
 
                   <label class="inline-flex items-center space-x-2">
@@ -2144,7 +2155,7 @@
                       :disabled="filtrarSaldosNegativos"
                       class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                     />
-                    <span class="text-sm text-gray-700">Mostrar apenas saldos positivos</span>
+                    <span class="text-sm text-gray-700">Mostrar apenas saldos premiados</span>
                   </label>
                 </div>
 
@@ -2755,6 +2766,61 @@ const selecionarRodada = (tipoRodadaId, rodada) => {
   rodadaCasaForm.value.tipoRodadaId = tipoRodadaId
   rodadaCasaForm.value.rodada = rodada
   mensagemRodadaAposta.value = ''
+}
+
+const carregarTextoRodadaSelecionada = async (
+  campeonatoId = apostaForm.value.campeonatoId,
+  tipoRodadaId = rodadaCasaForm.value.tipoRodadaId,
+  nomeRodada = rodadaCasaForm.value.rodada
+) => {
+  if (!campeonatoId || !tipoRodadaId || !nomeRodada) {
+    mensagemApostas.value =
+      'Selecione um campeonato e uma rodada em "Rodadas Cadastradas" para carregar o texto.'
+    mensagemApostasTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemApostas.value = ''
+    }, 3000)
+    return
+  }
+
+  try {
+    const resposta = await corridaApi.postRodadaAposta(
+      campeonatoId,
+      tipoRodadaId,
+      nomeRodada
+    )
+
+    const apostas = Array.isArray(resposta?.apostas)
+      ? resposta.apostas
+      : Array.isArray(resposta)
+        ? resposta
+        : []
+
+    if (!apostas.length) {
+      mensagemApostas.value =
+        'Nenhuma aposta encontrada para a rodada selecionada.'
+      mensagemApostasTipo.value = 'erro'
+      setTimeout(() => (mensagemApostas.value = ''), 3000)
+      return
+    }
+
+    const textoGerado = gerarTextoApostasRodada(
+      nomeRodada,
+      apostas
+    )
+
+    apostaForm.value.tipoRodadaId = tipoRodadaId
+    apostaForm.value.texto = textoGerado
+    mensagemApostas.value = 'Texto preenchido com sucesso!'
+    mensagemApostasTipo.value = 'sucesso'
+    setTimeout(() => (mensagemApostas.value = ''), 3000)
+  } catch (error) {
+    console.error('Erro ao carregar texto da rodada:', error)
+    mensagemApostas.value =
+      'Erro ao carregar as apostas da rodada. Verifique se a API está online.'
+    mensagemApostasTipo.value = 'erro'
+    setTimeout(() => (mensagemApostas.value = ''), 3000)
+  }
 }
 
 const apostasRodadaParaExibicao = computed(() => {
@@ -3905,6 +3971,108 @@ const atualizarValorPremioGlobal = () => {
   valorPremioGlobal.value = calculado.toFixed(2)
 }
 
+const formatarPercentual = (valor) => {
+  const numero = normalizarNumero(valor)
+  if (numero === '') {
+    return ''
+  }
+  return Number(numero).toFixed(2).replace('.00', '')
+}
+
+const gerarTextoApostasRodada = (nomeRodada, apostas) => {
+  if (!Array.isArray(apostas) || !apostas.length) {
+    return `${nomeRodada};\n`
+  }
+
+  const linhas = [`${nomeRodada};`]
+
+  const agrupadoPorPareo = new Map()
+
+  apostas.forEach((aposta) => {
+    const chave = aposta.numeroPareo || aposta.pareo || ''
+    if (!agrupadoPorPareo.has(chave)) {
+      agrupadoPorPareo.set(chave, [])
+    }
+    agrupadoPorPareo.get(chave).push(aposta)
+  })
+
+  const paresOrdenados = Array.from(agrupadoPorPareo.entries()).sort(
+    ([pareoA], [pareoB]) =>
+      (parseInt(pareoA, 10) || 0) - (parseInt(pareoB, 10) || 0)
+  )
+
+  paresOrdenados.forEach(([pareo, apostasDoPareo]) => {
+    const valorBase = normalizarNumero(
+      apostasDoPareo[0]?.valorOriginal ??
+      apostasDoPareo[0]?._valorOriginalBase ??
+      apostasDoPareo[0]?.valor
+    )
+    const valorFormatado = valorBase === ''
+      ? '0'
+      : Number(valorBase).toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })
+
+    const porcentagemTotal = apostasDoPareo.reduce((sum, item) => {
+      const percentual = normalizarNumero(
+        item.porcentagemAposta ?? item.porcentagemPremio
+      )
+      return sum + (percentual === '' ? 0 : Number(percentual))
+    }, 0)
+
+    let partes = []
+
+    if (apostasDoPareo.length === 2 && Math.abs(porcentagemTotal - 100) < 0.1) {
+      partes = apostasDoPareo.map((item) => {
+        const nome = item.apostador?.nome ?? item.apostador ?? item.nome ?? ''
+        return nome
+      })
+      linhas.push(`${pareo}- ${valorFormatado} ${partes.join(' / ')} ✅`)
+      return
+    }
+
+    partes = apostasDoPareo.map((item) => {
+      const nome = item.apostador?.nome ?? item.apostador ?? item.nome ?? ''
+      const percentual = formatarPercentual(
+        item.porcentagemAposta ?? item.porcentagemPremio
+      )
+
+      if (percentual === '' || Number(percentual) === 0 || Number(percentual) === 100) {
+        return nome
+      }
+
+      return `${nome} ${percentual}%`
+    })
+
+    linhas.push(
+      `${pareo}- ${valorFormatado} ${partes.join(' / ')} ✅`
+    )
+  })
+
+  const valorTotalRodada = (() => {
+    const primeiro = apostas.find((aposta) => aposta.valorOriginalPremio !== undefined && aposta.valorOriginalPremio !== null)
+    const valor = normalizarNumero(primeiro?.valorOriginalPremio ?? primeiro?.valorPremio ?? primeiro?.valorOriginal)
+    if (valor === '') {
+      return 0
+    }
+    return Number(valor)
+  })()
+
+  const retiradaPercent =
+    normalizarNumero(apostas[0]?.porcentagemRetirada ?? 0) || 0
+
+  linhas.push('')
+  const totalFormatado = valorTotalRodada
+    ? formatCurrency(valorTotalRodada).replace('\u00A0', ' ')
+    : 'R$ 0,00'
+  linhas.push(`TOTAL ${totalFormatado}`)
+  linhas.push('')
+  linhas.push(`Retirada ${retiradaPercent}%`)
+
+  return linhas.join('\n')
+}
+
 watch(valorOriginalPremioGlobal, (novo) => {
   if (!editandoApostasRodada.value) return
   const valor = normalizarNumero(novo)
@@ -4248,27 +4416,31 @@ const relatorioTextoCopiavel = computed(() => {
     return ''
   }
 
-  const header = ['Apostador', 'Total Apostado', 'Total Prêmios', 'Saldo Final']
-  const linhas = [header]
+  const apostadoresOrdenados = [...dadosRelatorioPagamentos.value.apostadores].sort(
+    (a, b) => {
+      const nomeA = (a?.nome || '').toLowerCase()
+      const nomeB = (b?.nome || '').toLowerCase()
+      return nomeA.localeCompare(nomeB, 'pt-BR')
+    }
+  )
 
-  dadosRelatorioPagamentos.value.apostadores.forEach((apostador) => {
-    linhas.push([
-      apostador?.nome ?? '',
-      formatCurrency(apostador?.totalApostado ?? 0),
-      formatCurrency(apostador?.totalPremiosVencidos ?? 0),
-      formatCurrency(apostador?.saldoFinal ?? 0)
-    ])
+  const total = apostadoresOrdenados.reduce(
+    (sum, apostador) => sum + (apostador?.saldoFinal ?? 0),
+    0
+  )
+
+  const titulo = total >= 0 ? 'PREMIADOS' : 'DEVEDORES'
+  const saldoTotalFormatado = formatCurrency(Math.abs(total))
+
+  const linhas = [`${titulo} ${saldoTotalFormatado.replace('\u00A0', ' ')}`]
+
+  apostadoresOrdenados.forEach((apostador) => {
+    const nome = apostador?.nome ?? ''
+    const saldo = formatCurrency(apostador?.saldoFinal ?? 0).replace('\u00A0', ' ')
+    linhas.push(`${nome} ${saldo}`)
   })
 
-  const totais = [
-    'TOTAL',
-    formatCurrency(dadosRelatorioPagamentos.value.apostadores.reduce((sum, a) => sum + (a?.totalApostado ?? 0), 0)),
-    formatCurrency(dadosRelatorioPagamentos.value.apostadores.reduce((sum, a) => sum + (a?.totalPremiosVencidos ?? 0), 0)),
-    formatCurrency(dadosRelatorioPagamentos.value.apostadores.reduce((sum, a) => sum + (a?.saldoFinal ?? 0), 0))
-  ]
-  linhas.push(totais)
-
-  return linhas.map((linha) => `| ${linha.join(' | ')} |`).join('\n')
+  return linhas.join('\n')
 })
 
 const copiarRelatorioTexto = async () => {
