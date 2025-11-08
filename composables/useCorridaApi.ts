@@ -234,6 +234,44 @@ export const useCorridaApi = () => {
       }
     },
 
+    async postApostadoresCombinados(
+      campeonatoId: string | number,
+      nomesApostadores: string[]
+    ) {
+      try {
+        const response = await api(`/apostadores-combinados/${campeonatoId}`, {
+          method: 'POST',
+          body: {
+            nomesApostadores
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao enviar apostadores combinados:', error)
+        throw error
+      }
+    },
+
+    async getApostadoresCombinados(campeonatoId: string | number) {
+      try {
+        const response = await api(`/apostadores-combinados/${campeonatoId}`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar apostadores combinados:', error)
+        throw error
+      }
+    },
+
+    async getApostadoresCombinadosApostas(campeonatoId: string | number) {
+      try {
+        const response = await api(`/apostadores-combinados/${campeonatoId}/apostas`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar apostas de apostadores combinados:', error)
+        throw error
+      }
+    },
+
     async getPdfDados(campeonatoId: string | number, apostadorId: string | number) {
       try {
         const response = await api(`/pdf/dados/${campeonatoId}/${apostadorId}`)

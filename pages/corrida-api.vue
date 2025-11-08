@@ -586,25 +586,29 @@
                 <!-- Seleção de Campeonato -->
                 <div class="mb-4">
                   <label for="campeonatoInfo" class="block text-sm font-medium text-gray-700 mb-2">
-                    Selecionar Campeonato
+                    Selecionar Campeonatos
                   </label>
                   <select
                     id="campeonatoInfo"
-                    v-model="campeonatoSelecionado"
+                    v-model="campeonatosSelecionados"
+                    multiple
+                    size="5"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Selecione um campeonato</option>
                     <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
                       {{ campeonato.nome }}
                     </option>
                   </select>
+                  <p class="text-xs text-gray-500 mt-2">
+                    Selecione um ou mais campeonatos (Ctrl/Cmd + clique) para agregar os apostadores.
+                  </p>
                 </div>
 
                 <!-- Botão de Busca -->
                 <div class="mb-4">
                   <button
                     @click="carregarApostadores"
-                    :disabled="carregandoApostadores || !campeonatoSelecionado"
+                    :disabled="carregandoApostadores || campeonatosSelecionados.length === 0"
                     class="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <svg v-if="carregandoApostadores" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -663,41 +667,53 @@
               </div>
               <div
                 v-for="apostador in apostadoresFiltrados"
-                :key="apostador.id"
+                :key="obterChaveApostador(apostador)"
                 @click="carregarDadosPdf(apostador)"
                 :class="[
                   'p-2 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200',
-                  apostadorSelecionado?.id === apostador.id 
+                  isApostadorSelecionado(apostador) 
                     ? 'bg-green-100 border-green-300 shadow-sm' 
                     : 'hover:bg-gray-50'
                 ]"
               >
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center space-x-2">
-                    <span 
-                      :class="[
-                        'text-sm font-medium',
-                        apostadorSelecionado?.id === apostador.id 
-                          ? 'text-green-800' 
-                          : 'text-gray-800'
-                      ]"
-                    >
-                      {{ apostador.nome }}
-                    </span>
-                    <div 
-                      v-if="apostadorSelecionado?.id === apostador.id"
-                      class="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                    ></div>
-                  </div>
-                  <div class="text-xs text-gray-500 text-right">
-                    <div>R$ {{ apostador.totalApostado?.toFixed(2) || '0.00' }}</div>
-                    <div>Prêmio: R$ {{ apostador.totalPremio?.toFixed(2) || '0.00' }}</div>
-                    <div>{{ apostador.totalApostas || 0 }} apostas</div>
+                <div class="flex justify-between items-center gap-3">
+                  <div class="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      :value="obterChaveApostador(apostador)"
+                      v-model="apostadoresSelecionados"
+                      class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      @click.stop
+                    />
+                    <div>
+                      <div class="flex items-center space-x-2">
+                        <span 
+                          :class="[
+                            'text-sm font-medium',
+                            isApostadorSelecionado(apostador)
+                              ? 'text-green-800' 
+                              : 'text-gray-800'
+                          ]"
+                        >
+                          {{ apostador.nome }}
+                        </span>
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                          {{ apostador.campeonatoNome }}
+                        </span>
+                        <div 
+                          v-if="isApostadorSelecionado(apostador)"
+                          class="w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                        ></div>
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        R$ {{ apostador.totalApostado?.toFixed(2) || '0.00' }} · Prêmio: R$ {{ apostador.totalPremio?.toFixed(2) || '0.00' }} · {{ apostador.totalApostas || 0 }} apostas
+                      </div>
+                    </div>
                   </div>
                   <svg 
                     :class="[
-                      'w-4 h-4 transition-colors',
-                      apostadorSelecionado?.id === apostador.id 
+                      'w-4 h-4 transition-colors flex-shrink-0',
+                      isApostadorSelecionado(apostador)
                         ? 'text-green-600' 
                         : 'text-gray-400'
                     ]" 
@@ -709,6 +725,41 @@
                   </svg>
                 </div>
               </div>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+              <span>Selecionados: {{ apostadoresSelecionadosDetalhes.length }}</span>
+              <span v-if="apostadoresSelecionadosDetalhes.length > 0">
+                <span class="font-medium">Apostadores:</span>
+                {{ apostadoresSelecionadosDetalhes.map(a => a.nome).join(', ') }}
+              </span>
+            </div>
+
+            <div class="mt-3">
+              <button
+                @click="enviarApostadoresCombinados"
+                :disabled="enviandoApostadoresCombinados || apostadoresSelecionadosDetalhes.length < 2"
+                class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+              >
+                <svg v-if="enviandoApostadoresCombinados" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>{{ enviandoApostadoresCombinados ? 'Enviando...' : 'Enviar Apostadores Combinados' }}</span>
+              </button>
+              <p class="text-xs text-gray-500 mt-2">
+                Seleciona dois ou mais apostadores para enviá-los ao endpoint de combinações.
+              </p>
+            </div>
+
+            <div
+              v-if="mensagemApostadoresCombinados"
+              :class="[
+                'mt-2 text-xs font-medium',
+                mensagemApostadoresCombinadosTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+              ]"
+            >
+              {{ mensagemApostadoresCombinados }}
             </div>
           </div>
 
@@ -2274,19 +2325,23 @@
                 
                 <!-- Seleção de Campeonato -->
                 <div class="mb-4">
-                  <label for="campeonatoInfo" class="block text-sm font-medium text-gray-700 mb-2">
-                    Selecionar Campeonato
+                  <label for="campeonatoInfoResumo" class="block text-sm font-medium text-gray-700 mb-2">
+                    Campeonatos Selecionados
                   </label>
                   <select
-                    id="campeonatoInfo"
-                    v-model="campeonatoSelecionado"
+                    id="campeonatoInfoResumo"
+                    v-model="campeonatosSelecionados"
+                    multiple
+                    size="5"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Selecione um campeonato</option>
                     <option v-for="campeonato in campeonatos" :key="campeonato.id" :value="campeonato.id">
                       {{ campeonato.nome }}
                     </option>
                   </select>
+                  <p class="text-xs text-gray-500 mt-2">
+                    Esta seleção é compartilhada com o filtro de apostas.
+                  </p>
                 </div>
               </div>
 
@@ -2893,7 +2948,7 @@ const fecharModalApostasRodada = () => {
 }
 
 // Estados para apostadores e PDF
-const campeonatoSelecionado = ref('')
+const campeonatosSelecionados = ref([])
 const apostadores = ref([])
 const totalApostadores = ref(0)
 const apostadorSelecionado = ref(null)
@@ -2905,6 +2960,32 @@ const gerandoPDF = ref(false)
 const componentePDF = ref(null)
 const filtroApostador = ref('')
 const gerandoPDFTodos = ref(false)
+const apostadoresSelecionados = ref([])
+const enviandoApostadoresCombinados = ref(false)
+const mensagemApostadoresCombinados = ref('')
+const mensagemApostadoresCombinadosTipo = ref('')
+const cacheApostasCombinadas = ref({})
+
+const gerarChaveNomes = (nomes) => {
+  if (!Array.isArray(nomes)) return ''
+  return nomes
+    .map(nome => normalizarTexto(nome))
+    .filter(Boolean)
+    .sort()
+    .join('|')
+}
+
+const obterChaveApostador = (apostador) => {
+  if (!apostador) return ''
+  if (apostador.chaveUnica) return apostador.chaveUnica
+  const campeonatoId = apostador.campeonatoId ?? apostador.campeonatoID ?? apostador.campeonato_id ?? '0'
+  return `${campeonatoId}-${apostador.id}`
+}
+
+const isApostadorSelecionado = (apostador) => {
+  if (!apostadorSelecionado.value) return false
+  return obterChaveApostador(apostadorSelecionado.value) === obterChaveApostador(apostador)
+}
 
 // Computed para filtrar apostadores
 const apostadoresFiltrados = computed(() => {
@@ -2915,6 +2996,12 @@ const apostadoresFiltrados = computed(() => {
   return apostadores.value.filter(apostador => 
     apostador.nome?.toLowerCase().includes(termoFiltro)
   )
+})
+
+const apostadoresSelecionadosDetalhes = computed(() => {
+  if (!apostadoresSelecionados.value.length) return []
+  const selecionadosSet = new Set(apostadoresSelecionados.value)
+  return apostadores.value.filter(apostador => selecionadosSet.has(obterChaveApostador(apostador)))
 })
 
 // Estados para editar apostador
@@ -5378,38 +5465,238 @@ const enviarRodadaCasa = async () => {
 
 // Função para carregar apostadores
 const carregarApostadores = async () => {
-  if (!campeonatoSelecionado.value) {
+  if (!campeonatosSelecionados.value.length) {
     apostadores.value = []
     totalApostadores.value = 0
     apostadorSelecionado.value = null
     dadosPdf.value = null
+    apostadoresSelecionados.value = []
+    cacheApostasCombinadas.value = {}
     return
   }
 
   carregandoApostadores.value = true
+  apostadoresSelecionados.value = []
+  mensagemApostadoresCombinados.value = ''
+  mensagemApostadoresCombinadosTipo.value = ''
   
   try {
-    const response = await corridaApi.getApostadores(campeonatoSelecionado.value)
-    // Ajustar para a nova estrutura: { campeonatoId, totalApostadores, apostadores: [...] }
-    apostadores.value = response.apostadores || []
-    totalApostadores.value = response.totalApostadores || 0
-    apostadorSelecionado.value = null // Limpar apostador selecionado
-    dadosPdf.value = null // Limpar dados do PDF anterior
-    filtroApostador.value = '' // Limpar filtro ao carregar novos apostadores
-    console.log('Apostadores carregados:', response)
+    cacheApostasCombinadas.value = {}
+
+    const idsSelecionados = Array.from(new Set(
+      campeonatosSelecionados.value.map(id => parseInt(id))
+    )).filter(id => !Number.isNaN(id))
+
+    const [resultados, resultadosCombinados] = await Promise.all([
+      Promise.allSettled(idsSelecionados.map(id => corridaApi.getApostadores(id))),
+      Promise.allSettled(idsSelecionados.map(id => corridaApi.getApostadoresCombinados(id)))
+    ])
+
+    const combinadosPorCampeonato = {}
+    resultadosCombinados.forEach((resultado, indice) => {
+      const campeonatoId = idsSelecionados[indice]
+      if (resultado.status === 'fulfilled' && Array.isArray(resultado.value)) {
+        combinadosPorCampeonato[campeonatoId] = resultado.value
+      } else if (resultado.status === 'rejected') {
+        console.error(`Erro ao carregar apostadores combinados do campeonato ${campeonatoId}:`, resultado.reason)
+      }
+    })
+
+    const listaApostadores = []
+
+    resultados.forEach((resultado, indice) => {
+      const campeonatoId = idsSelecionados[indice]
+      const campeonato = campeonatos.value.find(c => c.id === parseInt(campeonatoId))
+
+      if (resultado.status === 'fulfilled') {
+        const resposta = resultado.value || {}
+        const apostadoresCampeonato = (resposta.apostadores || []).map(apostador => ({
+          ...apostador,
+          campeonatoId: parseInt(campeonatoId),
+          campeonatoNome: campeonato?.nome || `Campeonato ${campeonatoId}`
+        }))
+        listaApostadores.push(...apostadoresCampeonato)
+      } else {
+        console.error(`Erro ao carregar apostadores do campeonato ${campeonatoId}:`, resultado.reason)
+      }
+    })
+
+    // Processar apostadores combinados
+    idsSelecionados.forEach(campeonatoId => {
+      const combos = combinadosPorCampeonato[campeonatoId] || []
+      const campeonato = campeonatos.value.find(c => c.id === parseInt(campeonatoId))
+      const nomeCampeonato = campeonato?.nome || `Campeonato ${campeonatoId}`
+
+      combos.forEach(combo => {
+        const nomes = Array.isArray(combo?.apostadores) ? combo.apostadores : []
+        const chaveNomes = gerarChaveNomes(nomes)
+        if (!chaveNomes) {
+          return
+        }
+
+        const nomesNormalizados = new Set(
+          nomes.map(nome => normalizarTexto(nome)).filter(Boolean)
+        )
+
+        const membros = []
+
+        for (let i = listaApostadores.length - 1; i >= 0; i--) {
+          const apostador = listaApostadores[i]
+          if (apostador.combinado) continue
+          const campeonatoItemId = apostador.campeonatoId ?? apostador.campeonatoID ?? apostador.campeonato_id
+          if (campeonatoItemId !== parseInt(campeonatoId)) continue
+          const nomeNormalizado = normalizarTexto(apostador.nome)
+          if (nomeNormalizado && nomesNormalizados.has(nomeNormalizado)) {
+            membros.push(apostador)
+            listaApostadores.splice(i, 1)
+          }
+        }
+
+        const totalApostado = membros.reduce((acc, item) => acc + (Number(item.totalApostado) || 0), 0)
+        const totalPremio = membros.reduce((acc, item) => acc + (Number(item.totalPremio) || 0), 0)
+        const totalApostas = membros.reduce((acc, item) => acc + (Number(item.totalApostas) || 0), 0)
+
+        const nomeCombinado = nomes.length > 0 ? nomes.join(' + ') : (combo.grupoIdentificador || 'Apostadores Combinados')
+
+        listaApostadores.push({
+          id: `comb-${campeonatoId}-${combo.grupoIdentificador || chaveNomes}`,
+          chaveUnica: `comb-${campeonatoId}-${combo.grupoIdentificador || chaveNomes}`,
+          campeonatoId: parseInt(campeonatoId),
+          campeonatoNome: nomeCampeonato,
+          nome: nomeCombinado,
+          combinado: true,
+          grupoIdentificador: combo.grupoIdentificador || null,
+          nomesCombinados: nomes,
+          nomesChave: chaveNomes,
+          componentes: membros.map(membro => ({
+            id: membro.id,
+            nome: membro.nome,
+            campeonatoId: membro.campeonatoId
+          })),
+          totalApostado,
+          totalPremio,
+          totalApostas
+        })
+      })
+    })
+
+    listaApostadores.sort((a, b) => {
+      const nomeA = a.nome || ''
+      const nomeB = b.nome || ''
+      return nomeA.localeCompare(nomeB, 'pt-BR', { sensitivity: 'base' })
+    })
+
+    apostadores.value = listaApostadores
+    totalApostadores.value = listaApostadores.length
+    apostadorSelecionado.value = null
+    dadosPdf.value = null
+    filtroApostador.value = ''
+    console.log('Apostadores carregados:', listaApostadores)
   } catch (err) {
     console.error('Erro ao carregar apostadores:', err)
     apostadores.value = []
     totalApostadores.value = 0
-    filtroApostador.value = '' // Limpar filtro em caso de erro
+    filtroApostador.value = ''
   } finally {
     carregandoApostadores.value = false
   }
 }
 
+const enviarApostadoresCombinados = async () => {
+  if (apostadoresSelecionadosDetalhes.value.length < 2) {
+    mensagemApostadoresCombinados.value = 'Selecione ao menos dois apostadores para combinar.'
+    mensagemApostadoresCombinadosTipo.value = 'erro'
+    return
+  }
+
+  enviandoApostadoresCombinados.value = true
+  mensagemApostadoresCombinados.value = ''
+  mensagemApostadoresCombinadosTipo.value = ''
+
+  try {
+    const gruposPorCampeonato = apostadoresSelecionadosDetalhes.value.reduce((acc, apostador) => {
+      if (!apostador.campeonatoId) {
+        console.warn(`Apostador ${apostador.nome} sem campeonato associado. Ignorando.`)
+        return acc
+      }
+
+      const chave = apostador.campeonatoId
+      if (!acc[chave]) {
+        acc[chave] = []
+      }
+
+      if (apostador.nome) {
+        acc[chave].push(apostador.nome)
+      }
+
+      return acc
+    }, {})
+
+    const entradas = Object.entries(gruposPorCampeonato).filter(([, nomes]) => nomes.length > 0)
+
+    if (entradas.length === 0) {
+      mensagemApostadoresCombinados.value = 'Nenhum apostador válido selecionado para envio.'
+      mensagemApostadoresCombinadosTipo.value = 'erro'
+      return
+    }
+
+    const resultados = await Promise.allSettled(
+      entradas.map(([campeonatoId, nomes]) =>
+        corridaApi.postApostadoresCombinados(campeonatoId, nomes)
+      )
+    )
+
+    const houveErro = resultados.some(resultado => resultado.status === 'rejected')
+
+    if (houveErro) {
+      mensagemApostadoresCombinados.value = 'Algumas combinações não puderam ser enviadas. Verifique o console para detalhes.'
+      mensagemApostadoresCombinadosTipo.value = 'erro'
+    } else {
+      mensagemApostadoresCombinados.value = 'Apostadores combinados enviados com sucesso!'
+      mensagemApostadoresCombinadosTipo.value = 'sucesso'
+      apostadoresSelecionados.value = []
+    }
+  } catch (error) {
+    console.error('Erro ao enviar apostadores combinados:', error)
+    mensagemApostadoresCombinados.value = 'Erro ao enviar apostadores combinados. Tente novamente.'
+    mensagemApostadoresCombinadosTipo.value = 'erro'
+  } finally {
+    enviandoApostadoresCombinados.value = false
+  }
+}
+
+const obterApostasCombinadasPorCampeonato = async (campeonatoId) => {
+  if (!campeonatoId) return []
+  const chave = campeonatoId.toString()
+  if (!cacheApostasCombinadas.value[chave]) {
+    try {
+      const resposta = await corridaApi.getApostadoresCombinadosApostas(campeonatoId)
+      cacheApostasCombinadas.value[chave] = resposta
+    } catch (error) {
+      console.error(`Erro ao buscar apostas combinadas do campeonato ${campeonatoId}:`, error)
+      cacheApostasCombinadas.value[chave] = []
+    }
+  }
+  return cacheApostasCombinadas.value[chave] || []
+}
+
+const transformarGrupoCombinadoParaPdf = (grupo, apostador) => {
+  const nomesGrupo = Array.isArray(grupo?.apostadores) ? grupo.apostadores : []
+  return {
+    apostador: {
+      nome: apostador?.nome || (nomesGrupo.join(' + ') || 'Apostadores Combinados'),
+      nomesCombinados: apostador?.nomesCombinados || nomesGrupo,
+      grupoIdentificador: grupo?.grupoIdentificador || apostador?.grupoIdentificador || '',
+      combinado: true
+    },
+    apostasPorRodada: Array.isArray(grupo?.apostasPorRodada) ? grupo.apostasPorRodada : [],
+    raw: grupo
+  }
+}
+
 // Função para carregar dados do PDF
 const carregarDadosPdf = async (apostador) => {
-  if (!campeonatoSelecionado.value || !apostador.id) {
+  if (!apostador?.campeonatoId || !apostador.id) {
     return
   }
 
@@ -5417,9 +5704,34 @@ const carregarDadosPdf = async (apostador) => {
   carregandoPdf.value = true
   
   try {
-    const response = await corridaApi.getPdfDados(campeonatoSelecionado.value, apostador.id)
-    dadosPdf.value = response
-    console.log('Dados do PDF carregados:', response)
+    if (apostador.combinado) {
+      const dadosCombinados = await obterApostasCombinadasPorCampeonato(apostador.campeonatoId)
+      let grupoEncontrado = null
+
+      if (Array.isArray(dadosCombinados)) {
+        const chaveNomes = apostador.nomesChave || gerarChaveNomes(apostador.nomesCombinados)
+
+        grupoEncontrado = dadosCombinados.find(grupo => {
+          if (!grupo) return false
+          if (apostador.grupoIdentificador && grupo.grupoIdentificador) {
+            return grupo.grupoIdentificador === apostador.grupoIdentificador
+          }
+          const nomesGrupo = Array.isArray(grupo.apostadores) ? gerarChaveNomes(grupo.apostadores) : ''
+          return nomesGrupo && nomesGrupo === chaveNomes
+        })
+      }
+
+      if (!grupoEncontrado) {
+        throw new Error('Combinação não encontrada no endpoint de apostas combinadas.')
+      }
+
+      dadosPdf.value = transformarGrupoCombinadoParaPdf(grupoEncontrado, apostador)
+      console.log('Dados do PDF combinados carregados:', dadosPdf.value)
+    } else {
+      const response = await corridaApi.getPdfDados(apostador.campeonatoId, apostador.id)
+      dadosPdf.value = response
+      console.log('Dados do PDF carregados:', response)
+    }
   } catch (err) {
     console.error('Erro ao carregar dados do PDF:', err)
     dadosPdf.value = null
@@ -5565,7 +5877,7 @@ const gerarHTMLApostador = (dados) => {
 
 // Função para gerar PDF de todos os apostadores
 const gerarPDFTodosApostadores = async () => {
-  if (!campeonatoSelecionado.value || apostadoresFiltrados.value.length === 0) {
+  if (apostadoresFiltrados.value.length === 0) {
     return
   }
 
@@ -5575,9 +5887,35 @@ const gerarPDFTodosApostadores = async () => {
     // Buscar dados de todos os apostadores
     const dadosApostadores = []
     for (const apostador of apostadoresFiltrados.value) {
+      if (!apostador.campeonatoId) {
+        console.warn(`Apostador ${apostador.nome} sem campeonato associado. Pulando.`)
+        continue
+      }
       try {
-        const response = await corridaApi.getPdfDados(campeonatoSelecionado.value, apostador.id)
-        dadosApostadores.push(response)
+        if (apostador.combinado) {
+          const dadosCombinados = await obterApostasCombinadasPorCampeonato(apostador.campeonatoId)
+          let grupoEncontrado = null
+          if (Array.isArray(dadosCombinados)) {
+            const chaveNomes = apostador.nomesChave || gerarChaveNomes(apostador.nomesCombinados)
+            grupoEncontrado = dadosCombinados.find(grupo => {
+              if (!grupo) return false
+              if (apostador.grupoIdentificador && grupo.grupoIdentificador) {
+                return grupo.grupoIdentificador === apostador.grupoIdentificador
+              }
+              const nomesGrupo = Array.isArray(grupo.apostadores) ? gerarChaveNomes(grupo.apostadores) : ''
+              return nomesGrupo && nomesGrupo === chaveNomes
+            })
+          }
+
+          if (grupoEncontrado) {
+            dadosApostadores.push(transformarGrupoCombinadoParaPdf(grupoEncontrado, apostador))
+          } else {
+            console.warn(`Combinação ${apostador.nome} não encontrada para geração de PDF.`)
+          }
+        } else {
+          const response = await corridaApi.getPdfDados(apostador.campeonatoId, apostador.id)
+          dadosApostadores.push(response)
+        }
       } catch (err) {
         console.error(`Erro ao buscar dados do apostador ${apostador.nome}:`, err)
       }
@@ -5908,7 +6246,7 @@ const salvarEdicao = async () => {
   
   try {
     await corridaApi.renomearApostador(
-      campeonatoSelecionado.value,
+      apostadorSelecionado.value.campeonatoId,
       apostadorSelecionado.value.nome,
       nomeEditado.value.trim()
     )
