@@ -90,9 +90,9 @@
                       </div>
 
                       <!-- Lista de Cavalos -->
-                      <div v-if="tipoSelecionado.cavalos.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+                      <div v-if="cavalosOrdenados.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
                         <div
-                          v-for="cavalo in tipoSelecionado.cavalos"
+                          v-for="cavalo in cavalosOrdenados"
                           :key="`${cavalo.cavaloId}-${cavalo.grupoId}`"
                           class="flex items-center justify-between p-3 bg-neutral-50 border rounded-lg hover:border-blue-300 transition-colors cursor-pointer"
                           :class="{ 'border-blue-500 bg-blue-50': isCavaloSelecionado(cavalo.cavaloId, cavalo.grupoId) }"
@@ -195,6 +195,13 @@ const cavalosSelecionados = ref([])
 const cavalosSelecionadosDoTipo = computed(() => {
   if (!tipoSelecionado.value) return []
   return cavalosSelecionados.value.filter(c => c.tipoId === tipoSelecionado.value.tipoId)
+})
+
+const cavalosOrdenados = computed(() => {
+  if (!tipoSelecionado.value?.cavalos) return []
+  return [...tipoSelecionado.value.cavalos].sort((a, b) =>
+    (a.cavaloNome || '').localeCompare(b.cavaloNome || '', 'pt', { sensitivity: 'base' })
+  )
 })
 
 // Carregar tipos quando modal abrir

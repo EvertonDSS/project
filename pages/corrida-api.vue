@@ -1889,7 +1889,7 @@
               
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div 
-                  v-for="cavalo in cavalosPossiveisGanhadores" 
+                  v-for="cavalo in cavalosPossiveisGanhadoresOrdenados" 
                   :key="cavalo.id || cavalo.idcavalo"
                   @click="toggleCavaloFinalista(cavalo.id || cavalo.idcavalo)"
                   :class="[
@@ -2946,6 +2946,17 @@ const cavalosSelecionadosVencedores = ref(new Set())
 const salvandoGanhadoresPossiveis = ref(false)
 const mensagemGanhadoresPossiveis = ref('')
 const mensagemGanhadoresPossiveisTipo = ref('')
+const cavalosPossiveisGanhadoresOrdenados = computed(() => {
+  if (!Array.isArray(cavalosPossiveisGanhadores.value)) {
+    return []
+  }
+
+  return [...cavalosPossiveisGanhadores.value].sort((a, b) => {
+    const nomeA = a?.nome ?? a?.nomecavalo ?? ''
+    const nomeB = b?.nome ?? b?.nomecavalo ?? ''
+    return nomeA.localeCompare(nomeB, 'pt-BR', { sensitivity: 'base' })
+  })
+})
 
 const cavalosSelecionadosFinalistasDetalhes = computed(() => {
   if (!Array.isArray(cavalosPossiveisGanhadores.value) || cavalosPossiveisGanhadores.value.length === 0) {
