@@ -5205,9 +5205,16 @@ const enviarPareo = async () => {
     return
   }
 
+  if (pareoFormCriar.value.texto.trim().toUpperCase().startsWith('R')) {
+    mensagemPareo.value = 'Adicione o texto válido, aqui tem que ser o pareo/cavalos'
+    mensagemPareoTipo.value = 'erro'
+    return;
+  }
+
   enviandoPareo.value = true
   mensagemPareo.value = ''
   
+
   try {
     const response = await corridaApi.criarPareo(
       pareoFormCriar.value.campeonatoId,
@@ -5364,6 +5371,12 @@ const enviarApostas = async () => {
   enviandoApostas.value = true
   mensagemApostas.value = ''
   
+  if (!apostaForm.value.texto.trim().toUpperCase().startsWith('R')) {
+    mensagemApostas.value = 'Adicione o texto válido, adicione a rodada aqui'
+    mensagemApostasTipo.value = 'erro'
+    return;
+  }
+
   try {
     const response = await corridaApi.criarApostas(
       apostaForm.value.campeonatoId,
