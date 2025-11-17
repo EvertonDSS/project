@@ -4,7 +4,7 @@ export const useCorridaApi = () => {
   const config = useRuntimeConfig()
   
   // URL base da API Corrida App
-  const baseURL = 'https://corrida-app11.onrender.com/'
+  const baseURL = 'https://corrida-app11-s9fe.onrender.com/'
   //const baseURL = 'http://localhost:3002/'
 
   const api = $fetch.create({
