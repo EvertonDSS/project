@@ -184,11 +184,8 @@ export const useCorridaApi = () => {
 
     async excluirPareo(campeonatoId: string | number, tipoRodadaId: string | number, pareo: string) {
       try {
-        const response = await $fetch(`https://corrida-app11.onrender.com/pareos-excluidos/${campeonatoId}/${tipoRodadaId}`, {
+        const response = await api(`/pareos-excluidos/${campeonatoId}/${tipoRodadaId}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: { pareo: pareo }
         })
         return response
@@ -210,7 +207,7 @@ export const useCorridaApi = () => {
 
     async criarApostas(campeonatoId: string | number, tipoRodadaId: string | number, texto: string) {
       try {
-        const response = await $fetch(`https://corrida-app11.onrender.com/apostas/${campeonatoId}/${tipoRodadaId}`, {
+        const response = await api(`/apostas/${campeonatoId}/${tipoRodadaId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'text/plain',
