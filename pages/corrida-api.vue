@@ -5661,11 +5661,24 @@ const enviarApostas = async () => {
     return;
   }
 
+  // Processar o texto: substituir 'retirada' por 'Retirada' (primeira letra maiúscula)
+  let textoProcessado = apostaForm.value.texto
+  // Substituir 'retirada' por 'Retirada' (case-insensitive, mas mantendo o resto do texto)
+  textoProcessado = textoProcessado.replace(/\bretirada\b/gi, (match) => {
+    return 'Retirada'
+  })
+  // Substituir U+00A0 (non-breaking space) por U+0020 (espaço normal) entre 'retirada'/'Retirada' e número
+  textoProcessado = textoProcessado.replace(/\bretirada\u00A0(\d)/gi, (match, numero) => {
+    return `Retirada ${numero}`
+  })
+  // Adicionar espaço antes de '✅' se não houver espaço antes
+  textoProcessado = textoProcessado.replace(/([^\s])✅/g, '$1 ✅')
+
   try {
     const response = await corridaApi.criarApostas(
       apostaForm.value.campeonatoId,
       apostaForm.value.tipoRodadaId,
-      apostaForm.value.texto
+      textoProcessado
     )
     
     mensagemApostas.value = 'Apostas criadas com sucesso!'
