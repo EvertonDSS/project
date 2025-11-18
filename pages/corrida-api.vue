@@ -891,20 +891,38 @@
                   {{ dados.nometiporodada }}
                 </h4>
                 <div class="flex flex-wrap gap-2">
-                  <span
+                  <div
                     v-for="rodada in dados.rodadas"
                     :key="`${tipoRodadaId}-${rodada}`"
-                    :class="[
-                      'px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors',
-                      rodadaCasaForm.tipoRodadaId === tipoRodadaId && rodadaCasaForm.rodada === rodada 
-                        ? 'bg-green-600 text-white' 
-                        : 'bg-green-100 text-green-800 hover:bg-green-200'
-                    ]"
-                    @click="selecionarRodada(tipoRodadaId, rodada)"
-                    @dblclick="handleRodadaDblClick(tipoRodadaId, rodada)"
+                    class="flex items-center gap-1"
                   >
-                    {{ rodada }}
-                  </span>
+                    <span
+                      :class="[
+                        'px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors',
+                        rodadaCasaForm.tipoRodadaId === tipoRodadaId && rodadaCasaForm.rodada === rodada 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-green-100 text-green-800 hover:bg-green-200'
+                      ]"
+                      @click="selecionarRodada(tipoRodadaId, rodada)"
+                      @dblclick="handleRodadaDblClick(tipoRodadaId, rodada)"
+                    >
+                      {{ rodada }}
+                    </span>
+                    <button
+                      @click="excluirRodadaCadastrada(apostaForm.campeonatoId, tipoRodadaId, rodada)"
+                      :disabled="excluindoRodada === `${tipoRodadaId}-${rodada}`"
+                      class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Excluir rodada"
+                    >
+                      <svg v-if="excluindoRodada === `${tipoRodadaId}-${rodada}`" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -2913,6 +2931,7 @@ const mensagemRodadaCasaTipo = ref('')
 const enviandoRodadaAposta = ref(false)
 const mensagemRodadaAposta = ref('')
 const mensagemRodadaApostaTipo = ref('')
+const excluindoRodada = ref('')
 const modalApostasRodadaOpen = ref(false)
 const apostasRodadaSelecionada = ref([])
 const editandoApostasRodada = ref(false)
@@ -3075,6 +3094,51 @@ const fecharModalApostasRodada = () => {
   salvandoApostasRodada.value = false
   mensagemEdicaoApostasRodada.value = ''
   mensagemEdicaoApostasRodadaTipo.value = ''
+}
+
+const excluirRodadaCadastrada = async (campeonatoId, tipoRodadaId, nomeRodada) => {
+  if (!campeonatoId || !tipoRodadaId || !nomeRodada) {
+    mensagemRodadaAposta.value = 'Dados insuficientes para excluir a rodada'
+    mensagemRodadaApostaTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemRodadaAposta.value = ''
+    }, 3000)
+    return
+  }
+
+  const chaveRodada = `${tipoRodadaId}-${nomeRodada}`
+  excluindoRodada.value = chaveRodada
+  mensagemRodadaAposta.value = ''
+  mensagemRodadaApostaTipo.value = ''
+
+  try {
+    await corridaApi.deleteRodadaAposta(campeonatoId, tipoRodadaId, nomeRodada)
+    
+    mensagemRodadaAposta.value = 'Rodada excluída com sucesso!'
+    mensagemRodadaApostaTipo.value = 'sucesso'
+    
+    // Recarregar rodadas cadastradas para atualizar a lista
+    await carregarRodadasCadastradas()
+    
+    // Limpar seleção se a rodada excluída estava selecionada
+    if (rodadaCasaForm.value.tipoRodadaId === tipoRodadaId && rodadaCasaForm.value.rodada === nomeRodada) {
+      rodadaCasaForm.value.tipoRodadaId = ''
+      rodadaCasaForm.value.rodada = ''
+    }
+    
+    setTimeout(() => {
+      mensagemRodadaAposta.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('Erro ao excluir rodada:', error)
+    mensagemRodadaAposta.value = 'Erro ao excluir rodada. Tente novamente.'
+    mensagemRodadaApostaTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemRodadaAposta.value = ''
+    }, 3000)
+  } finally {
+    excluindoRodada.value = ''
+  }
 }
 
 // Estados para apostadores e PDF
@@ -3586,6 +3650,11 @@ const obterCavalosDoTipo = (dados) => {
       
       // Verificar se o valor é um array (lista de apostadores)
       if (Array.isArray(dados[key])) {
+        // Não mostrar se o array estiver vazio
+        if (dados[key].length === 0) {
+          continue
+        }
+        
         // Filtrar apostadores que tenham valor de prêmio válido
         const apostadoresComValor = (dados[key] || []).filter(apostador => {
           const valorPremio = apostador?.valorpremio ?? apostador?.valorPremio ?? 0

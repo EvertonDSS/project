@@ -552,6 +552,25 @@ export const useCorridaApi = () => {
       }
     },
 
+    async deleteRodadaAposta(
+      campeonatoId: string | number,
+      tipoRodadaId: string | number,
+      nomeRodada: string
+    ) {
+      try {
+        const response = await api(`/apostas/rodadas/${campeonatoId}/${tipoRodadaId}`, {
+          method: 'DELETE',
+          body: {
+            nomeRodada
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao deletar rodada de apostas:', error)
+        throw error
+      }
+    },
+
     async getVencedoresCampeonato(campeonatoId: string | number) {
       try {
         const response = await api(`/vencedores/${campeonatoId}`)
