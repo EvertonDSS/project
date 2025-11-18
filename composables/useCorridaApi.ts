@@ -288,6 +288,24 @@ export const useCorridaApi = () => {
       }
     },
 
+    async deleteApostadoresCombinados(
+      campeonatoId: string | number,
+      grupoIdentificador: string
+    ) {
+      try {
+        const response = await api(`/apostadores-combinados/${campeonatoId}`, {
+          method: 'DELETE',
+          body: {
+            grupoIdentificador
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao deletar apostadores combinados:', error)
+        throw error
+      }
+    },
+
     async getPdfDados(campeonatoId: string | number, apostadorId: string | number) {
       try {
         const response = await api(`/pdf/dados/${campeonatoId}/${apostadorId}`)

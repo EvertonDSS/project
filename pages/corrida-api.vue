@@ -736,17 +736,43 @@
             </div>
 
             <div class="mt-3">
-              <button
-                @click="enviarApostadoresCombinados"
-                :disabled="enviandoApostadoresCombinados || apostadoresSelecionadosDetalhes.length < 2"
-                class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
-              >
-                <svg v-if="enviandoApostadoresCombinados" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>{{ enviandoApostadoresCombinados ? 'Enviando...' : 'Enviar Apostadores Combinados' }}</span>
-              </button>
+              <div class="flex gap-2">
+                <button
+                  @click="enviarApostadoresCombinados"
+                  :disabled="enviandoApostadoresCombinados || apostadoresSelecionadosDetalhes.length < 2"
+                  class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                >
+                  <svg v-if="enviandoApostadoresCombinados" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>{{ enviandoApostadoresCombinados ? 'Enviando...' : 'Combinar apostadores' }}</span>
+                </button>
+                <button
+                  @click="deletarApostadoresCombinados"
+                  :disabled="deletandoApostadoresCombinados || !grupoIdentificadorParaDeletar || campeonatosSelecionados.length === 0"
+                  class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                  title="Deletar Apostadores Combinados"
+                >
+                  <svg v-if="deletandoApostadoresCombinados" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                  <span>{{ deletandoApostadoresCombinados ? 'Deletando...' : 'Deletar' }}</span>
+                </button>
+              </div>
+              <div class="mt-2">
+                <input
+                  v-model="grupoIdentificadorParaDeletar"
+                  type="text"
+                  placeholder="Grupo Identificador para deletar"
+                  disabled
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                />
+              </div>
               <p class="text-xs text-gray-500 mt-2">
                 Seleciona dois ou mais apostadores para enviá-los ao endpoint de combinações.
               </p>
@@ -1394,7 +1420,12 @@
 
             <div v-else class="space-y-6">
               <!-- Para cada tipo de rodada (quando agrupado) ou objeto direto (quando não agrupado) -->
-              <div v-for="(tipoRodada, index) in dadosGanhadoresVisualizacao" :key="ganhadoresAgrupados && tipoRodada.tiporodada ? tipoRodada.tiporodada : index" class="mb-8">
+              <div 
+                v-for="(tipoRodada, index) in dadosGanhadoresVisualizacao" 
+                :key="ganhadoresAgrupados && tipoRodada.tiporodada ? tipoRodada.tiporodada : index" 
+                v-show="obterCavalosDoTipo(tipoRodada).length > 0"
+                class="mb-8"
+              >
                 <!-- Título do tipo de rodada (apenas quando agrupado) -->
                 <h3 v-if="ganhadoresAgrupados && tipoRodada.nometiporodada" class="text-xl font-bold text-gray-800 mb-4 bg-yellow-100 px-4 py-2 rounded-lg">
                   {{ tipoRodada.nometiporodada || `Tipo ${tipoRodada.tiporodada || ''}` }}
@@ -3064,6 +3095,8 @@ const enviandoApostadoresCombinados = ref(false)
 const mensagemApostadoresCombinados = ref('')
 const mensagemApostadoresCombinadosTipo = ref('')
 const cacheApostasCombinadas = ref({})
+const deletandoApostadoresCombinados = ref(false)
+const grupoIdentificadorParaDeletar = ref('')
 
 const gerarChaveNomes = (nomes) => {
   if (!Array.isArray(nomes)) return ''
@@ -3502,11 +3535,18 @@ const visualizarGanhadoresPossiveis = async () => {
       }
     }
     
-    // Verificar se há dados válidos
+    // Verificar se há dados válidos (cavalos com apostadores que tenham valores)
     const temDados = dadosGanhadoresVisualizacao.value.length > 0 && 
       dadosGanhadoresVisualizacao.value.some(item => {
         const cavalos = obterCavalosDoTipo(item)
-        return cavalos.length > 0
+        // Verificar se há cavalos com apostadores que tenham valores de prêmio
+        return cavalos.length > 0 && cavalos.some(cavalo => 
+          cavalo.apostadores && cavalo.apostadores.length > 0 &&
+          cavalo.apostadores.some(apostador => {
+            const valorPremio = apostador?.valorpremio ?? apostador?.valorPremio ?? 0
+            return valorPremio > 0
+          })
+        )
       })
     
     if (temDados) {
@@ -3546,18 +3586,27 @@ const obterCavalosDoTipo = (dados) => {
       
       // Verificar se o valor é um array (lista de apostadores)
       if (Array.isArray(dados[key])) {
-        // Ordenar apostadores alfabeticamente por nome
-        const apostadoresOrdenados = [...(dados[key] || [])].sort((a, b) => {
-          const nomeA = (a.nomeapostador || '').toLowerCase()
-          const nomeB = (b.nomeapostador || '').toLowerCase()
-          return nomeA.localeCompare(nomeB, 'pt-BR')
+        // Filtrar apostadores que tenham valor de prêmio válido
+        const apostadoresComValor = (dados[key] || []).filter(apostador => {
+          const valorPremio = apostador?.valorpremio ?? apostador?.valorPremio ?? 0
+          return valorPremio > 0
         })
         
-        cavalos.push({
-          id: key,
-          nome: nomeCavalo,
-          apostadores: apostadoresOrdenados
-        })
+        // Só adicionar o cavalo se tiver apostadores com valores
+        if (apostadoresComValor.length > 0) {
+          // Ordenar apostadores alfabeticamente por nome
+          const apostadoresOrdenados = [...apostadoresComValor].sort((a, b) => {
+            const nomeA = (a.nomeapostador || '').toLowerCase()
+            const nomeB = (b.nomeapostador || '').toLowerCase()
+            return nomeA.localeCompare(nomeB, 'pt-BR')
+          })
+          
+          cavalos.push({
+            id: key,
+            nome: nomeCavalo,
+            apostadores: apostadoresOrdenados
+          })
+        }
       }
     }
   }
@@ -5975,6 +6024,63 @@ const enviarApostadoresCombinados = async () => {
   }
 }
 
+const deletarApostadoresCombinados = async () => {
+  if (!grupoIdentificadorParaDeletar.value || !grupoIdentificadorParaDeletar.value.trim()) {
+    mensagemApostadoresCombinados.value = 'Por favor, informe o grupo identificador'
+    mensagemApostadoresCombinadosTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemApostadoresCombinados.value = ''
+    }, 3000)
+    return
+  }
+
+  if (campeonatosSelecionados.value.length === 0) {
+    mensagemApostadoresCombinados.value = 'Por favor, selecione pelo menos um campeonato'
+    mensagemApostadoresCombinadosTipo.value = 'erro'
+    setTimeout(() => {
+      mensagemApostadoresCombinados.value = ''
+    }, 3000)
+    return
+  }
+
+  deletandoApostadoresCombinados.value = true
+  mensagemApostadoresCombinados.value = ''
+  mensagemApostadoresCombinadosTipo.value = ''
+
+  try {
+    // Deletar para cada campeonato selecionado
+    const resultados = await Promise.allSettled(
+      campeonatosSelecionados.value.map((campeonatoId) =>
+        corridaApi.deleteApostadoresCombinados(campeonatoId, grupoIdentificadorParaDeletar.value.trim())
+      )
+    )
+
+    const houveErro = resultados.some(resultado => resultado.status === 'rejected')
+
+    if (houveErro) {
+      mensagemApostadoresCombinados.value = 'Algumas deleções não puderam ser realizadas. Verifique o console para detalhes.'
+      mensagemApostadoresCombinadosTipo.value = 'erro'
+      resultados.forEach((resultado, index) => {
+        if (resultado.status === 'rejected') {
+          console.error(`Erro ao deletar apostadores combinados do campeonato ${campeonatosSelecionados.value[index]}:`, resultado.reason)
+        }
+      })
+    } else {
+      mensagemApostadoresCombinados.value = 'Apostadores combinados deletados com sucesso!'
+      mensagemApostadoresCombinadosTipo.value = 'sucesso'
+      grupoIdentificadorParaDeletar.value = ''
+      // Recarregar apostadores para atualizar a lista
+      await carregarApostadores()
+    }
+  } catch (error) {
+    console.error('Erro ao deletar apostadores combinados:', error)
+    mensagemApostadoresCombinados.value = 'Erro ao deletar apostadores combinados. Tente novamente.'
+    mensagemApostadoresCombinadosTipo.value = 'erro'
+  } finally {
+    deletandoApostadoresCombinados.value = false
+  }
+}
+
 const obterApostasCombinadasPorCampeonato = async (campeonatoId) => {
   if (!campeonatoId) return []
   const chave = campeonatoId.toString()
@@ -6015,6 +6121,11 @@ const carregarDadosPdf = async (apostador) => {
   
   try {
     if (apostador.combinado) {
+      // Preencher automaticamente o grupoIdentificador se o apostador for combinado
+      if (apostador.grupoIdentificador) {
+        grupoIdentificadorParaDeletar.value = apostador.grupoIdentificador
+      }
+      
       const dadosCombinados = await obterApostasCombinadasPorCampeonato(apostador.campeonatoId)
       let grupoEncontrado = null
 
@@ -6035,9 +6146,17 @@ const carregarDadosPdf = async (apostador) => {
         throw new Error('Combinação não encontrada no endpoint de apostas combinadas.')
       }
 
+      // Garantir que o grupoIdentificador seja preenchido mesmo se não estava no apostador
+      if (grupoEncontrado.grupoIdentificador && !grupoIdentificadorParaDeletar.value) {
+        grupoIdentificadorParaDeletar.value = grupoEncontrado.grupoIdentificador
+      }
+
       dadosPdf.value = transformarGrupoCombinadoParaPdf(grupoEncontrado, apostador)
       console.log('Dados do PDF combinados carregados:', dadosPdf.value)
     } else {
+      // Limpar o grupoIdentificador se o apostador não for combinado
+      grupoIdentificadorParaDeletar.value = ''
+      
       const response = await corridaApi.getPdfDados(apostador.campeonatoId, apostador.id)
       dadosPdf.value = response
       console.log('Dados do PDF carregados:', response)
