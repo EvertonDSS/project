@@ -3546,15 +3546,27 @@ const obterCavalosDoTipo = (dados) => {
       
       // Verificar se o valor é um array (lista de apostadores)
       if (Array.isArray(dados[key])) {
+        // Ordenar apostadores alfabeticamente por nome
+        const apostadoresOrdenados = [...(dados[key] || [])].sort((a, b) => {
+          const nomeA = (a.nomeapostador || '').toLowerCase()
+          const nomeB = (b.nomeapostador || '').toLowerCase()
+          return nomeA.localeCompare(nomeB, 'pt-BR')
+        })
+        
         cavalos.push({
           id: key,
           nome: nomeCavalo,
-          apostadores: dados[key] || []
+          apostadores: apostadoresOrdenados
         })
       }
     }
   }
-  return cavalos
+  // Ordenar cavalos alfabeticamente por nome
+  return cavalos.sort((a, b) => {
+    const nomeA = (a.nome || '').toLowerCase()
+    const nomeB = (b.nome || '').toLowerCase()
+    return nomeA.localeCompare(nomeB, 'pt-BR')
+  })
 }
 
 const salvarGanhadoresPossiveis = async () => {
