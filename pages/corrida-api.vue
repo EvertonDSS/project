@@ -6275,8 +6275,44 @@ const gerarHTMLApostador = (dados) => {
     })
   }
   
+  // Função para ordenar rodadas: Rodada 01, Rodada 01 B, Rodada 02, Rodada 02 B, etc.
+  const ordenarRodadas = (rodadas) => {
+    if (!rodadas || !Array.isArray(rodadas)) return rodadas
+    
+    return [...rodadas].sort((a, b) => {
+      const nomeA = (a.nomeRodada || '').trim()
+      const nomeB = (b.nomeRodada || '').trim()
+      
+      // Extrair número da rodada (ex: "Rodada 01" -> 01, "Rodada 01 B" -> 01)
+      const regexNumero = /(\d+)/i
+      const matchA = nomeA.match(regexNumero)
+      const matchB = nomeB.match(regexNumero)
+      
+      const numeroA = matchA ? parseInt(matchA[1], 10) : 0
+      const numeroB = matchB ? parseInt(matchB[1], 10) : 0
+      
+      // Comparar números primeiro
+      if (numeroA !== numeroB) {
+        return numeroA - numeroB
+      }
+      
+      // Se números são iguais, verificar se tem "B" (com "B" vem depois)
+      const temBA = /\bB\b/i.test(nomeA)
+      const temBB = /\bB\b/i.test(nomeB)
+      
+      if (temBA && !temBB) return 1  // A tem "B", B não tem -> B vem primeiro
+      if (!temBA && temBB) return -1 // A não tem "B", B tem -> A vem primeiro
+      
+      // Ambos têm ou não têm "B", manter ordem original
+      return 0
+    })
+  }
+  
+  // Ordenar rodadas antes de processar
+  const rodadasOrdenadas = ordenarRodadas(dados.apostasPorRodada)
+  
   // Processar dados
-  dados.apostasPorRodada?.forEach(rodada => {
+  rodadasOrdenadas?.forEach(rodada => {
     rodada.apostas?.forEach((aposta) => {
       const cavalos = aposta.pareo?.cavalos?.map(cavalo => cavalo.nome).join(' / ') || ''
       const chave = `${aposta.pareo?.numero || ''}- ${cavalos}`
@@ -6297,8 +6333,8 @@ const gerarHTMLApostador = (dados) => {
     })
   })
   
-  // Gerar linhas da tabela
-  const linhasTabela = dados.apostasPorRodada?.map(rodada => 
+  // Gerar linhas da tabela (já usando rodadasOrdenadas criado anteriormente)
+  const linhasTabela = rodadasOrdenadas?.map(rodada => 
     rodada.apostas?.map((aposta) => {
       const cavalos = aposta.pareo?.cavalos?.map(cavalo => cavalo.nome).join(' / ') || ''
       return `
