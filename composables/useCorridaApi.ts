@@ -195,6 +195,25 @@ export const useCorridaApi = () => {
       }
     },
 
+    async atualizarPareo(
+      campeonatoId: string | number,
+      tipoRodadaId: string | number,
+      cavalos: Array<{ pareoId: number; id: number; nome: string }>
+    ) {
+      try {
+        const response = await api(`/pareos/${campeonatoId}/${tipoRodadaId}/cavalos`, {
+          method: 'PUT',
+          body: {
+            cavalos
+          }
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao atualizar pareo:', error)
+        throw error
+      }
+    },
+
     async getPareosExcluidos(campeonatoId: string | number, tipoRodadaId: string | number) {
       try {
         const response = await api(`/pareos-excluidos/${campeonatoId}/${tipoRodadaId}`)

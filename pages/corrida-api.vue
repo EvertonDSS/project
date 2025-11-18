@@ -2485,26 +2485,50 @@
         <!-- Content -->
         <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div class="mb-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-              </svg>
-              Cavalos ({{ pareoSelecionado?.cavalos?.length || 0 }})
-            </h3>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Cavalos ({{ pareoSelecionado?.cavalos?.length || 0 }})
+              </h3>
+              <button
+                v-if="!editandoPareo"
+                @click="iniciarEdicaoPareo"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <span>Editar</span>
+              </button>
+            </div>
             <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-4 space-y-3">
               <div 
-                v-for="cavalo in pareoSelecionado?.cavalos" 
-                :key="cavalo.id"
+                v-for="(cavalo, index) in (editandoPareo ? cavalosEditando : pareoSelecionado?.cavalos)" 
+                :key="cavalo.id || index"
                 class="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-200"
               >
                 <div class="flex-1">
-                  <div class="font-semibold text-gray-800">{{ cavalo.nome }}</div>
-                  <div v-if="cavalo.identificador" class="text-sm text-gray-600">Identificador: {{ cavalo.identificador }}</div>
+                  <div v-if="editandoPareo" class="mb-2">
+                    <input
+                      v-model="cavalo.nome"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Nome do cavalo"
+                    />
+                  </div>
+                  <div v-else class="font-semibold text-gray-800">{{ cavalo.nome }}</div>
+                  <div v-if="cavalo.identificador && !editandoPareo" class="text-sm text-gray-600">Identificador: {{ cavalo.identificador }}</div>
                 </div>
-                <div class="text-xs text-gray-500">
+                <div class="text-xs text-gray-500 ml-4">
                   ID: {{ cavalo.id }}
+                  <span v-if="cavalo.pareoId" class="block">Pareo ID: {{ cavalo.pareoId }}</span>
                 </div>
               </div>
+            </div>
+            <div v-if="mensagemEdicaoPareo" :class="mensagemEdicaoPareoTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" class="mt-3 text-sm font-medium">
+              {{ mensagemEdicaoPareo }}
             </div>
           </div>
 
@@ -2533,8 +2557,28 @@
         </div>
 
         <!-- Footer -->
-        <div class="bg-neutral-100 px-6 py-4 flex justify-end">
+        <div class="bg-neutral-100 px-6 py-4 flex justify-end space-x-3">
           <button 
+            v-if="editandoPareo"
+            @click="cancelarEdicaoPareo"
+            class="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button 
+            v-if="editandoPareo"
+            @click="salvarEdicaoPareo"
+            :disabled="salvandoEdicaoPareo"
+            class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <svg v-if="salvandoEdicaoPareo" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ salvandoEdicaoPareo ? 'Salvando...' : 'Salvar' }}</span>
+          </button>
+          <button 
+            v-if="!editandoPareo"
             @click="fecharModalPareo"
             class="px-6 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
           >
@@ -2592,31 +2636,86 @@
                   'font-bold text-lg',
                   isPareoExcluido(pareo) ? 'text-red-800' : 'text-blue-800'
                 ]">Pareo #{{ pareo.numero }}</h3>
-                <button
-                  v-if="!isPareoExcluido(pareo)"
-                  @click="excluirPareo(pareo)"
-                  class="text-red-600 hover:text-red-800 transition-colors p-1"
-                  title="Excluir pareo"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
-                </button>
+                <div class="flex items-center space-x-2">
+                  <button
+                    v-if="!isPareoExcluido(pareo) && pareoEditandoId !== pareo.id"
+                    @click="iniciarEdicaoPareoInline(pareo)"
+                    class="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                    title="Editar pareo"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    v-if="!isPareoExcluido(pareo) && pareoEditandoId !== pareo.id"
+                    @click="excluirPareo(pareo)"
+                    class="text-red-600 hover:text-red-800 transition-colors p-1"
+                    title="Excluir pareo"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                  <div v-if="pareoEditandoId === pareo.id" class="flex items-center space-x-2">
+                    <button
+                      @click="salvarEdicaoPareoInline(pareo)"
+                      :disabled="salvandoEdicaoPareo"
+                      class="text-green-600 hover:text-green-800 transition-colors p-1 disabled:opacity-50"
+                      title="Salvar"
+                    >
+                      <svg v-if="salvandoEdicaoPareo" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </button>
+                    <button
+                      @click="cancelarEdicaoPareoInline"
+                      class="text-gray-600 hover:text-gray-800 transition-colors p-1"
+                      title="Cancelar"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
               
-              <div v-for="cavalo in pareo.cavalos" :key="cavalo.id" class="ml-4 mt-2">
+              <div v-if="mensagemEdicaoPareo && pareoEditandoId === pareo.id" 
+                   :class="mensagemEdicaoPareoTipo === 'sucesso' ? 'text-green-600' : 'text-red-600'" 
+                   class="mb-2 text-sm font-medium">
+                {{ mensagemEdicaoPareo }}
+              </div>
+              
+              <div v-for="(cavalo, index) in (pareoEditandoId === pareo.id ? cavalosEditandoPorPareo[pareo.id] : pareo.cavalos)" 
+                   :key="cavalo.id || index" 
+                   class="ml-4 mt-2">
                 <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-2">
-                    <span :class="[
-                      'font-semibold',
-                      isPareoExcluido(pareo) ? 'text-red-700' : 'text-blue-700'
-                    ]">{{ cavalo.nome }}</span>
-                    <span v-if="cavalo.identificador" class="text-xs text-gray-600">({{ cavalo.identificador }})</span>
+                  <div class="flex-1 flex items-center space-x-2">
+                    <div v-if="pareoEditandoId === pareo.id" class="flex-1">
+                      <input
+                        v-model="cavalo.nome"
+                        type="text"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Nome do cavalo"
+                      />
+                    </div>
+                    <template v-else>
+                      <span :class="[
+                        'font-semibold',
+                        isPareoExcluido(pareo) ? 'text-red-700' : 'text-blue-700'
+                      ]">{{ cavalo.nome }}</span>
+                      <span v-if="cavalo.identificador" class="text-xs text-gray-600">({{ cavalo.identificador }})</span>
+                    </template>
                   </div>
                   
-                  <!-- Botão para remover cavalo individual (só aparece se há mais de um cavalo) -->
+                  <!-- Botão para remover cavalo individual (só aparece se há mais de um cavalo e não está editando) -->
                   <button
-                    v-if="!isPareoExcluido(pareo) && pareo.cavalos.length > 1"
+                    v-if="!isPareoExcluido(pareo) && pareo.cavalos.length > 1 && pareoEditandoId !== pareo.id"
                     @click="removerCavaloPareo(pareo, cavalo)"
                     class="text-red-500 hover:text-red-700 transition-colors p-1 ml-2"
                     :title="`Remover ${cavalo.nome}`"
@@ -3014,6 +3113,13 @@ const mensagemEdicaoTipo = ref('')
 // Estados para modal de pareo
 const modalPareoOpen = ref(false)
 const pareoSelecionado = ref(null)
+const editandoPareo = ref(false)
+const cavalosEditando = ref([])
+const salvandoEdicaoPareo = ref(false)
+const mensagemEdicaoPareo = ref('')
+const mensagemEdicaoPareoTipo = ref('')
+const pareoEditandoId = ref(null)
+const cavalosEditandoPorPareo = ref({})
 
 // Estados para modal de lista de pareos
 const modalPareosOpen = ref(false)
@@ -5306,6 +5412,172 @@ const abrirModalPareo = (pareo) => {
 const fecharModalPareo = () => {
   modalPareoOpen.value = false
   pareoSelecionado.value = null
+  editandoPareo.value = false
+  cavalosEditando.value = []
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+}
+
+const iniciarEdicaoPareo = () => {
+  if (!pareoSelecionado.value?.cavalos) return
+  
+  const pareoId = pareoSelecionado.value.id || pareoSelecionado.value.pareoId
+  
+  cavalosEditando.value = pareoSelecionado.value.cavalos.map(cavalo => ({
+    pareoId: cavalo.pareoId || pareoId,
+    id: cavalo.id,
+    nome: cavalo.nome || ''
+  }))
+  
+  editandoPareo.value = true
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+}
+
+const cancelarEdicaoPareo = () => {
+  editandoPareo.value = false
+  cavalosEditando.value = []
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+}
+
+const iniciarEdicaoPareoInline = (pareo) => {
+  if (!pareo?.cavalos) return
+  
+  const pareoId = pareo.id || pareo.pareoId
+  
+  cavalosEditandoPorPareo.value[pareoId] = pareo.cavalos.map(cavalo => ({
+    pareoId: cavalo.pareoId || pareoId,
+    id: cavalo.id,
+    nome: cavalo.nome || ''
+  }))
+  
+  pareoEditandoId.value = pareoId
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+}
+
+const cancelarEdicaoPareoInline = () => {
+  pareoEditandoId.value = null
+  cavalosEditandoPorPareo.value = {}
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+}
+
+const salvarEdicaoPareoInline = async (pareo) => {
+  if (!pareo || !pareoEditandoId.value) return
+  
+  const pareoId = pareoEditandoId.value
+  const cavalosEditando = cavalosEditandoPorPareo.value[pareoId]
+  
+  if (!cavalosEditando || cavalosEditando.length === 0) return
+  
+  salvandoEdicaoPareo.value = true
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+  
+  try {
+    const cavalosParaEnviar = cavalosEditando.map(cavalo => ({
+      pareoId: cavalo.pareoId,
+      id: cavalo.id,
+      nome: cavalo.nome.trim()
+    })).filter(cavalo => cavalo.nome)
+    
+    if (cavalosParaEnviar.length === 0) {
+      mensagemEdicaoPareo.value = 'Pelo menos um cavalo deve ter um nome válido.'
+      mensagemEdicaoPareoTipo.value = 'erro'
+      salvandoEdicaoPareo.value = false
+      return
+    }
+    
+    await corridaApi.atualizarPareo(
+      pareo.campeonatoId,
+      pareo.tipoRodadaId,
+      cavalosParaEnviar
+    )
+    
+    mensagemEdicaoPareo.value = 'Pareo atualizado com sucesso!'
+    mensagemEdicaoPareoTipo.value = 'sucesso'
+    
+    // Atualizar os dados do pareo na lista
+    pareo.cavalos = cavalosParaEnviar.map(cavalo => ({
+      ...cavalo,
+      identificador: pareo.cavalos.find(c => c.id === cavalo.id)?.identificador
+    }))
+    
+    pareoEditandoId.value = null
+    delete cavalosEditandoPorPareo.value[pareoId]
+    
+    // Recarregar pareos para atualizar a lista
+    if (pareoFormBuscar.value.campeonatoId && pareoFormBuscar.value.tipoRodadaId) {
+      await carregarPareos()
+    }
+    
+    setTimeout(() => {
+      mensagemEdicaoPareo.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('Erro ao atualizar pareo:', error)
+    mensagemEdicaoPareo.value = 'Erro ao atualizar pareo. Tente novamente.'
+    mensagemEdicaoPareoTipo.value = 'erro'
+  } finally {
+    salvandoEdicaoPareo.value = false
+  }
+}
+
+const salvarEdicaoPareo = async () => {
+  if (!pareoSelecionado.value || !cavalosEditando.value.length) return
+  
+  salvandoEdicaoPareo.value = true
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
+  
+  try {
+    const cavalosParaEnviar = cavalosEditando.value.map(cavalo => ({
+      pareoId: cavalo.pareoId,
+      id: cavalo.id,
+      nome: cavalo.nome.trim()
+    })).filter(cavalo => cavalo.nome)
+    
+    if (cavalosParaEnviar.length === 0) {
+      mensagemEdicaoPareo.value = 'Pelo menos um cavalo deve ter um nome válido.'
+      mensagemEdicaoPareoTipo.value = 'erro'
+      return
+    }
+    
+    await corridaApi.atualizarPareo(
+      pareoSelecionado.value.campeonatoId,
+      pareoSelecionado.value.tipoRodadaId,
+      cavalosParaEnviar
+    )
+    
+    mensagemEdicaoPareo.value = 'Pareo atualizado com sucesso!'
+    mensagemEdicaoPareoTipo.value = 'sucesso'
+    
+    // Atualizar os dados do pareo selecionado
+    pareoSelecionado.value.cavalos = cavalosParaEnviar.map(cavalo => ({
+      ...cavalo,
+      identificador: pareoSelecionado.value.cavalos.find(c => c.id === cavalo.id)?.identificador
+    }))
+    
+    editandoPareo.value = false
+    cavalosEditando.value = []
+    
+    // Recarregar pareos se necessário
+    if (pareoFormBuscar.value.campeonatoId && pareoFormBuscar.value.tipoRodadaId) {
+      await carregarPareos()
+    }
+    
+    setTimeout(() => {
+      mensagemEdicaoPareo.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('Erro ao atualizar pareo:', error)
+    mensagemEdicaoPareo.value = 'Erro ao atualizar pareo. Tente novamente.'
+    mensagemEdicaoPareoTipo.value = 'erro'
+  } finally {
+    salvandoEdicaoPareo.value = false
+  }
 }
 
 // Função para excluir pareo
@@ -6147,6 +6419,10 @@ const gerarPDFTodosApostadores = async () => {
 // Funções para modal de lista de pareos
 const fecharModalPareos = () => {
   modalPareosOpen.value = false
+  pareoEditandoId.value = null
+  cavalosEditandoPorPareo.value = {}
+  mensagemEdicaoPareo.value = ''
+  mensagemEdicaoPareoTipo.value = ''
 }
 
 // Função para verificar se o pareo está excluído
