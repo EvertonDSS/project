@@ -4879,7 +4879,7 @@ const gerarPDFRelatorioPagamentos = () => {
               <th>TOTAIS</th>
               <th class="text-right">${formatCurrency(totalApostado)}</th>
               <th class="text-right text-green">${formatCurrency(totalPremios)}</th>
-              <th class="text-right ${totalSaldo >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(totalSaldo)}</th>
+              <th class="text-right ${totalSaldo >= 0 ? 'text-green' : 'text-red'}"></th>
             </tr>
           </tfoot>
         </table>
