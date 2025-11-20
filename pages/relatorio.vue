@@ -290,7 +290,6 @@ import {
   DocumentArrowDownIcon 
 } from '@heroicons/vue/24/outline'
 
-const { getCampeonatos, getApostadoresPorCampeonato, getApostasPorApostador, getTipoPorId, getGrupoPorCampeonato } = useApi()
 const corridaApi = useCorridaApi()
 
 // Estados reativos
@@ -384,13 +383,16 @@ onMounted(async () => {
 const carregarCampeonatos = async () => {
   loading.value = true
   try {
-    const campeonatos = await getCampeonatos()
-    campeonatoOptions.value = campeonatos.map(campeonato => ({
-      value: campeonato.id,
-      label: campeonato.nome
-    }))
+    const campeonatos = await corridaApi.getAll()
+    campeonatoOptions.value = Array.isArray(campeonatos) 
+      ? campeonatos.map(campeonato => ({
+          value: campeonato.id,
+          label: campeonato.nome
+        }))
+      : []
   } catch (error) {
     console.error('Erro ao carregar campeonatos:', error)
+    campeonatoOptions.value = []
   } finally {
     loading.value = false
   }
@@ -404,14 +406,18 @@ const onCampeonatoChange = async (campeonatoId) => {
   }
 
   try {
-    const apostadores = await getApostadoresPorCampeonato(campeonatoId)
-    apostadorOptions.value = apostadores.map(apostador => ({
-      value: apostador.id,
-      label: apostador.nome
-    }))
+    const resposta = await corridaApi.getApostadores(campeonatoId)
+    const apostadores = resposta?.apostadores || []
+    apostadorOptions.value = Array.isArray(apostadores) 
+      ? apostadores.map(apostador => ({
+          value: apostador.id,
+          label: apostador.nome
+        }))
+      : []
     apostadorSelecionado.value = ''
   } catch (error) {
     console.error('Erro ao carregar apostadores:', error)
+    apostadorOptions.value = []
   }
 }
 
@@ -422,74 +428,59 @@ const carregarApostas = async () => {
   errorApostas.value = ''
 
   try {
-    const apostas = await getApostasPorApostador(
+    const dados = await corridaApi.getPdfDados(
       parseInt(campeonatoSelecionado.value),
       parseInt(apostadorSelecionado.value)
     )
 
-    // Verificar se retornou vazio
-    if (!apostas || apostas.length === 0) {
+    // Verificar se retornou dados válidos
+    if (!dados || !dados.apostasPorRodada || !Array.isArray(dados.apostasPorRodada) || dados.apostasPorRodada.length === 0) {
       apostasCarregadas.value = []
       errorApostas.value = 'Não há aposta válida para este apostador neste campeonato.'
       return
     }
 
-    // Mapear apostas para o formato do relatório, buscando nomes dos tipos e dados do grupo
-    const apostasComTipos = await Promise.all(apostas.map(async (aposta) => {
-      let nomeTipo = aposta.rodadas?.tipo?.nome || 'SEM TIPO'
-      
-      // Se não tiver nome do tipo, buscar pelo endpoint
-      if (!aposta.rodadas?.tipo?.nome && aposta.rodadas?.tipoId) {
-        try {
-          const tipoInfo = await getTipoPorId(aposta.rodadas.tipoId)
-          nomeTipo = tipoInfo.nome
-        } catch (error) {
-          console.error('Erro ao buscar tipo:', error)
-          nomeTipo = `Tipo ${aposta.rodadas.tipoId}`
-        }
-      }
-      
-      // Buscar dados do grupo para obter pareo e cavalos
-      let nomeCavalo = null
-      if (aposta.grupoId) {
-        try {
-          const grupoInfo = await getGrupoPorCampeonato(aposta.campeonatoId, aposta.grupoId)
-          nomeCavalo = `${grupoInfo.pareo} - ${grupoInfo.cavalos}`
-        } catch (error) {
-          console.error('Erro ao buscar dados do grupo (não será exibido):', error)
-          // Retornar null para que esta aposta seja filtrada
-          return null
-        }
-      }
-      
-      // Se não encontrou o cavalo, não incluir esta linha
-      if (!nomeCavalo) {
-        return null
-      }
-      
-      return {
-        rodada: aposta.rodadas?.rodada?.nomeRodada || 'N/A',
-        chave: nomeCavalo,
-        valorAposta: parseFloat(aposta.valorUnitario),
-        porcentagem: parseFloat(aposta.porcentagem),
-        premioIndividual: parseFloat(aposta.total || 0),
-        totalRodada: parseFloat(aposta.rodadas?.valorRodada || 0),
-        tipo: nomeTipo,
-        cavalo: nomeCavalo
-      }
-    }))
-
-    // Filtrar apostas válidas (remover null)
-    const apostasValidas = apostasComTipos.filter(aposta => aposta !== null)
+    // Mapear apostas para o formato do relatório
+    const apostasComTipos = []
     
-    // Verificar se após filtrar ainda há apostas válidas
-    if (apostasValidas.length === 0) {
+    dados.apostasPorRodada.forEach((rodada) => {
+      if (!rodada.apostas || !Array.isArray(rodada.apostas)) return
+      
+      const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
+      const nomeRodada = rodada.nomeRodada || 'N/A'
+      const valorRodada = parseFloat(rodada.valorRodada || 0)
+      
+      rodada.apostas.forEach((aposta) => {
+        // Obter dados do pareo
+        if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
+          return
+        }
+        
+        const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
+        const nomeCavalo = `${aposta.pareo.numero || ''} - ${cavalosNomes}`
+        const chave = nomeCavalo
+        
+        apostasComTipos.push({
+          rodada: nomeRodada,
+          chave: chave,
+          valorAposta: parseFloat(aposta.valor || 0),
+          porcentagem: parseFloat(aposta.porcentagemAposta || 0),
+          premioIndividual: parseFloat(aposta.valorPremio || 0),
+          totalRodada: valorRodada,
+          tipo: nomeTipo,
+          cavalo: nomeCavalo
+        })
+      })
+    })
+
+    // Verificar se há apostas válidas
+    if (apostasComTipos.length === 0) {
       apostasCarregadas.value = []
       errorApostas.value = 'Não há aposta válida para este apostador neste campeonato.'
       return
     }
     
-    apostasCarregadas.value = apostasValidas
+    apostasCarregadas.value = apostasComTipos
   } catch (error) {
     console.error('Erro ao carregar apostas:', error)
     errorApostas.value = 'Erro ao carregar apostas do apostador.'

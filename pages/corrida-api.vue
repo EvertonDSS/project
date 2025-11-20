@@ -2865,12 +2865,6 @@
     </div>
   </div>
 
-  <!-- Componente PDF -->
-  <RelatorioApostasSimplesPDF 
-    v-if="dadosPdf" 
-    ref="componentePDF" 
-    :dados="dadosPdf" 
-  />
 </template>
 
 <script setup>
@@ -3151,7 +3145,6 @@ const mostrarJsonDados = ref(false)
 const carregandoApostadores = ref(false)
 const carregandoPdf = ref(false)
 const gerandoPDF = ref(false)
-const componentePDF = ref(null)
 const filtroApostador = ref('')
 const gerandoPDFTodos = ref(false)
 const apostadoresSelecionados = ref([])
@@ -6238,7 +6231,7 @@ const carregarDadosPdf = async (apostador) => {
   }
 }
 
-// Função para gerar PDF
+// Função para gerar PDF (formato similar ao relatorio.vue)
 const gerarPDF = async () => {
   if (!dadosPdf.value) {
     alert('Nenhum dado disponível para gerar PDF')
@@ -6248,12 +6241,310 @@ const gerarPDF = async () => {
   gerandoPDF.value = true
   
   try {
-    // Aguardar o próximo tick para garantir que o componente está montado
-    await nextTick()
+    // Processar dados para o formato do relatório
+    const apostasCarregadas = []
+    const apostasAgrupadas = {}
+    const isCombinado = dadosPdf.value.apostador?.combinado || apostadorSelecionado.value?.combinado || false
     
-    if (componentePDF.value) {
-      componentePDF.value.gerarPDF()
+    // Ordenar rodadas
+    const ordenarRodadas = (rodadas) => {
+      if (!rodadas || !Array.isArray(rodadas)) return rodadas
+      
+      return [...rodadas].sort((a, b) => {
+        const nomeA = (a.nomeRodada || '').trim()
+        const nomeB = (b.nomeRodada || '').trim()
+        
+        const regexNumero = /(\d+)/i
+        const matchA = nomeA.match(regexNumero)
+        const matchB = nomeB.match(regexNumero)
+        
+        const numeroA = matchA ? parseInt(matchA[1], 10) : 0
+        const numeroB = matchB ? parseInt(matchB[1], 10) : 0
+        
+        if (numeroA !== numeroB) {
+          return numeroA - numeroB
+        }
+        
+        const temBA = /\bB\b/i.test(nomeA)
+        const temBB = /\bB\b/i.test(nomeB)
+        
+        if (temBA && !temBB) return 1
+        if (!temBA && temBB) return -1
+        
+        return 0
+      })
     }
+    
+    const rodadasOrdenadas = ordenarRodadas(dadosPdf.value.apostasPorRodada)
+    
+    rodadasOrdenadas?.forEach((rodada) => {
+      if (!rodada.apostas || !Array.isArray(rodada.apostas)) return
+      
+      const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
+      const nomeRodada = rodada.nomeRodada || 'N/A'
+      // Calcular valorRodada: usar o valor da API ou calcular somando os valores das apostas
+      let valorRodada = parseFloat(rodada.valorRodada || 0)
+      if (!valorRodada || valorRodada === 0) {
+        // Se não tiver valorRodada, calcular somando os valores das apostas da rodada usando valorOriginalPremio
+        valorRodada = rodada.apostas.reduce((total, aposta) => {
+          return total + parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
+        }, 0)
+      }
+      
+      rodada.apostas.forEach((aposta) => {
+        if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
+          return
+        }
+        
+        const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
+        const nomeCavalo = `${aposta.pareo.numero || ''} - ${cavalosNomes}`
+        const chave = nomeCavalo
+        
+        // Obter nome do apostador se for aposta combinada
+        const nomeApostador = isCombinado ? (aposta.apostador?.nome || '') : ''
+        
+        apostasCarregadas.push({
+          rodada: nomeRodada,
+          chave: chave,
+          valorAposta: parseFloat(aposta.valor || 0),
+          porcentagem: parseFloat(aposta.porcentagemAposta || 0),
+          premioIndividual: parseFloat(aposta.valorPremio || 0),
+          totalRodada: valorRodada,
+          tipo: nomeTipo,
+          cavalo: nomeCavalo,
+          nomeApostador: nomeApostador,
+          isCombinado: isCombinado
+        })
+        
+        // Agrupar por tipo e cavalo
+        if (!apostasAgrupadas[nomeTipo]) {
+          apostasAgrupadas[nomeTipo] = {
+            _totalPremio: 0,
+            _totalRodada: 0
+          }
+        }
+        
+        if (!apostasAgrupadas[nomeTipo][nomeCavalo]) {
+          apostasAgrupadas[nomeTipo][nomeCavalo] = {
+            rodada: nomeRodada,
+            porcentagem: parseFloat(aposta.porcentagemAposta || 0),
+            premioIndividual: 0,
+            totalRodada: 0
+          }
+        }
+        
+        apostasAgrupadas[nomeTipo][nomeCavalo].premioIndividual += parseFloat(aposta.valorPremio || 0)
+        apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorRodada
+        apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
+        apostasAgrupadas[nomeTipo]._totalRodada += valorRodada
+      })
+    })
+    
+    const valorTotalApostas = apostasCarregadas.reduce((total, aposta) => total + aposta.valorAposta, 0)
+    const apostadorNome = dadosPdf.value.apostador?.nome || apostadorSelecionado.value?.nome || 'N/A'
+    // Buscar nome do campeonato usando o campeonatoId do apostador selecionado
+    const campeonatoId = apostadorSelecionado.value?.campeonatoId || dadosPdf.value.campeonato?.id || dadosPdf.value.campeonatoId
+    const campeonatoEncontrado = campeonatos.value.find(c => c.id === parseInt(campeonatoId))
+    const campeonatoNome = campeonatoEncontrado?.nome || dadosPdf.value.campeonato?.nome || apostadorSelecionado.value?.campeonatoNome || ''
+    
+    const formatCurrency = (value) => {
+      const numValue = parseFloat(value)
+      if (isNaN(numValue) || numValue === null || numValue === undefined) {
+        return 'R$ 0,00'
+      }
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(numValue)
+    }
+    
+    // Criar conteúdo HTML para o PDF (mesmo formato do relatorio.vue)
+    const content = `
+      <html>
+        <head>
+          <title>Relatório de Apostas - ${apostadorNome}</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              background-color: #f5f5f5;
+            }
+            .container {
+              max-width: 1200px;
+              margin: 0 auto;
+              background-color: white;
+              padding: 20px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 30px; 
+              border-bottom: 2px solid #e5e5e5;
+              padding-bottom: 20px;
+            }
+            .logo {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 20px;
+            }
+            .title { 
+              font-size: 28px; 
+              font-weight: bold; 
+              color: #333; 
+              margin: 0;
+            }
+            .subtitle { 
+              font-size: 14px; 
+              color: #666; 
+              margin: 0;
+            }
+            .info-card {
+              background: #ffcc00;
+              color: black;
+              padding: 15px;
+              border-radius: 8px;
+              text-align: center;
+            }
+            .info-label {
+              font-size: 12px;
+              font-weight: bold;
+              margin-bottom: 5px;
+              opacity: 0.9;
+            }
+            .info-value {
+              font-size: 18px;
+              font-weight: bold;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-bottom: 30px; 
+              background-color: white;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            th, td { 
+              border: 1px solid #e5e5e5; 
+              padding: 12px; 
+              text-align: left; 
+            }
+            th { 
+              background: #000000;
+              color: white;
+              font-weight: bold;
+              font-size: 14px;
+            }
+            td {
+              background-color: white;
+              font-size: 14px;
+            }
+            tr:nth-child(even) td {
+              background-color: #f9f9f9;
+            }
+            @media print {
+              body { margin: 0; }
+              .container { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
+                <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto; border: 4px solid #ffcc00; border-radius: 8px;" />
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1;">
+                  <div class="info-card">
+                    <div class="info-label">NOME APOSTADOR</div>
+                    <div class="info-value">${apostadorNome}</div>
+                  </div>
+                  <div class="info-card">
+                    <div class="info-label">NOME CAMPEONATO</div>
+                    <div class="info-value">${campeonatoNome}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Tabela Original de Apostas -->
+            <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Apostas Detalhadas</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <thead>
+                <tr style="background: #000000; color: white;">
+                  <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">RODADA</th>
+                  <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">CHAVE</th>
+                  <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">VALOR DA APOSTA</th>
+                  <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">%</th>
+                  <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">PRÊMIO INDIVIDUAL</th>
+                  <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">TOTAL DA RODADA</th>
+                  ${isCombinado ? '<th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">APOSTADOR</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>
+                ${apostasCarregadas.map(aposta => `
+                  <tr>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.rodada}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.chave}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.valorAposta)}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.porcentagem}%</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.premioIndividual)}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.totalRodada)}</td>
+                    ${isCombinado ? `<td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.nomeApostador || '-'}</td>` : ''}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <!-- Resumos Originais -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
+              <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="background: #000000; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
+                <div style="background: #ffcc00; color: black; padding: 20px; text-align: center;">
+                  <div style="font-size: 24px; font-weight: bold;">${formatCurrency(valorTotalApostas)}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seção de Agrupamento -->
+            <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Resumo por Tipo e Cavalo</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 30px; font-size: 14px;">Apostas agrupadas e somadas por tipo de rodada e cavalo</p>
+            
+            ${Object.entries(apostasAgrupadas).map(([tipo, tipoData]) => `
+              <div style="margin-bottom: 30px;">
+                <h3 style="background: #ffcc00; color: black; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
+                <table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">
+                  <thead>
+                    <tr style="background: #f5f5f5;">
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([cavalo, cavaloData]) => `
+                      <tr>
+                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavalo}</td>
+                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `).join('')}
+          </div>
+        </body>
+      </html>
+    `
+
+    // Criar nova janela para impressão
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(content)
+    printWindow.document.close()
+    
+    // Aguardar carregamento e imprimir
+    printWindow.onload = () => {
+      printWindow.print()
+    }
+    
   } catch (err) {
     console.error('Erro ao gerar PDF:', err)
     alert('Erro ao gerar PDF')
@@ -6262,20 +6553,13 @@ const gerarPDF = async () => {
   }
 }
 
-// Função auxiliar para gerar HTML de um apostador
+// Função auxiliar para gerar HTML de um apostador (mesmo estilo do relatorio.vue)
 const gerarHTMLApostador = (dados) => {
-  let totalApostado = 0
-  let apostasPorTipo = new Map()
+  // Processar dados para o formato do relatório
+  const apostasCarregadas = []
+  const apostasAgrupadas = {}
   
-  const formatarNumeroBrasileiro = (numero) => {
-    const valorNumerico = typeof numero === 'string' ? parseFloat(numero) : numero
-    return valorNumerico.toLocaleString('pt-BR', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    })
-  }
-  
-  // Função para ordenar rodadas: Rodada 01, Rodada 01 B, Rodada 02, Rodada 02 B, etc.
+  // Função para ordenar rodadas
   const ordenarRodadas = (rodadas) => {
     if (!rodadas || !Array.isArray(rodadas)) return rodadas
     
@@ -6283,7 +6567,6 @@ const gerarHTMLApostador = (dados) => {
       const nomeA = (a.nomeRodada || '').trim()
       const nomeB = (b.nomeRodada || '').trim()
       
-      // Extrair número da rodada (ex: "Rodada 01" -> 01, "Rodada 01 B" -> 01)
       const regexNumero = /(\d+)/i
       const matchA = nomeA.match(regexNumero)
       const matchB = nomeB.match(regexNumero)
@@ -6291,119 +6574,187 @@ const gerarHTMLApostador = (dados) => {
       const numeroA = matchA ? parseInt(matchA[1], 10) : 0
       const numeroB = matchB ? parseInt(matchB[1], 10) : 0
       
-      // Comparar números primeiro
       if (numeroA !== numeroB) {
         return numeroA - numeroB
       }
       
-      // Se números são iguais, verificar se tem "B" (com "B" vem depois)
       const temBA = /\bB\b/i.test(nomeA)
       const temBB = /\bB\b/i.test(nomeB)
       
-      if (temBA && !temBB) return 1  // A tem "B", B não tem -> B vem primeiro
-      if (!temBA && temBB) return -1 // A não tem "B", B tem -> A vem primeiro
+      if (temBA && !temBB) return 1
+      if (!temBA && temBB) return -1
       
-      // Ambos têm ou não têm "B", manter ordem original
       return 0
     })
   }
   
-  // Ordenar rodadas antes de processar
+  const formatCurrency = (value) => {
+    const numValue = parseFloat(value)
+    if (isNaN(numValue) || numValue === null || numValue === undefined) {
+      return 'R$ 0,00'
+    }
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(numValue)
+  }
+  
   const rodadasOrdenadas = ordenarRodadas(dados.apostasPorRodada)
   
-  // Processar dados
-  rodadasOrdenadas?.forEach(rodada => {
-    rodada.apostas?.forEach((aposta) => {
-      const cavalos = aposta.pareo?.cavalos?.map(cavalo => cavalo.nome).join(' / ') || ''
-      const chave = `${aposta.pareo?.numero || ''}- ${cavalos}`
-      
-      totalApostado += aposta.valor || 0
-      
-      const tipoRodada = rodada.tipoRodada?.nome || ''
-      if (!apostasPorTipo.has(tipoRodada)) {
-        apostasPorTipo.set(tipoRodada, new Map())
+  // Verificar se é aposta combinada
+  const isCombinado = dados.apostador?.combinado || false
+  
+  rodadasOrdenadas?.forEach((rodada) => {
+    if (!rodada.apostas || !Array.isArray(rodada.apostas)) return
+    
+    const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
+    const nomeRodada = rodada.nomeRodada || 'N/A'
+    // Calcular valorRodada: usar o valor da API ou calcular somando os valores das apostas
+    let valorRodada = parseFloat(rodada.valorRodada || 0)
+    if (!valorRodada || valorRodada === 0) {
+      // Se não tiver valorRodada, calcular somando os valores das apostas da rodada usando valorOriginalPremio
+      valorRodada = rodada.apostas.reduce((total, aposta) => {
+        return total + parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
+      }, 0)
+    }
+    
+    rodada.apostas.forEach((aposta) => {
+      if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
+        return
       }
       
-      if (apostasPorTipo.get(tipoRodada).has(chave)) {
-        const valorAtual = apostasPorTipo.get(tipoRodada).get(chave)
-        apostasPorTipo.get(tipoRodada).set(chave, valorAtual + (aposta.valorPremio || 0))
-      } else {
-        apostasPorTipo.get(tipoRodada).set(chave, aposta.valorPremio || 0)
+      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
+      const nomeCavalo = `${aposta.pareo.numero || ''} - ${cavalosNomes}`
+      const chave = nomeCavalo
+      
+      // Obter nome do apostador se for aposta combinada
+      const nomeApostador = isCombinado ? (aposta.apostador?.nome || '') : ''
+      
+      apostasCarregadas.push({
+        rodada: nomeRodada,
+        chave: chave,
+        valorAposta: parseFloat(aposta.valor || 0),
+        porcentagem: parseFloat(aposta.porcentagemAposta || 0),
+        premioIndividual: parseFloat(aposta.valorPremio || 0),
+        totalRodada: valorRodada,
+        tipo: nomeTipo,
+        cavalo: nomeCavalo,
+        nomeApostador: nomeApostador,
+        isCombinado: isCombinado
+      })
+      
+      // Agrupar por tipo e cavalo
+      if (!apostasAgrupadas[nomeTipo]) {
+        apostasAgrupadas[nomeTipo] = {
+          _totalPremio: 0,
+          _totalRodada: 0
+        }
       }
+      
+      if (!apostasAgrupadas[nomeTipo][nomeCavalo]) {
+        apostasAgrupadas[nomeTipo][nomeCavalo] = {
+          rodada: nomeRodada,
+          porcentagem: parseFloat(aposta.porcentagemAposta || 0),
+          premioIndividual: 0,
+          totalRodada: 0
+        }
+      }
+      
+      apostasAgrupadas[nomeTipo][nomeCavalo].premioIndividual += parseFloat(aposta.valorPremio || 0)
+      apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorRodada
+      apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
+      apostasAgrupadas[nomeTipo]._totalRodada += valorRodada
     })
   })
   
-  // Gerar linhas da tabela (já usando rodadasOrdenadas criado anteriormente)
-  const linhasTabela = rodadasOrdenadas?.map(rodada => 
-    rodada.apostas?.map((aposta) => {
-      const cavalos = aposta.pareo?.cavalos?.map(cavalo => cavalo.nome).join(' / ') || ''
-      return `
-        <tr>
-          <td>${rodada.nomeRodada || ''}</td>
-          <td>${aposta.pareo?.numero || ''}- ${cavalos}</td>
-          <td class="valor">R$ ${(aposta.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-          <td class="porcentagem">${aposta.porcentagemAposta || 0}%</td>
-          <td class="premio">R$ ${(aposta.valorPremio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-          <td class="total-rodada">R$ ${formatarNumeroBrasileiro(aposta.valorOriginalPremio || 0)}</td>
-        </tr>
-      `
-    }).join('') || ''
-  ).join('') || ''
-  
-  // Gerar seções de resumo
-  const secoesResumo = Array.from(apostasPorTipo.entries()).map(([tipoRodada, apostasMap]) => `
-    <div class="summary-section">
-      <div class="summary-title">${tipoRodada.toUpperCase()}</div>
-      <table class="summary-table">
-        <tbody>
-          ${Array.from(apostasMap.entries()).map(([chave, valor]) => `
-            <tr>
-              <td>${chave}</td>
-              <td>R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `).join('')
+  const valorTotalApostas = apostasCarregadas.reduce((total, aposta) => total + aposta.valorAposta, 0)
+  const apostadorNome = dados.apostador?.nome || 'N/A'
+  // Buscar nome do campeonato usando o campeonatoId dos dados
+  const campeonatoId = dados.campeonatoId || dados.campeonato?.id
+  const campeonatoEncontrado = campeonatoId ? campeonatos.value.find(c => c.id === parseInt(campeonatoId)) : null
+  const campeonatoNome = campeonatoEncontrado?.nome || dados.campeonato?.nome || (campeonatoId ? `Campeonato ${campeonatoId}` : '')
   
   return `
     <div class="page-break">
-      <div class="relatorio-container">
+      <div class="container">
         <div class="header">
-          <div class="logo">
-            <div class="logo-icon">🐎</div>
-            <div class="logo-text">JOGOS ONLINE</div>
+          <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
+            <img src="/images/aa.png" alt="JOGOS ONLINE" style="height: 80px; width: auto; border: 4px solid #ffcc00; border-radius: 8px;" />
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1;">
+              <div class="info-card">
+                <div class="info-label">NOME APOSTADOR</div>
+                <div class="info-value">${apostadorNome}</div>
+              </div>
+              <div class="info-card">
+                <div class="info-label">NOME CAMPEONATO</div>
+                <div class="info-value">${campeonatoNome}</div>
+              </div>
+            </div>
           </div>
-          <div class="apostador-name">${dados.apostador?.nome || 'N/A'}</div>
         </div>
-
-        <div class="title">RELATÓRIO DE APOSTAS</div>
-
-        <table class="table">
+        
+        <!-- Tabela Original de Apostas -->
+        <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Apostas Detalhadas</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <thead>
-            <tr>
-              <th>RODADA</th>
-              <th>CHAVE</th>
-              <th>VALOR DA APOSTA</th>
-              <th>%</th>
-              <th>PRÊMIO INDIVIDUAL</th>
-              <th>TOTAL DA RODADA</th>
+            <tr style="background: #000000; color: white;">
+              <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">RODADA</th>
+              <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">CHAVE</th>
+              <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">VALOR DA APOSTA</th>
+              <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">%</th>
+              <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">PRÊMIO INDIVIDUAL</th>
+              <th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">TOTAL DA RODADA</th>
+              ${isCombinado ? '<th style="border: 1px solid #e5e5e5; padding: 12px; text-align: left; font-weight: bold; font-size: 14px;">APOSTADOR</th>' : ''}
             </tr>
           </thead>
           <tbody>
-            ${linhasTabela}
+            ${apostasCarregadas.map(aposta => `
+              <tr>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.rodada}</td>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.chave}</td>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.valorAposta)}</td>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.porcentagem}%</td>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.premioIndividual)}</td>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.totalRodada)}</td>
+                ${isCombinado ? `<td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.nomeApostador || '-'}</td>` : ''}
+              </tr>
+            `).join('')}
           </tbody>
         </table>
 
-        <div class="summary">
-          <div class="summary-section">
-            <div class="summary-title">VALOR TOTAL DA APOSTA:</div>
-            <div class="summary-value">R$ ${totalApostado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        <!-- Resumos Originais -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px;">
+          <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="background: #000000; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 16px;">VALOR TOTAL DA APOSTA</div>
+            <div style="background: #ffcc00; color: black; padding: 20px; text-align: center;">
+              <div style="font-size: 24px; font-weight: bold;">${formatCurrency(valorTotalApostas)}</div>
+            </div>
           </div>
-
-          ${secoesResumo}
         </div>
+
+        <!-- Seção de Agrupamento -->
+        <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 30px 0 20px 0; text-align: center;">Resumo por Tipo e Cavalo</h2>
+        <p style="text-align: center; color: #666; margin-bottom: 30px; font-size: 14px;">Apostas agrupadas e somadas por tipo de rodada e cavalo</p>
+        
+        ${Object.entries(apostasAgrupadas).map(([tipo, tipoData]) => `
+          <div style="margin-bottom: 30px;">
+            <h3 style="background: #ffcc00; color: black; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">${tipo}</h3>
+            <table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">
+              <thead>
+                <tr style="background: #f5f5f5;">
+                </tr>
+              </thead>
+              <tbody>
+                ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([cavalo, cavaloData]) => `
+                  <tr>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavalo}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `).join('')}
       </div>
     </div>
   `
@@ -6426,6 +6777,7 @@ const gerarPDFTodosApostadores = async () => {
         continue
       }
       try {
+        let dadosPdf = null
         if (apostador.combinado) {
           const dadosCombinados = await obterApostasCombinadasPorCampeonato(apostador.campeonatoId)
           let grupoEncontrado = null
@@ -6442,13 +6794,19 @@ const gerarPDFTodosApostadores = async () => {
           }
 
           if (grupoEncontrado) {
-            dadosApostadores.push(transformarGrupoCombinadoParaPdf(grupoEncontrado, apostador))
+            dadosPdf = transformarGrupoCombinadoParaPdf(grupoEncontrado, apostador)
           } else {
             console.warn(`Combinação ${apostador.nome} não encontrada para geração de PDF.`)
           }
         } else {
           const response = await corridaApi.getPdfDados(apostador.campeonatoId, apostador.id)
-          dadosApostadores.push(response)
+          dadosPdf = response
+        }
+        
+        // Adicionar campeonatoId aos dados para facilitar a busca do nome
+        if (dadosPdf) {
+          dadosPdf.campeonatoId = apostador.campeonatoId
+          dadosApostadores.push(dadosPdf)
         }
       } catch (err) {
         console.error(`Erro ao buscar dados do apostador ${apostador.nome}:`, err)
@@ -6463,7 +6821,7 @@ const gerarPDFTodosApostadores = async () => {
     // Gerar HTML para cada apostador
     const htmlApostadores = dadosApostadores.map(dados => gerarHTMLApostador(dados)).join('')
 
-    // HTML completo com estilos
+    // HTML completo com estilos (mesmo estilo do relatorio.vue)
     const htmlCompleto = `
       <!DOCTYPE html>
       <html lang="pt-BR">
@@ -6480,164 +6838,90 @@ const gerarPDFTodosApostadores = async () => {
             .page-break:last-child {
               page-break-after: avoid;
             }
+            body { margin: 0; }
+            .container { box-shadow: none; }
           }
           
-          body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: white;
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
           }
-
-          .relatorio-container {
-            font-family: 'Arial', sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
-            background: white;
+          .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 40px;
           }
-
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid #e5e5e5;
             padding-bottom: 20px;
-            border-bottom: 2px solid #D4AF37;
           }
-
           .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
-          }
-
-          .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: #D4AF37;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
+            margin-bottom: 20px;
           }
-
-          .logo-text {
+          .title { 
+            font-size: 28px; 
+            font-weight: bold; 
+            color: #333; 
+            margin: 0;
+          }
+          .subtitle { 
+            font-size: 14px; 
+            color: #666; 
+            margin: 0;
+          }
+          .info-card {
+            background: #ffcc00;
+            color: black;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+          }
+          .info-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.9;
+          }
+          .info-value {
             font-size: 18px;
             font-weight: bold;
-            color: #D4AF37;
           }
-
-          .apostador-name {
-            background: #D4AF37;
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 30px; 
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          }
+          th, td { 
+            border: 1px solid #e5e5e5; 
+            padding: 12px; 
+            text-align: left; 
+          }
+          th { 
+            background: #000000;
             color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
             font-weight: bold;
             font-size: 14px;
           }
-
-          .title {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #D4AF37;
-            margin-bottom: 30px;
+          td {
+            background-color: white;
+            font-size: 14px;
           }
-
-          .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-          }
-
-          .table th {
-            background: #D4AF37;
-            color: white;
-            padding: 12px 8px;
-            text-align: center;
-            font-weight: bold;
-            border: 1px solid #B8941F;
-          }
-
-          .table td {
-            padding: 10px 8px;
-            text-align: center;
-            border: 1px solid #ddd;
-            background: white;
-          }
-
-          .table tr:nth-child(even) td {
-            background: #f9f9f9;
-          }
-
-          .valor {
-            font-weight: bold;
-            color: #2E7D32;
-          }
-
-          .porcentagem {
-            color: #1976D2;
-            font-weight: bold;
-          }
-
-          .premio {
-            color: #D4AF37;
-            font-weight: bold;
-          }
-
-          .total-rodada {
-            background: #E8F5E8 !important;
-            font-weight: bold;
-            color: #2E7D32;
-          }
-
-          .summary {
-            margin-top: 30px;
-          }
-
-          .summary-section {
-            margin-bottom: 20px;
-          }
-
-          .summary-title {
-            background: #D4AF37;
-            color: white;
-            padding: 8px 12px;
-            font-weight: bold;
-            margin-bottom: 10px;
-          }
-
-          .summary-value {
-            background: #D4AF37;
-            color: white;
-            padding: 8px 12px;
-            font-weight: bold;
-            font-size: 16px;
-          }
-
-          .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-          }
-
-          .summary-table th {
-            background: #D4AF37;
-            color: white;
-            padding: 8px 12px;
-            text-align: left;
-            font-weight: bold;
-          }
-
-          .summary-table td {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            background: white;
+          tr:nth-child(even) td {
+            background-color: #f9f9f9;
           }
         </style>
       </head>
