@@ -6282,14 +6282,6 @@ const gerarPDF = async () => {
       
       const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
       const nomeRodada = rodada.nomeRodada || 'N/A'
-      // Calcular valorRodada: usar o valor da API ou calcular somando os valores das apostas
-      let valorRodada = parseFloat(rodada.valorRodada || 0)
-      if (!valorRodada || valorRodada === 0) {
-        // Se não tiver valorRodada, calcular somando os valores das apostas da rodada usando valorOriginalPremio
-        valorRodada = rodada.apostas.reduce((total, aposta) => {
-          return total + parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
-        }, 0)
-      }
       
       rodada.apostas.forEach((aposta) => {
         if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
@@ -6303,13 +6295,16 @@ const gerarPDF = async () => {
         // Obter nome do apostador se for aposta combinada
         const nomeApostador = isCombinado ? (aposta.apostador?.nome || '') : ''
         
+        // Usar valorOriginalPremio individual de cada aposta, não somar
+        const valorOriginalPremio = parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
+        
         apostasCarregadas.push({
           rodada: nomeRodada,
           chave: chave,
           valorAposta: parseFloat(aposta.valor || 0),
           porcentagem: parseFloat(aposta.porcentagemAposta || 0),
           premioIndividual: parseFloat(aposta.valorPremio || 0),
-          totalRodada: valorRodada,
+          totalRodada: valorOriginalPremio,
           tipo: nomeTipo,
           cavalo: nomeCavalo,
           nomeApostador: nomeApostador,
@@ -6334,9 +6329,9 @@ const gerarPDF = async () => {
         }
         
         apostasAgrupadas[nomeTipo][nomeCavalo].premioIndividual += parseFloat(aposta.valorPremio || 0)
-        apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorRodada
+        apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorOriginalPremio
         apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
-        apostasAgrupadas[nomeTipo]._totalRodada += valorRodada
+        apostasAgrupadas[nomeTipo]._totalRodada += valorOriginalPremio
       })
     })
     
@@ -6609,14 +6604,6 @@ const gerarHTMLApostador = (dados) => {
     
     const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
     const nomeRodada = rodada.nomeRodada || 'N/A'
-    // Calcular valorRodada: usar o valor da API ou calcular somando os valores das apostas
-    let valorRodada = parseFloat(rodada.valorRodada || 0)
-    if (!valorRodada || valorRodada === 0) {
-      // Se não tiver valorRodada, calcular somando os valores das apostas da rodada usando valorOriginalPremio
-      valorRodada = rodada.apostas.reduce((total, aposta) => {
-        return total + parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
-      }, 0)
-    }
     
     rodada.apostas.forEach((aposta) => {
       if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
@@ -6630,13 +6617,16 @@ const gerarHTMLApostador = (dados) => {
       // Obter nome do apostador se for aposta combinada
       const nomeApostador = isCombinado ? (aposta.apostador?.nome || '') : ''
       
+      // Usar valorOriginalPremio individual de cada aposta, não somar
+      const valorOriginalPremio = parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
+      
       apostasCarregadas.push({
         rodada: nomeRodada,
         chave: chave,
         valorAposta: parseFloat(aposta.valor || 0),
         porcentagem: parseFloat(aposta.porcentagemAposta || 0),
         premioIndividual: parseFloat(aposta.valorPremio || 0),
-        totalRodada: valorRodada,
+        totalRodada: valorOriginalPremio,
         tipo: nomeTipo,
         cavalo: nomeCavalo,
         nomeApostador: nomeApostador,
@@ -6661,9 +6651,9 @@ const gerarHTMLApostador = (dados) => {
       }
       
       apostasAgrupadas[nomeTipo][nomeCavalo].premioIndividual += parseFloat(aposta.valorPremio || 0)
-      apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorRodada
+      apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorOriginalPremio
       apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
-      apostasAgrupadas[nomeTipo]._totalRodada += valorRodada
+      apostasAgrupadas[nomeTipo]._totalRodada += valorOriginalPremio
     })
   })
   
