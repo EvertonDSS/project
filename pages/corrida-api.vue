@@ -6311,7 +6311,25 @@ const gerarPDF = async () => {
           isCombinado: isCombinado
         })
         
-        // Agrupar por tipo e cavalo
+        // Agrupar por tipo e cavalo para o resumo
+        // Criar chave normalizada para agrupamento (tipoRodada.id + pareo.numero + cavalos ordenados)
+        const tipoRodadaIdRodada = rodada.tipoRodada?.id
+        const tipoRodadaIdNormalizado = tipoRodadaIdRodada != null ? String(tipoRodadaIdRodada) : 'SEM_ID'
+        const numeroPareo = String(aposta.pareo.numero || '').trim()
+        
+        // Normalizar e ordenar nomes dos cavalos para agrupamento (independente da ordem)
+        const cavalosNomesNormalizados = aposta.pareo.cavalos
+          .map(cavalo => {
+            const nome = (cavalo.nome || '').trim()
+            return nome.replace(/\s+/g, ' ').toLowerCase()
+          })
+          .filter(nome => nome.length > 0)
+          .sort()
+          .join('|')
+        
+        // Chave de agrupamento para o resumo: tipoRodadaId + numeroPareo + cavalos normalizados
+        const chaveAgrupamentoResumo = `${tipoRodadaIdNormalizado}_${numeroPareo}_${cavalosNomesNormalizados}`
+        
         if (!apostasAgrupadas[nomeTipo]) {
           apostasAgrupadas[nomeTipo] = {
             _totalPremio: 0,
@@ -6319,17 +6337,19 @@ const gerarPDF = async () => {
           }
         }
         
-        if (!apostasAgrupadas[nomeTipo][nomeCavalo]) {
-          apostasAgrupadas[nomeTipo][nomeCavalo] = {
+        // Usar a chave normalizada para agrupamento, mas manter nomeCavalo original para exibição
+        if (!apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo]) {
+          apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo] = {
             rodada: nomeRodada,
             porcentagem: parseFloat(aposta.porcentagemAposta || 0),
             premioIndividual: 0,
-            totalRodada: 0
+            totalRodada: 0,
+            chaveExibicao: nomeCavalo // Manter o nome original para exibição
           }
         }
         
-        apostasAgrupadas[nomeTipo][nomeCavalo].premioIndividual += parseFloat(aposta.valorPremio || 0)
-        apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorOriginalPremio
+        apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].premioIndividual += parseFloat(aposta.valorPremio || 0)
+        apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].totalRodada += valorOriginalPremio
         apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
         apostasAgrupadas[nomeTipo]._totalRodada += valorOriginalPremio
       })
@@ -6442,10 +6462,59 @@ const gerarPDF = async () => {
             @media print {
               body { margin: 0; }
               .container { box-shadow: none; }
+              .no-print { display: none !important; }
+            }
+            .editable-valor:read-only,
+            .editable-premio:read-only,
+            .editable-total:read-only {
+              cursor: default;
+            }
+            .editable-valor:not(:read-only),
+            .editable-premio:not(:read-only),
+            .editable-total:not(:read-only) {
+              border: 2px solid #4CAF50 !important;
+              background: #f0f8f0 !important;
+              cursor: text;
+            }
+            .btn-container {
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              z-index: 1000;
+              display: flex;
+              gap: 10px;
+            }
+            .btn {
+              padding: 12px 24px;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 16px;
+              font-weight: bold;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+              transition: all 0.3s;
+            }
+            .btn:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            .btn-editar {
+              background: #4CAF50;
+            }
+            .btn-editar.ativo {
+              background: #FF9800;
+            }
+            .btn-download {
+              background: #2196F3;
             }
           </style>
         </head>
         <body>
+          <div class="btn-container no-print">
+            <button id="btnEditar" class="btn btn-editar" onclick="toggleEdicao()">✏️ Editar</button>
+            <button id="btnDownload" class="btn btn-download" onclick="downloadPDF()">📥 Download PDF</button>
+          </div>
           <div class="container">
             <div class="header">
               <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
@@ -6478,14 +6547,20 @@ const gerarPDF = async () => {
                 </tr>
               </thead>
               <tbody>
-                ${apostasCarregadas.map(aposta => `
-                  <tr>
+                ${apostasCarregadas.map((aposta, index) => `
+                  <tr data-aposta-index="${index}">
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.rodada}</td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.chave}</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.valorAposta)}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      <input type="text" class="editable-valor" data-field="valorAposta" data-index="${index}" data-original="${parseFloat(aposta.valorAposta) || 0}" value="${formatCurrency(aposta.valorAposta)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">
+                    </td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.porcentagem}%</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.premioIndividual)}</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.totalRodada)}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      <input type="text" class="editable-premio" data-field="premioIndividual" data-index="${index}" data-original="${parseFloat(aposta.premioIndividual) || 0}" value="${formatCurrency(aposta.premioIndividual)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">
+                    </td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      <input type="text" class="editable-total" data-field="totalRodada" data-index="${index}" data-original="${parseFloat(aposta.totalRodada) || 0}" value="${formatCurrency(aposta.totalRodada)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">
+                    </td>
                     ${isCombinado ? `<td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.nomeApostador || '-'}</td>` : ''}
                   </tr>
                 `).join('')}
@@ -6515,9 +6590,9 @@ const gerarPDF = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([cavalo, cavaloData]) => `
+                    ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([chave, cavaloData]) => `
                       <tr>
-                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavalo}</td>
+                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavaloData.chaveExibicao || chave}</td>
                         <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
                       </tr>
                     `).join('')}
@@ -6530,15 +6605,290 @@ const gerarPDF = async () => {
       </html>
     `
 
-    // Criar nova janela para impressão
-    const printWindow = window.open('', '_blank')
-    printWindow.document.write(content)
-    printWindow.document.close()
+    // Adicionar script para edição e download
+    const scriptTag = '<' + 'script' + '>'
+    const scriptClose = '</' + 'script' + '>'
     
-    // Aguardar carregamento e imprimir
-    printWindow.onload = () => {
-      printWindow.print()
-    }
+    // Escapar dados para uso em string JavaScript
+    const dadosApostasStr = JSON.stringify(apostasCarregadas).replace(/`/g, '\\`')
+    const dadosResumoStr = JSON.stringify(apostasAgrupadas).replace(/`/g, '\\`')
+    const apostadorNomeEscapado = apostadorNome.replace(/'/g, "\\'").replace(/`/g, '\\`')
+    const campeonatoNomeEscapado = campeonatoNome.replace(/'/g, "\\'").replace(/`/g, '\\`')
+    
+    const scriptEdicao = scriptTag + `
+        let modoEdicao = false;
+        const dadosApostas = ${dadosApostasStr};
+        const dadosResumo = ${dadosResumoStr};
+        const apostadorNome = '${apostadorNomeEscapado}';
+        const campeonatoNome = '${campeonatoNomeEscapado}';
+        const valorTotalApostasOriginal = ${valorTotalApostas};
+        const isCombinado = ${isCombinado};
+        
+        function formatCurrency(value) {
+          const numValue = parseFloat(value) || 0;
+          return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          }).format(numValue);
+        }
+        
+        function parseNumber(value) {
+          // Se já for número, retornar diretamente
+          if (typeof value === 'number') {
+            return isNaN(value) ? 0 : value;
+          }
+          
+          // Se for null ou undefined, retornar 0
+          if (value === null || value === undefined || value === '') {
+            return 0;
+          }
+          
+          if (typeof value === 'string') {
+            // Remover símbolos de moeda, espaços e caracteres não numéricos exceto vírgula e ponto
+            let cleaned = value.replace(/[R$\s]/g, '').trim();
+            
+            // Se estiver vazio, retornar 0
+            if (!cleaned) return 0;
+            
+            // Se for apenas números, retornar diretamente
+            if (/^\d+$/.test(cleaned)) {
+              return parseFloat(cleaned);
+            }
+            
+            // Se tiver vírgula, assumir formato brasileiro (1.234,56 ou 7000,00)
+            if (cleaned.includes(',')) {
+              // Se tiver ponto antes da vírgula, é formato brasileiro com milhar (1.234,56)
+              // Se não tiver ponto, é apenas decimal (7000,00)
+              if (cleaned.includes('.')) {
+                // Formato brasileiro: remover pontos (milhar) e substituir vírgula por ponto
+                cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+              } else {
+                // Apenas vírgula decimal: substituir por ponto
+                cleaned = cleaned.replace(',', '.');
+              }
+            } else if (cleaned.includes('.')) {
+              // Se não tiver vírgula mas tiver ponto, verificar se é decimal ou milhar
+              const parts = cleaned.split('.');
+              const lastPart = parts[parts.length - 1];
+              // Se a última parte tiver 2 dígitos e for a única parte após o último ponto, é decimal
+              if (parts.length === 2 && lastPart.length === 2) {
+                // Formato decimal americano (7000.00)
+                // Não fazer nada, parseFloat já trata
+              } else {
+                // Formato brasileiro sem vírgula (7.000) - remover pontos
+                cleaned = cleaned.replace(/\./g, '');
+              }
+            }
+            
+            const result = parseFloat(cleaned);
+            return isNaN(result) ? 0 : result;
+          }
+          
+          return parseFloat(value) || 0;
+        }
+        
+        function toggleEdicao() {
+          modoEdicao = !modoEdicao;
+          const campos = document.querySelectorAll('.editable-valor, .editable-premio, .editable-total');
+          const btn = document.getElementById('btnEditar');
+          
+          campos.forEach(campo => {
+            if (modoEdicao) {
+              // Modo edição: converter de moeda para número
+              const originalValue = campo.getAttribute('data-original');
+              const original = parseNumber(originalValue);
+              campo.value = original.toFixed(2);
+              campo.readOnly = false;
+            } else {
+              // Modo visualização: converter de número para moeda
+              // IMPORTANTE: Atualizar o data-original com o valor editado antes de formatar
+              const valor = parseNumber(campo.value);
+              campo.setAttribute('data-original', valor.toString());
+              campo.value = formatCurrency(valor);
+              campo.readOnly = true;
+            }
+          });
+          
+          if (modoEdicao) {
+            btn.textContent = '✅ Salvar Edições';
+            btn.classList.add('ativo');
+          } else {
+            btn.textContent = '✏️ Editar';
+            btn.classList.remove('ativo');
+          }
+        }
+        
+        async function downloadPDF() {
+          // Coletar valores editados
+          const apostasEditadas = [];
+          const linhas = document.querySelectorAll('tr[data-aposta-index]');
+          
+          linhas.forEach(linha => {
+            const index = parseInt(linha.getAttribute('data-aposta-index'));
+            const valorInput = linha.querySelector('.editable-valor');
+            const premioInput = linha.querySelector('.editable-premio');
+            const totalInput = linha.querySelector('.editable-total');
+            
+            const apostaOriginal = dadosApostas[index];
+            
+            // Sempre usar o data-original como fonte de verdade, pois ele é atualizado quando o usuário salva as edições
+            // Se o campo estiver em modo edição (não readonly), usar o valor do input e atualizar o data-original
+            let valorAposta, premioIndividual, totalRodada;
+            
+            if (valorInput) {
+              if (!valorInput.readOnly) {
+                // Modo edição: usar valor do input e atualizar data-original
+                valorAposta = parseNumber(valorInput.value);
+                valorInput.setAttribute('data-original', valorAposta.toString());
+              } else {
+                // Modo visualização: usar data-original (que foi atualizado quando salvou)
+                const originalAttr = valorInput.getAttribute('data-original');
+                valorAposta = originalAttr ? parseNumber(originalAttr) : (apostaOriginal?.valorAposta || 0);
+              }
+            } else {
+              valorAposta = apostaOriginal?.valorAposta || 0;
+            }
+            
+            if (premioInput) {
+              if (!premioInput.readOnly) {
+                premioIndividual = parseNumber(premioInput.value);
+                premioInput.setAttribute('data-original', premioIndividual.toString());
+              } else {
+                const originalAttr = premioInput.getAttribute('data-original');
+                premioIndividual = originalAttr ? parseNumber(originalAttr) : (apostaOriginal?.premioIndividual || 0);
+              }
+            } else {
+              premioIndividual = apostaOriginal?.premioIndividual || 0;
+            }
+            
+            if (totalInput) {
+              if (!totalInput.readOnly) {
+                totalRodada = parseNumber(totalInput.value);
+                totalInput.setAttribute('data-original', totalRodada.toString());
+              } else {
+                const originalAttr = totalInput.getAttribute('data-original');
+                totalRodada = originalAttr ? parseNumber(originalAttr) : (apostaOriginal?.totalRodada || 0);
+              }
+            } else {
+              totalRodada = apostaOriginal?.totalRodada || 0;
+            }
+            
+            apostasEditadas.push({
+              ...apostaOriginal,
+              valorAposta: valorAposta,
+              premioIndividual: premioIndividual,
+              totalRodada: totalRodada
+            });
+          });
+          
+          // Calcular total
+          const valorTotalEditado = apostasEditadas.reduce((total, aposta) => total + aposta.valorAposta, 0);
+          
+          // Gerar HTML para PDF
+          const htmlPDF = gerarHTMLPDF(apostasEditadas, dadosResumo, valorTotalEditado);
+          
+          // Atualizar o conteúdo da página atual com o HTML do PDF
+          document.open();
+          document.write(htmlPDF);
+          document.close();
+          
+          // Aguardar um pouco para garantir que o conteúdo foi carregado e então executar Ctrl+P (ou Cmd+P no Mac)
+          setTimeout(() => {
+            // Criar evento de teclado para simular Ctrl+P (Windows/Linux) ou Cmd+P (Mac)
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const printEvent = new KeyboardEvent('keydown', {
+              key: 'p',
+              code: 'KeyP',
+              ctrlKey: !isMac,
+              metaKey: isMac,
+              bubbles: true,
+              cancelable: true
+            });
+            document.dispatchEvent(printEvent);
+            
+            // Também chamar window.print() como fallback
+            window.print();
+          }, 100);
+        }
+        
+        function gerarHTMLPDF(apostas, resumo, valorTotal) {
+          const backtick = String.fromCharCode(96)
+          const resumoHTML = Object.entries(resumo).map(([tipo, tipoData]) => {
+            const linhasResumo = Object.entries(tipoData)
+              .filter(([key]) => !key.startsWith('_'))
+              .map(([chave, cavaloData]) => {
+                return '<tr>' +
+                  '<td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">' + (cavaloData.chaveExibicao || chave) + '</td>' +
+                  '<td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">' + formatCurrency(cavaloData.premioIndividual) + '</td>' +
+                  '</tr>'
+              }).join('');
+            
+            return '<div style="margin-bottom: 30px;">' +
+              '<h3 style="background: #ffcc00; color: black; padding: 15px; margin: 0; font-size: 18px; font-weight: bold;">' + tipo + '</h3>' +
+              '<table style="border-collapse: collapse; width: 100%; border: 1px solid #e5e5e5;">' +
+              '<tbody>' + linhasResumo + '</tbody>' +
+              '</table>' +
+              '</div>'
+          }).join('');
+          
+          const apostasHTML = apostas.map(aposta => {
+            return '<tr>' +
+              '<td>' + aposta.rodada + '</td>' +
+              '<td>' + aposta.chave + '</td>' +
+              '<td>' + formatCurrency(aposta.valorAposta) + '</td>' +
+              '<td>' + aposta.porcentagem + '%</td>' +
+              '<td>' + formatCurrency(aposta.premioIndividual) + '</td>' +
+              '<td>' + formatCurrency(aposta.totalRodada) + '</td>' +
+              '</tr>'
+          }).join('');
+          
+          return '<!DOCTYPE html>' +
+            '<html>' +
+            '<head>' +
+            '<title>Relatório de Apostas - ' + apostadorNome + '</title>' +
+            '<style>' +
+            '@media print { body { margin: 0; } }' +
+            'body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }' +
+            '.container { max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; }' +
+            'table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }' +
+            'th, td { border: 1px solid #e5e5e5; padding: 12px; text-align: left; }' +
+            'th { background: #000000; color: white; font-weight: bold; }' +
+            '</style>' +
+            '</head>' +
+            '<body>' +
+            '<div class="container">' +
+            '<div style="text-align: center; margin-bottom: 30px;">' +
+            '<h1>RELATÓRIO DE APOSTAS</h1>' +
+            '<p><strong>Apostador:</strong> ' + apostadorNome + '</p>' +
+            '<p><strong>Campeonato:</strong> ' + campeonatoNome + '</p>' +
+            '</div>' +
+            '<h2 style="text-align: center; margin: 30px 0 20px 0;">Apostas Detalhadas</h2>' +
+            '<table>' +
+            '<thead>' +
+            '<tr><th>RODADA</th><th>CHAVE</th><th>VALOR DA APOSTA</th><th>%</th><th>PRÊMIO INDIVIDUAL</th><th>TOTAL DA RODADA</th></tr>' +
+            '</thead>' +
+            '<tbody>' + apostasHTML + '</tbody>' +
+            '</table>' +
+            '<div style="margin: 30px 0; text-align: center;">' +
+            '<h2>VALOR TOTAL DA APOSTA: ' + formatCurrency(valorTotal) + '</h2>' +
+            '</div>' +
+            '<h2 style="text-align: center; margin: 30px 0 20px 0;">Resumo por Tipo e Cavalo</h2>' +
+            resumoHTML +
+            '</div>' +
+            '</body>' +
+            '</html>'
+        }
+      ` + scriptClose
+      
+      // Criar nova janela para edição
+      const editWindow = window.open('', '_blank', 'width=1400,height=900')
+      
+      // Inserir script antes do fechamento do body - usar concatenação para evitar parser do Vue
+      const bodyEnd = '</' + 'body>'
+      const contentComBotoes = content.replace(bodyEnd, scriptEdicao + bodyEnd)
+      
+      editWindow.document.write(contentComBotoes)
+      editWindow.document.close()
     
   } catch (err) {
     console.error('Erro ao gerar PDF:', err)
@@ -6633,7 +6983,25 @@ const gerarHTMLApostador = (dados) => {
         isCombinado: isCombinado
       })
       
-      // Agrupar por tipo e cavalo
+      // Agrupar por tipo e cavalo para o resumo
+      // Criar chave normalizada para agrupamento (tipoRodada.id + pareo.numero + cavalos ordenados)
+      const tipoRodadaIdRodada = rodada.tipoRodada?.id
+      const tipoRodadaIdNormalizado = tipoRodadaIdRodada != null ? String(tipoRodadaIdRodada) : 'SEM_ID'
+      const numeroPareo = String(aposta.pareo.numero || '').trim()
+      
+      // Normalizar e ordenar nomes dos cavalos para agrupamento (independente da ordem)
+      const cavalosNomesNormalizados = aposta.pareo.cavalos
+        .map(cavalo => {
+          const nome = (cavalo.nome || '').trim()
+          return nome.replace(/\s+/g, ' ').toLowerCase()
+        })
+        .filter(nome => nome.length > 0)
+        .sort()
+        .join('|')
+      
+      // Chave de agrupamento para o resumo: tipoRodadaId + numeroPareo + cavalos normalizados
+      const chaveAgrupamentoResumo = `${tipoRodadaIdNormalizado}_${numeroPareo}_${cavalosNomesNormalizados}`
+      
       if (!apostasAgrupadas[nomeTipo]) {
         apostasAgrupadas[nomeTipo] = {
           _totalPremio: 0,
@@ -6641,17 +7009,19 @@ const gerarHTMLApostador = (dados) => {
         }
       }
       
-      if (!apostasAgrupadas[nomeTipo][nomeCavalo]) {
-        apostasAgrupadas[nomeTipo][nomeCavalo] = {
+      // Usar a chave normalizada para agrupamento, mas manter nomeCavalo original para exibição
+      if (!apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo]) {
+        apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo] = {
           rodada: nomeRodada,
           porcentagem: parseFloat(aposta.porcentagemAposta || 0),
           premioIndividual: 0,
-          totalRodada: 0
+          totalRodada: 0,
+          chaveExibicao: nomeCavalo // Manter o nome original para exibição
         }
       }
       
-      apostasAgrupadas[nomeTipo][nomeCavalo].premioIndividual += parseFloat(aposta.valorPremio || 0)
-      apostasAgrupadas[nomeTipo][nomeCavalo].totalRodada += valorOriginalPremio
+      apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].premioIndividual += parseFloat(aposta.valorPremio || 0)
+      apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].totalRodada += valorOriginalPremio
       apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
       apostasAgrupadas[nomeTipo]._totalRodada += valorOriginalPremio
     })
@@ -6735,9 +7105,9 @@ const gerarHTMLApostador = (dados) => {
                 </tr>
               </thead>
               <tbody>
-                ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([cavalo, cavaloData]) => `
+                ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([chave, cavaloData]) => `
                   <tr>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavalo}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavaloData.chaveExibicao || chave}</td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
                   </tr>
                 `).join('')}
