@@ -1533,70 +1533,87 @@
               <p class="text-gray-600">Carregando dados...</p>
             </div>
 
-            <div v-else>
-              <!-- Informações do Campeonato -->
-              <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div class="flex items-center space-x-2">
-                  <span class="text-lg font-semibold text-gray-800">{{ tituloResumoRelatorioPagamentos }}</span>
-                  <span class="text-lg text-gray-700">{{ descricaoRelatorioPagamentos || 'N/A' }}</span>
+            <div v-else class="flex gap-6 items-start">
+              <!-- Logo à esquerda -->
+              <div class="flex-shrink-0">
+                <div class="flex flex-col items-center">
+                  <div class="h-24 w-24 border-4 border-yellow-500 rounded-lg mb-3 flex items-center justify-center bg-white overflow-hidden">
+                    <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-full w-full object-contain" />
+                  </div>
+                  <div class="text-center">
+                    <div class="text-3xl font-bold text-yellow-600" style="font-family: Arial, sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">JOGOS</div>
+                    <div class="text-xl font-light text-yellow-500">ONLINE</div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Tabela de Apostadores -->
-              <div class="overflow-x-auto">
-                <table class="w-full border-collapse">
-                  <thead>
-                    <tr class="bg-gradient-to-r from-red-100 to-rose-100">
-                      <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800">Apostador</th>
-                      <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Total Apostado</th>
-                      <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Total Prêmios Vencidos</th>
-                      <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800">Saldo Final</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr 
-                      v-for="(apostador, index) in dadosRelatorioPagamentos.apostadores" 
-                      :key="apostador.id ?? `${apostador.nome}-${index}`"
-                      class="hover:bg-gray-50 transition-colors"
-                    >
-                      <td class="border border-gray-300 px-4 py-3 text-gray-800 font-medium">{{ apostador.nome }}</td>
-                      <td class="border border-gray-300 px-4 py-3 text-right text-gray-700">{{ formatCurrency(apostador.totalApostado) }}</td>
-                      <td class="border border-gray-300 px-4 py-3 text-right text-green-600 font-semibold">{{ formatCurrency(apostador.totalPremiosVencidos) }}</td>
-                      <td 
-                        :class="[
-                          'border border-gray-300 px-4 py-3 text-right font-bold',
-                          apostador.saldoFinal >= 0 ? 'text-green-600' : 'text-red-600'
-                        ]"
-                      >
-                        {{ formatCurrency(apostador.saldoFinal) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                  <tfoot v-if="dadosRelatorioPagamentos.apostadores && dadosRelatorioPagamentos.apostadores.length > 0">
-                    <tr class="bg-gradient-to-r from-gray-100 to-gray-200 font-bold">
-                      <td class="border border-gray-300 px-4 py-3 text-gray-800">TOTAIS</td>
-                      <td class="border border-gray-300 px-4 py-3 text-right text-gray-800">
-                        {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.totalApostado || 0), 0)) }}
-                      </td>
-                      <td class="border border-gray-300 px-4 py-3 text-right text-green-700">
-                        {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.totalPremiosVencidos || 0), 0)) }}
-                      </td>
-                      <td 
-                        :class="[
-                          'border border-gray-300 px-4 py-3 text-right',
-                          dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.saldoFinal || 0), 0) >= 0 ? 'text-green-700' : 'text-red-700'
-                        ]"
-                      >
-                        {{ formatCurrency(dadosRelatorioPagamentos.apostadores.reduce((sum, a) => sum + (a.saldoFinal || 0), 0)) }}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+              <!-- Conteúdo à direita -->
+              <div class="flex-1">
+                <!-- Barras de Campeonatos (douradas) -->
+                <template v-if="dadosRelatorioPagamentos.campeonatos && Array.isArray(dadosRelatorioPagamentos.campeonatos)">
+                  <div
+                    v-for="(campeonato, index) in dadosRelatorioPagamentos.campeonatos"
+                    :key="campeonato.id || index"
+                    class="bg-yellow-500 text-black px-4 py-2 font-semibold text-sm mb-1"
+                  >
+                    {{ campeonato.nome || 'N/A' }}
+                  </div>
+                </template>
+                <div
+                  v-else-if="dadosRelatorioPagamentos.campeonato"
+                  class="bg-yellow-500 text-black px-4 py-2 font-semibold text-sm mb-1"
+                >
+                  {{ dadosRelatorioPagamentos.campeonato.nome || 'N/A' }}
+                </div>
 
-              <!-- Mensagem se não houver apostadores -->
-              <div v-if="!dadosRelatorioPagamentos.apostadores || dadosRelatorioPagamentos.apostadores.length === 0" class="text-center py-12">
-                <p class="text-gray-600">Nenhum apostador encontrado para este campeonato.</p>
+                <!-- Barra RELATÓRIO DE PAGAMENTOS (preta) -->
+                <div class="bg-black text-white px-4 py-2 font-semibold text-sm mb-4">
+                  RELATÓRIO DE PAGAMENTOS
+                </div>
+
+                <!-- Tabela de Apostadores -->
+                <div class="overflow-x-auto">
+                  <table class="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800 bg-white">JOGADOR</th>
+                        <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-800 bg-white" colspan="2" style="position: relative;">
+                          <div style="border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; margin-bottom: 4px;">VALOR DE APOSTA</div>
+                          <div class="text-xs font-normal">APOSTA</div>
+                        </th>
+                        <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800 bg-white">PRÊMIO</th>
+                        <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800 bg-white">SALDO FINAL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr 
+                        v-for="(apostador, index) in dadosRelatorioPagamentos.apostadores" 
+                        :key="apostador.id ?? `${apostador.nome}-${index}`"
+                      >
+                        <td class="border border-gray-300 px-4 py-3 text-gray-800 font-medium bg-white">{{ apostador.nome }}</td>
+                        <td class="border border-gray-300 px-4 py-3 text-right text-gray-700 bg-white" colspan="2">
+                          {{ formatCurrency(-Math.abs(apostador.totalApostado || 0)) }}
+                        </td>
+                        <td class="border border-gray-300 px-4 py-3 text-right text-gray-700 bg-white">
+                          {{ formatCurrency(apostador.totalPremiosVencidos) }}
+                        </td>
+                        <td 
+                          :class="[
+                            'border border-gray-300 px-4 py-3 text-right font-bold',
+                            apostador.saldoFinal >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                          ]"
+                        >
+                          {{ formatCurrency(apostador.saldoFinal) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Mensagem se não houver apostadores -->
+                <div v-if="!dadosRelatorioPagamentos.apostadores || dadosRelatorioPagamentos.apostadores.length === 0" class="text-center py-12">
+                  <p class="text-gray-600">Nenhum apostador encontrado para este campeonato.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -2124,63 +2141,67 @@
               <p>Nenhum dado de vencedores disponível.</p>
             </div>
             <div v-else class="p-6">
-              <div class="mb-5">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">📊 Resumo dos Vencedores</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                    <p class="text-xs uppercase text-purple-600 font-semibold tracking-wide">Cavalos vencedores</p>
-                    <p class="text-2xl font-bold text-purple-700">{{ dadosVencedores.vencedores?.length || 0 }}</p>
-                  </div>
-                  <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p class="text-xs uppercase text-green-600 font-semibold tracking-wide">Total de prêmios pagos</p>
-                    <p class="text-2xl font-bold text-green-700">{{ formatCurrency(totalPremios) }}</p>
+              <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="flex gap-6 items-start">
+                <!-- Logo à esquerda -->
+                <div class="flex-shrink-0">
+                  <div class="flex flex-col items-center">
+                    <div class="h-24 w-24 border-4 border-yellow-500 rounded-lg mb-3 flex items-center justify-center bg-white overflow-hidden">
+                      <img src="/images/aa.png" alt="JOGOS ONLINE" class="h-full w-full object-contain" />
+                    </div>
+                    <div class="text-center">
+                      <div class="text-3xl font-bold text-yellow-600" style="font-family: Arial, sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">JOGOS</div>
+                      <div class="text-xl font-light text-yellow-500">ONLINE</div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div v-if="dadosVencedores.vencedores && dadosVencedores.vencedores.length > 0" class="space-y-5">
-                <div
-                  v-for="(cavalo, index) in dadosVencedores.vencedores"
-                  :key="cavalo.cavaloId || index"
-                  class="border border-gray-200 rounded-xl overflow-hidden shadow-sm"
-                >
-                  <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                      <span class="text-sm font-semibold text-purple-600">#{{ index + 1 }}</span>
-                      <div>
-                        <h4 class="text-lg font-semibold text-gray-800">
-                          {{ cavalo.nomecavalovencedor || 'Cavalo não informado' }}
-                        </h4>
-                        <p class="text-xs text-gray-500">ID: {{ cavalo.cavaloId || 'N/A' }}</p>
+                <!-- Cards de Ganhadores à direita -->
+                <div class="flex-1 flex flex-col gap-4">
+                  <div
+                    v-for="(cavalo, index) in dadosVencedores.vencedores"
+                    :key="cavalo.cavaloId || index"
+                    class="bg-white border border-gray-200 overflow-hidden"
+                  >
+                    <!-- Barra GANHADORES -->
+                    <div class="bg-yellow-500 text-black px-4 py-2 font-semibold text-sm">
+                      GANHADORES
+                    </div>
+                    
+                    <!-- Nome do Campeonato/GP -->
+                    <div class="bg-black text-white px-4 py-2 font-semibold text-sm">
+                      {{ nomeCampeonatoVencedores || 'N/A' }}
+                    </div>
+                    
+                    <!-- Espaço entre campeonato e cavalo -->
+                    <div class="h-1"></div>
+                    
+                    <!-- Linha 1: Nome do Cavalo e PRÊMIO (dourado com PRÊMIO preto) -->
+                    <div class="flex">
+                      <div class="bg-yellow-500 text-black px-4 py-2 font-semibold text-sm flex-1">
+                        {{ cavalo.nomecavalovencedor || 'Cavalo não informado' }}
+                      </div>
+                      <div class="bg-black text-white px-4 py-2 font-semibold text-sm">
+                        PRÊMIO
                       </div>
                     </div>
-                    <div class="text-sm font-semibold text-emerald-600">
-                      {{ formatCurrency(calcularTotalPremiosCavalo(cavalo)) }}
-                    </div>
-                  </div>
-
-                  <div class="p-4">
-                    <div v-if="Array.isArray(cavalo.vencedores) && cavalo.vencedores.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    
+                    <!-- Lista de Apostadores com seus valores -->
+                    <template v-if="Array.isArray(cavalo.vencedores) && cavalo.vencedores.length > 0">
                       <div
                         v-for="(apostador, apostadorIndex) in cavalo.vencedores"
-                        :key="`${cavalo.cavaloId || index}-${apostadorIndex}`"
-                        class="rounded-lg p-3 border-2 border-gray-100 bg-gray-50 hover:bg-gray-100 transition-colors"
+                        :key="apostadorIndex"
+                        class="bg-white text-black px-4 py-2 flex justify-between items-center text-sm border-l border-r border-gray-200"
+                        :class="{ 'border-b': apostadorIndex === cavalo.vencedores.length - 1 }"
                       >
-                        <div class="flex justify-between items-center">
-                          <div class="flex flex-col">
-                            <span class="text-xs font-semibold text-purple-600 uppercase tracking-wide">Apostador</span>
-                            <span class="text-sm font-medium text-gray-800">{{ apostador.nomeapostador || 'Não informado' }}</span>
-                          </div>
-                          <span class="text-xs font-semibold text-gray-500">#{{ apostadorIndex + 1 }}</span>
-                        </div>
-                        <div class="mt-3">
-                          <span class="text-xs uppercase text-green-600 font-semibold tracking-wide">Prêmio</span>
-                          <p class="text-base font-bold text-green-700">{{ formatCurrency(apostador.valorpremio) }}</p>
-                        </div>
+                        <span>{{ apostador.nomeapostador || 'N/A' }}</span>
+                        <span class="font-semibold">
+                          {{ formatCurrency(apostador.valorpremio || 0) }}
+                        </span>
                       </div>
-                    </div>
-                    <div v-else class="text-center py-6 text-sm text-gray-500">
-                      Nenhum apostador vencedor registrado para este cavalo.
+                    </template>
+                    <div v-else class="bg-white text-black px-4 py-2 flex justify-between items-center text-sm border-l border-r border-b border-gray-200">
+                      <span>N/A</span>
+                      <span class="font-semibold">{{ formatCurrency(0) }}</span>
                     </div>
                   </div>
                 </div>
@@ -2241,8 +2262,8 @@
                   <label class="inline-flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      v-model="filtrarSaldosNegativos"
-                      :disabled="filtrarSaldosPositivos"
+                      :checked="filtrarSaldosNegativos"
+                      @change="toggleFiltrarSaldosNegativos"
                       class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                     />
                     <span class="text-sm text-gray-700">Mostrar apenas saldos devedores</span>
@@ -2251,8 +2272,8 @@
                   <label class="inline-flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      v-model="filtrarSaldosPositivos"
-                      :disabled="filtrarSaldosNegativos"
+                      :checked="filtrarSaldosPositivos"
+                      @change="toggleFiltrarSaldosPositivos"
                       class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                     />
                     <span class="text-sm text-gray-700">Mostrar apenas saldos premiados</span>
@@ -4235,6 +4256,20 @@ const gerarRelatorioPagamentosMultiplo = async () => {
   }
 }
 
+const toggleFiltrarSaldosNegativos = (event) => {
+  filtrarSaldosNegativos.value = event.target.checked
+  if (filtrarSaldosNegativos.value) {
+    filtrarSaldosPositivos.value = false
+  }
+}
+
+const toggleFiltrarSaldosPositivos = (event) => {
+  filtrarSaldosPositivos.value = event.target.checked
+  if (filtrarSaldosPositivos.value) {
+    filtrarSaldosNegativos.value = false
+  }
+}
+
 const aplicarFiltroLocalSaldos = (dados) => {
   if (!dados || !Array.isArray(dados.apostadores)) {
     return dados
@@ -4814,7 +4849,16 @@ const gerarPDFRelatorioPagamentos = () => {
   }
 
   const dados = dadosRelatorioPagamentos.value
-  const campeonatoNome = descricaoRelatorioPagamentos.value || 'N/A'
+  
+  // Obter nomes dos campeonatos
+  const campeonatosNomes = []
+  if (Array.isArray(dados.campeonatos) && dados.campeonatos.length > 0) {
+    dados.campeonatos.forEach(c => {
+      if (c?.nome) campeonatosNomes.push(c.nome)
+    })
+  } else if (dados.campeonato?.nome) {
+    campeonatosNomes.push(dados.campeonato.nome)
+  }
   
   // Calcular totais
   const totalApostado = dados.apostadores.reduce((sum, a) => sum + (a.totalApostado || 0), 0)
@@ -4825,57 +4869,74 @@ const gerarPDFRelatorioPagamentos = () => {
   const content = `
     <html>
       <head>
-        <title>Relatório de Pagamentos - ${campeonatoNome}</title>
+        <title>Relatório de Pagamentos</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #dc2626; padding-bottom: 15px; }
-          .title { font-size: 24px; font-weight: bold; color: #dc2626; }
-          .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
+          .container { display: flex; gap: 30px; align-items: flex-start; }
+          .logo-section { flex-shrink: 0; }
+          .logo-section img { height: 96px; width: auto; border: 4px solid #ffcc00; border-radius: 8px; }
+          .logo-text { text-align: center; margin-top: 8px; }
+          .logo-jogos { font-size: 30px; font-weight: bold; color: #D4AF37; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+          .logo-online { font-size: 20px; font-weight: 300; color: #D4AF37; }
+          .content-section { flex: 1; }
+          .barra-campeonato { background-color: #ffcc00; color: #000; padding: 8px 12px; font-weight: bold; font-size: 14px; margin-bottom: 1px; }
+          .barra-relatorio { background-color: #000; color: #fff; padding: 8px 12px; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-          th { background-color: #fef2f2; font-weight: bold; color: #991b1b; }
-          tfoot th, tfoot td { background-color: #f3f4f6; font-weight: bold; }
+          th, td { border: 1px solid #e5e5e5; padding: 10px; text-align: left; background-color: white; }
+          th { font-weight: bold; font-size: 14px; }
           .text-right { text-align: right; }
-          .text-green { color: #059669; }
-          .text-red { color: #dc2626; }
+          .text-center { text-align: center; }
+          .saldo-positivo { background-color: #d1fae5 !important; color: #059669; font-weight: bold; }
+          .saldo-negativo { background-color: #fee2e2 !important; color: #dc2626; font-weight: bold; }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="title">Relatório de Pagamentos</div>
-          <div class="subtitle">${campeonatoNome}</div>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>Apostador</th>
-              <th class="text-right">Total Apostado</th>
-              <th class="text-right">Total Prêmios Vencidos</th>
-              <th class="text-right">Saldo Final</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${dados.apostadores.map(apostador => `
-              <tr>
-                <td>${apostador.nome || 'N/A'}</td>
-                <td class="text-right">${formatCurrency(apostador.totalApostado || 0)}</td>
-                <td class="text-right text-green">${formatCurrency(apostador.totalPremiosVencidos || 0)}</td>
-                <td class="text-right ${apostador.saldoFinal >= 0 ? 'text-green' : 'text-red'}" style="font-weight: bold;">
-                  ${formatCurrency(apostador.saldoFinal || 0)}
-                </td>
-              </tr>
+        <div class="container">
+          <!-- Logo à esquerda -->
+          <div class="logo-section">
+            <img src="/images/aa.png" alt="JOGOS ONLINE" />
+            <div class="logo-text">
+              <div class="logo-jogos">JOGOS</div>
+              <div class="logo-online">ONLINE</div>
+            </div>
+          </div>
+
+          <!-- Conteúdo à direita -->
+          <div class="content-section">
+            ${campeonatosNomes.map(nome => `
+              <div class="barra-campeonato">${nome}</div>
             `).join('')}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th>TOTAIS</th>
-              <th class="text-right">${formatCurrency(totalApostado)}</th>
-              <th class="text-right text-green">${formatCurrency(totalPremios)}</th>
-              <th class="text-right ${totalSaldo >= 0 ? 'text-green' : 'text-red'}"></th>
-            </tr>
-          </tfoot>
-        </table>
+            <div class="barra-relatorio">RELATÓRIO DE PAGAMENTOS</div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>JOGADOR</th>
+                  <th class="text-center" colspan="2" style="border-left: 1px solid #e5e5e5; border-right: 1px solid #e5e5e5;">
+                    <div style="border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; margin-bottom: 4px;">VALOR DE APOSTA</div>
+                    <div style="font-size: 12px; font-weight: normal;">APOSTA</div>
+                  </th>
+                  <th class="text-right">PRÊMIO</th>
+                  <th class="text-right">SALDO FINAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${dados.apostadores.map(apostador => `
+                  <tr>
+                    <td>${apostador.nome || 'N/A'}</td>
+                    <td class="text-right" colspan="2" style="border-left: 1px solid #e5e5e5; border-right: 1px solid #e5e5e5;">
+                      ${formatCurrency(-Math.abs(apostador.totalApostado || 0))}
+                    </td>
+                    <td class="text-right">${formatCurrency(apostador.totalPremiosVencidos || 0)}</td>
+                    <td class="text-right ${apostador.saldoFinal >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">
+                      ${formatCurrency(apostador.saldoFinal || 0)}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </body>
     </html>
   `
@@ -4898,101 +4959,72 @@ const gerarPDFVencedores = () => {
 
   const dados = dadosVencedores.value
   const campeonatoNome = nomeCampeonatoVencedores.value || dados.nomeCampeonato || 'N/A'
-  const totalPremiosCampeonato = dados.vencedores.reduce((sum, cavalo) => {
-    if (!Array.isArray(cavalo.vencedores)) {
-      return sum
-    }
-    const premiosCavalo = cavalo.vencedores.reduce((acc, apostador) => {
-      return acc + (Number(apostador.valorpremio) || 0)
-    }, 0)
-    return sum + premiosCavalo
-  }, 0)
 
-  // Criar conteúdo HTML para o PDF
+  // Criar conteúdo HTML para o PDF - um ganhador por página
   const content = `
     <html>
       <head>
         <title>Vencedores - ${campeonatoNome}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #7c3aed; padding-bottom: 15px; }
-          .title { font-size: 24px; font-weight: bold; color: #7c3aed; }
-          .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
-          .resumo { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-          .card { flex: 1 1 220px; border: 1px solid #e0e7ff; background: #f5f3ff; padding: 14px; border-radius: 8px; }
-          .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #5b21b6; margin-bottom: 6px; }
-          .card-value { font-size: 20px; font-weight: bold; color: #4338ca; }
-          .cavalo-section { border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.08); }
-          .cavalo-header { background: linear-gradient(90deg, #ede9fe, #e0f2fe); padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-          .cavalo-header h3 { margin: 0; font-size: 18px; color: #312e81; }
-          .cavalo-header p { margin: 4px 0 0; font-size: 13px; color: #4c1d95; }
-          .cavalo-total { font-weight: bold; color: #047857; font-size: 18px; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #e5e7eb; padding: 12px 14px; text-align: left; }
-          th { background-color: #ede9fe; font-weight: bold; color: #4c1d95; }
-          tbody tr:nth-child(even) { background-color: #f9fafb; }
-          tfoot th, tfoot td { background-color: #f3f4f6; font-weight: bold; }
-          .text-right { text-align: right; }
-          .text-green { color: #059669; font-weight: bold; }
-          .empty-row { text-align: center; color: #6b7280; font-style: italic; }
+          .page-break { page-break-after: always; }
+          .page-break:last-child { page-break-after: avoid; }
+          .container { display: flex; gap: 30px; align-items: flex-start; }
+          .logo-section { flex-shrink: 0; }
+          .logo-section img { height: 96px; width: auto; border: 4px solid #ffcc00; border-radius: 8px; }
+          .logo-text { text-align: center; margin-top: 8px; }
+          .logo-jogos { font-size: 30px; font-weight: bold; color: #D4AF37; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+          .logo-online { font-size: 20px; font-weight: 300; color: #D4AF37; }
+          .ganhador-card { border: 1px solid #e5e5e5; overflow: hidden; background: white; flex: 1; }
+          .barra-ganhadores { background-color: #ffcc00; color: #000; padding: 8px 12px; font-weight: bold; font-size: 14px; }
+          .barra-gp { background-color: #000; color: #fff; padding: 8px 12px; font-weight: bold; font-size: 14px; }
+          .espaco-campeonato-cavalo { height: 4px; }
+          .linha-dourada { display: flex; font-weight: bold; font-size: 14px; }
+          .nome-cavalo { background-color: #ffcc00; color: #000; padding: 8px 12px; flex: 1; }
+          .premio-preto { background-color: #000; color: #fff; padding: 8px 12px; font-weight: bold; }
+          .linha-branca { background-color: #fff; color: #000; padding: 8px 12px; display: flex; justify-content: space-between; font-size: 14px; border-left: 1px solid #e5e5e5; border-right: 1px solid #e5e5e5; }
+          @media print {
+            .page-break { page-break-after: always; }
+            .page-break:last-child { page-break-after: avoid; }
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="title">Vencedores do Campeonato</div>
-          <div class="subtitle">${campeonatoNome}</div>
-        </div>
-
-        <div class="resumo">
-          <div class="card">
-            <div class="card-title">Cavalos vencedores</div>
-            <div class="card-value">${dados.vencedores.length}</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Total de prêmios pagos</div>
-            <div class="card-value">${formatCurrency(totalPremiosCampeonato)}</div>
-          </div>
-        </div>
-
         ${dados.vencedores.map((cavalo, index) => {
-          const premiosCavalo = calcularTotalPremiosCavalo(cavalo)
-          const linhas = Array.isArray(cavalo.vencedores) && cavalo.vencedores.length > 0
-            ? cavalo.vencedores.map((apostador, apostadorIndex) => `
-                <tr>
-                  <td>${apostadorIndex + 1}</td>
-                  <td>${apostador.nomeapostador || 'N/A'}</td>
-                  <td class="text-right text-green">${formatCurrency(apostador.valorpremio)}</td>
-                </tr>
+          const apostadores = Array.isArray(cavalo.vencedores) ? cavalo.vencedores : []
+          const linhasApostadores = apostadores.length > 0
+            ? apostadores.map((apostador, apostadorIndex) => `
+                <div class="linha-branca" ${apostadorIndex === apostadores.length - 1 ? 'style="border-bottom: 1px solid #e5e5e5;"' : ''}>
+                  <span>${apostador.nomeapostador || 'N/A'}</span>
+                  <span style="font-weight: bold;">${formatCurrency(apostador.valorpremio || 0)}</span>
+                </div>
               `).join('')
-            : '<tr><td class="empty-row" colspan="3">Nenhum apostador vencedor registrado para este cavalo.</td></tr>'
+            : '<div class="linha-branca" style="border-bottom: 1px solid #e5e5e5;"><span>N/A</span><span style="font-weight: bold;">' + formatCurrency(0) + '</span></div>'
 
           return `
-            <div class="cavalo-section">
-              <div class="cavalo-header">
-                <div>
-                  <h3>🐎 Cavalo ${index + 1}: ${cavalo.nomecavalovencedor || 'N/A'}</h3>
-                  <p>ID: ${cavalo.cavaloId || 'N/A'}</p>
+            <div class="${index < dados.vencedores.length - 1 ? 'page-break' : ''}">
+              <div class="container">
+                <!-- Logo à esquerda -->
+                <div class="logo-section">
+                  <img src="/images/aa.png" alt="JOGOS ONLINE" />
+                  <div class="logo-text">
+                    <div class="logo-jogos">JOGOS</div>
+                    <div class="logo-online">ONLINE</div>
+                  </div>
                 </div>
-                <div class="cavalo-total">${formatCurrency(premiosCavalo)}</div>
+
+                <!-- Card de Ganhador à direita -->
+                <div class="ganhador-card">
+                  <div class="barra-ganhadores">GANHADORES</div>
+                  <div class="barra-gp">${campeonatoNome}</div>
+                  <div class="espaco-campeonato-cavalo"></div>
+                  <div class="linha-dourada">
+                    <div class="nome-cavalo">${cavalo.nomecavalovencedor || 'Cavalo não informado'}</div>
+                    <div class="premio-preto">PRÊMIO</div>
+                  </div>
+                  ${linhasApostadores}
+                </div>
               </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Apostador</th>
-                    <th class="text-right">Prêmio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${linhas}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th colspan="2">TOTAL DO CAVALO</th>
-                    <th class="text-right text-green">${formatCurrency(premiosCavalo)}</th>
-                  </tr>
-                </tfoot>
-              </table>
             </div>
           `
         }).join('')}
@@ -5778,10 +5810,16 @@ const enviarApostas = async () => {
   textoProcessado = textoProcessado.replace(/\bretirada\b/gi, (match) => {
     return 'Retirada'
   })
-  // Substituir U+00A0 (non-breaking space) por U+0020 (espaço normal) entre 'retirada'/'Retirada' e número
-  textoProcessado = textoProcessado.replace(/\bretirada\u00A0(\d)/gi, (match, numero) => {
-    return `Retirada ${numero}`
+  // Substituir qualquer tipo de espaço (incluindo U+00A0) após 'retirada'/'Retirada' por espaço U+0020
+  textoProcessado = textoProcessado.replace(/\bretirada[\s\u00A0]+/gi, (match) => {
+    return 'Retirada '
   })
+  // Substituir qualquer tipo de espaço (incluindo U+00A0) após 'TOTAL' por espaço U+0020
+  textoProcessado = textoProcessado.replace(/\bTOTAL[\s\u00A0]+/gi, (match) => {
+    return 'TOTAL '
+  })
+  // Remover quebra de linha após o caractere '%'
+  textoProcessado = textoProcessado.replace(/%\s*\r?\n/g, '%')
   // Adicionar espaço antes de '✅' se não houver espaço antes
   textoProcessado = textoProcessado.replace(/([^\s])✅/g, '$1 ✅')
 
@@ -5795,8 +5833,12 @@ const enviarApostas = async () => {
     mensagemApostas.value = 'Apostas criadas com sucesso!'
     mensagemApostasTipo.value = 'sucesso'
     
-    // Limpar formulário
-    apostaForm.value = { campeonatoId: '', tipoRodadaId: '', texto: '' }
+    // Limpar apenas texto e tipo de rodada, mantendo o campeonato selecionado
+    apostaForm.value.texto = ''
+    apostaForm.value.tipoRodadaId = ''
+    
+    // Atualizar rodadas cadastradas
+    await carregarRodadasCadastradas()
     
     // Limpar mensagem após 3 segundos
     setTimeout(() => {
