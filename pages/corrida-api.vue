@@ -1576,13 +1576,12 @@
                   <table class="w-full border-collapse">
                     <thead>
                       <tr>
-                        <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-800 bg-white">JOGADOR</th>
-                        <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-800 bg-white" colspan="2" style="position: relative;">
-                          <div style="border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; margin-bottom: 4px;">VALOR DE APOSTA</div>
-                          <div class="text-xs font-normal">APOSTA</div>
+                        <th class="border border-gray-600 px-4 py-3 text-left font-semibold text-gray-800 bg-white">JOGADOR</th>
+                        <th class="border border-gray-600 px-4 py-3 text-center font-semibold text-gray-800 bg-white" colspan="2">
+                         VALOR DE APOSTA
                         </th>
-                        <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800 bg-white">PRÊMIO</th>
-                        <th class="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-800 bg-white">SALDO FINAL</th>
+                        <th class="border border-gray-600 px-4 py-3 text-right font-semibold text-gray-800 bg-white">PRÊMIO</th>
+                        <th class="border border-gray-600 px-4 py-3 text-right font-semibold text-gray-800 bg-white">SALDO FINAL</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1590,16 +1589,16 @@
                         v-for="(apostador, index) in dadosRelatorioPagamentos.apostadores" 
                         :key="apostador.id ?? `${apostador.nome}-${index}`"
                       >
-                        <td class="border border-gray-300 px-4 py-3 text-gray-800 font-medium bg-white">{{ apostador.nome }}</td>
-                        <td class="border border-gray-300 px-4 py-3 text-right text-gray-700 bg-white" colspan="2">
+                        <td class="border border-gray-600 px-4 py-3 text-gray-800 font-medium bg-white">{{ apostador.nome }}</td>
+                        <td class="border border-gray-600 px-4 py-3 text-right text-gray-700 bg-white" colspan="2">
                           {{ formatCurrency(-Math.abs(apostador.totalApostado || 0)) }}
                         </td>
-                        <td class="border border-gray-300 px-4 py-3 text-right text-gray-700 bg-white">
+                        <td class="border border-gray-600 px-4 py-3 text-right text-gray-700 bg-white">
                           {{ formatCurrency(apostador.totalPremiosVencidos) }}
                         </td>
                         <td 
                           :class="[
-                            'border border-gray-300 px-4 py-3 text-right font-bold',
+                            'border border-gray-600 px-4 py-3 text-right font-bold',
                             apostador.saldoFinal >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                           ]"
                         >
@@ -4882,7 +4881,7 @@ const gerarPDFRelatorioPagamentos = () => {
           .barra-campeonato { background-color: #ffcc00; color: #000; padding: 8px 12px; font-weight: bold; font-size: 14px; margin-bottom: 1px; }
           .barra-relatorio { background-color: #000; color: #fff; padding: 8px 12px; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #e5e5e5; padding: 10px; text-align: left; background-color: white; }
+          th, td { border: 1px solid #4b5563; padding: 10px; text-align: left; background-color: white; }
           th { font-weight: bold; font-size: 14px; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
@@ -4912,8 +4911,8 @@ const gerarPDFRelatorioPagamentos = () => {
               <thead>
                 <tr>
                   <th>JOGADOR</th>
-                  <th class="text-center" colspan="2" style="border-left: 1px solid #e5e5e5; border-right: 1px solid #e5e5e5;">
-                    <div style="border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; margin-bottom: 4px;">VALOR DE APOSTA</div>
+                  <th class="text-center" colspan="2" style="border-left: 1px solid #4b5563; border-right: 1px solid #4b5563;">
+                    <div style="border-bottom: 1px solid #4b5563; padding-bottom: 4px; margin-bottom: 4px;">VALOR DE APOSTA</div>
                     <div style="font-size: 12px; font-weight: normal;">APOSTA</div>
                   </th>
                   <th class="text-right">PRÊMIO</th>
@@ -4924,7 +4923,7 @@ const gerarPDFRelatorioPagamentos = () => {
                 ${dados.apostadores.map(apostador => `
                   <tr>
                     <td>${apostador.nome || 'N/A'}</td>
-                    <td class="text-right" colspan="2" style="border-left: 1px solid #e5e5e5; border-right: 1px solid #e5e5e5;">
+                    <td class="text-right" colspan="2" style="border-left: 1px solid #4b5563; border-right: 1px solid #4b5563;">
                       ${formatCurrency(-Math.abs(apostador.totalApostado || 0))}
                     </td>
                     <td class="text-right">${formatCurrency(apostador.totalPremiosVencidos || 0)}</td>
@@ -5214,9 +5213,7 @@ const loadCampeonatos = async () => {
   try {
     const response = await corridaApi.getAll()
     campeonatos.value = Array.isArray(response) ? response : []
-    console.log('Campeonatos carregados:', response)
   } catch (err) {
-    console.error('Erro ao carregar campeonatos:', err)
     campeonatos.value = []
   } finally {
     carregando.value = false
@@ -5251,11 +5248,9 @@ const criarCampeonato = async () => {
       mensagem.value = ''
     }, 3000)
     
-    console.log('Campeonato criado:', response)
   } catch (err) {
     mensagem.value = 'Erro ao criar campeonato. Verifique se a API está online.'
     mensagemTipo.value = 'erro'
-    console.error('Erro ao criar campeonato:', err)
   } finally {
     criando.value = false
   }
@@ -5283,7 +5278,6 @@ const deletarCampeonato = async (id) => {
   } catch (err) {
     mensagem.value = 'Erro ao excluir campeonato.'
     mensagemTipo.value = 'erro'
-    console.error('Erro ao excluir campeonato:', err)
   }
 }
 
@@ -5295,10 +5289,8 @@ const loadData = async () => {
   try {
     const response = await corridaApi.getAll()
     data.value = response
-    console.log('Dados recebidos:', response)
   } catch (err) {
     error.value = 'Não foi possível conectar à API. Verifique sua conexão ou se a API está online.'
-    console.error('Erro ao carregar dados:', err)
     data.value = null
   } finally {
     loading.value = false
@@ -5323,9 +5315,7 @@ const loadTiposRodadas = async () => {
   try {
     const response = await corridaApi.getTiposRodadas()
     tiposRodadas.value = Array.isArray(response) ? response : []
-    console.log('Tipos de rodadas carregados:', response)
   } catch (err) {
-    console.error('Erro ao carregar tipos de rodadas:', err)
     tiposRodadas.value = []
   } finally {
     carregandoTipos.value = false
@@ -5359,11 +5349,9 @@ const criarTipoRodada = async () => {
       mensagemTipoRodada.value = ''
     }, 3000)
     
-    console.log('Tipo de rodada criado:', response)
   } catch (err) {
     mensagemTipoRodada.value = 'Erro ao criar tipo de rodada. Verifique se a API está online.'
     mensagemTipoRodadaTipo.value = 'erro'
-    console.error('Erro ao criar tipo de rodada:', err)
   } finally {
     criandoTipoRodada.value = false
   }
@@ -7109,8 +7097,6 @@ const gerarPDFTodosApostadores = async () => {
 
           if (grupoEncontrado) {
             dadosPdf = transformarGrupoCombinadoParaPdf(grupoEncontrado, apostador)
-          } else {
-            console.warn(`Combinação ${apostador.nome} não encontrada para geração de PDF.`)
           }
         } else {
           const response = await corridaApi.getPdfDados(apostador.campeonatoId, apostador.id)
@@ -7123,7 +7109,6 @@ const gerarPDFTodosApostadores = async () => {
           dadosApostadores.push(dadosPdf)
         }
       } catch (err) {
-        console.error(`Erro ao buscar dados do apostador ${apostador.nome}:`, err)
       }
     }
 
@@ -7256,7 +7241,6 @@ const gerarPDFTodosApostadores = async () => {
     }
     
   } catch (err) {
-    console.error('Erro ao gerar PDF de todos os apostadores:', err)
     alert('Erro ao gerar PDF. Verifique se a API está online.')
   } finally {
     gerandoPDFTodos.value = false
