@@ -4399,24 +4399,13 @@ const gerarTextoApostasRodada = (nomeRodada, apostas) => {
       return sum + (percentual === '' ? 0 : Number(percentual))
     }, 0)
 
-    let partes = []
-
-    if (apostasDoPareo.length === 2 && Math.abs(porcentagemTotal - 100) < 0.1) {
-      partes = apostasDoPareo.map((item) => {
-        const nome = item.apostador?.nome ?? item.apostador ?? item.nome ?? ''
-        return nome
-      })
-      linhas.push(`${pareo}- ${valorFormatado} ${partes.join(' / ')} ✅`)
-      return
-    }
-
-    partes = apostasDoPareo.map((item) => {
+    const partes = apostasDoPareo.map((item) => {
       const nome = item.apostador?.nome ?? item.apostador ?? item.nome ?? ''
       const percentual = formatarPercentual(
         item.porcentagemAposta ?? item.porcentagemPremio
       )
 
-      if (percentual === '' || Number(percentual) === 0 || Number(percentual) === 100) {
+      if (percentual === '' || Number(percentual) === 0) {
         return nome
       }
 
