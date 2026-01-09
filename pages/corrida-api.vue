@@ -6392,6 +6392,16 @@ const gerarPDF = async () => {
       }).format(numValue)
     }
     
+    const escapeHtml = (str) => {
+      if (!str) return ''
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+    }
+    
     // Criar conteúdo HTML para o PDF (mesmo formato do relatorio.vue)
     const content = `
       <html>
@@ -6485,12 +6495,20 @@ const gerarPDF = async () => {
             }
             .editable-valor:read-only,
             .editable-premio:read-only,
-            .editable-total:read-only {
+            .editable-total:read-only,
+            .editable-texto:read-only,
+            .editable-porcentagem:read-only,
+            .editable-resumo-chave:read-only,
+            .editable-resumo-premio:read-only {
               cursor: default;
             }
             .editable-valor:not(:read-only),
             .editable-premio:not(:read-only),
-            .editable-total:not(:read-only) {
+            .editable-total:not(:read-only),
+            .editable-texto:not(:read-only),
+            .editable-porcentagem:not(:read-only),
+            .editable-resumo-chave:not(:read-only),
+            .editable-resumo-premio:not(:read-only) {
               border: 2px solid #4CAF50 !important;
               background: #f0f8f0 !important;
               cursor: text;
@@ -6566,23 +6584,36 @@ const gerarPDF = async () => {
                 </tr>
               </thead>
               <tbody>
-                ${apostasCarregadas.map((aposta, index) => `
+                ${apostasCarregadas.map((aposta, index) => {
+                  const rodadaEscapado = aposta.rodada ? escapeHtml(aposta.rodada) : ''
+                  const chaveEscapado = aposta.chave ? escapeHtml(aposta.chave) : ''
+                  const nomeApostadorEscapado = aposta.nomeApostador ? escapeHtml(aposta.nomeApostador) : ''
+                  return `
                   <tr data-aposta-index="${index}">
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.rodada}</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.chave}</td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
-                      <input type="text" class="editable-valor" data-field="valorAposta" data-index="${index}" data-original="${parseFloat(aposta.valorAposta) || 0}" value="${formatCurrency(aposta.valorAposta)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">
-                    </td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.porcentagem}%</td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
-                      <input type="text" class="editable-premio" data-field="premioIndividual" data-index="${index}" data-original="${parseFloat(aposta.premioIndividual) || 0}" value="${formatCurrency(aposta.premioIndividual)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">
+                      ${aposta.rodada ? `<input type="text" class="editable-texto" data-field="rodada" data-index="${index}" data-original="${rodadaEscapado}" value="${rodadaEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
                     </td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
-                      <input type="text" class="editable-total" data-field="totalRodada" data-index="${index}" data-original="${parseFloat(aposta.totalRodada) || 0}" value="${formatCurrency(aposta.totalRodada)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">
+                      ${aposta.chave ? `<input type="text" class="editable-texto" data-field="chave" data-index="${index}" data-original="${chaveEscapado}" value="${chaveEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
                     </td>
-                    ${isCombinado ? `<td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.nomeApostador || '-'}</td>` : ''}
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      ${aposta.valorAposta ? `<input type="text" class="editable-valor" data-field="valorAposta" data-index="${index}" data-original="${parseFloat(aposta.valorAposta) || 0}" value="${formatCurrency(aposta.valorAposta)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                    </td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      ${aposta.porcentagem !== undefined && aposta.porcentagem !== null ? `<input type="text" class="editable-porcentagem" data-field="porcentagem" data-index="${index}" data-original="${parseFloat(aposta.porcentagem) || 0}" value="${aposta.porcentagem}%" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                    </td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      ${aposta.premioIndividual ? `<input type="text" class="editable-premio" data-field="premioIndividual" data-index="${index}" data-original="${parseFloat(aposta.premioIndividual) || 0}" value="${formatCurrency(aposta.premioIndividual)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                    </td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      ${aposta.totalRodada ? `<input type="text" class="editable-total" data-field="totalRodada" data-index="${index}" data-original="${parseFloat(aposta.totalRodada) || 0}" value="${formatCurrency(aposta.totalRodada)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                    </td>
+                    ${isCombinado ? `<td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
+                      ${aposta.nomeApostador ? `<input type="text" class="editable-texto" data-field="nomeApostador" data-index="${index}" data-original="${nomeApostadorEscapado}" value="${nomeApostadorEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                    </td>` : ''}
                   </tr>
-                `).join('')}
+                `
+                }).join('')}
               </tbody>
             </table>
 
@@ -6609,12 +6640,22 @@ const gerarPDF = async () => {
                     </tr>
                   </thead>
                   <tbody>
-                    ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([chave, cavaloData]) => `
+                    ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([chave, cavaloData], resumoIndex) => {
+                      const resumoKey = tipo + '|' + chave;
+                      const chaveExibicao = cavaloData.chaveExibicao || chave;
+                      const chaveExibicaoEscapado = chaveExibicao ? escapeHtml(chaveExibicao) : '';
+                      const resumoKeyEscapado = escapeHtml(resumoKey);
+                      return `
                       <tr>
-                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavaloData.chaveExibicao || chave}</td>
-                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
+                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">
+                          ${chaveExibicao ? `<input type="text" class="editable-resumo-chave" data-field="chaveExibicao" data-resumo-key="${resumoKeyEscapado}" data-original="${chaveExibicaoEscapado}" value="${chaveExibicaoEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left; font-weight: bold;">` : '<span>-</span>'}
+                        </td>
+                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">
+                          ${cavaloData.premioIndividual ? `<input type="text" class="editable-resumo-premio" data-field="premioIndividual" data-resumo-key="${resumoKeyEscapado}" data-original="${parseFloat(cavaloData.premioIndividual) || 0}" value="${formatCurrency(cavaloData.premioIndividual)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                        </td>
                       </tr>
-                    `).join('')}
+                    `;
+                    }).join('')}
                   </tbody>
                 </table>
               </div>
@@ -6708,10 +6749,11 @@ const gerarPDF = async () => {
         
         function toggleEdicao() {
           modoEdicao = !modoEdicao;
-          const campos = document.querySelectorAll('.editable-valor, .editable-premio, .editable-total');
           const btn = document.getElementById('btnEditar');
           
-          campos.forEach(campo => {
+          // Campos monetários
+          const camposMonetarios = document.querySelectorAll('.editable-valor, .editable-premio, .editable-total, .editable-resumo-premio');
+          camposMonetarios.forEach(campo => {
             if (modoEdicao) {
               // Modo edição: converter de moeda para número
               const originalValue = campo.getAttribute('data-original');
@@ -6724,6 +6766,38 @@ const gerarPDF = async () => {
               const valor = parseNumber(campo.value);
               campo.setAttribute('data-original', valor.toString());
               campo.value = formatCurrency(valor);
+              campo.readOnly = true;
+            }
+          });
+          
+          // Campos de texto
+          const camposTexto = document.querySelectorAll('.editable-texto, .editable-resumo-chave');
+          camposTexto.forEach(campo => {
+            if (modoEdicao) {
+              // Modo edição: permitir edição de texto
+              campo.readOnly = false;
+            } else {
+              // Modo visualização: salvar valor editado e tornar read-only
+              const valorEditado = campo.value || '';
+              campo.setAttribute('data-original', valorEditado);
+              campo.readOnly = true;
+            }
+          });
+          
+          // Campos de porcentagem
+          const camposPorcentagem = document.querySelectorAll('.editable-porcentagem');
+          camposPorcentagem.forEach(campo => {
+            if (modoEdicao) {
+              // Modo edição: remover % e mostrar apenas número
+              const originalValue = campo.getAttribute('data-original');
+              const numero = parseNumber(originalValue);
+              campo.value = numero.toString();
+              campo.readOnly = false;
+            } else {
+              // Modo visualização: adicionar % e tornar read-only
+              const valor = parseNumber(campo.value);
+              campo.setAttribute('data-original', valor.toString());
+              campo.value = valor + '%';
               campo.readOnly = true;
             }
           });
