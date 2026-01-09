@@ -5452,12 +5452,18 @@ const enviarPareo = async () => {
   enviandoPareo.value = true
   mensagemPareo.value = ''
   
+  // Processar o texto: remover espaço após o número antes do hífen
+  // Exemplo: "01 - nome" → "01- nome"
+  let textoProcessado = pareoFormCriar.value.texto
+  // Regex para encontrar padrão: número no início da linha, espaço, hífen e espaço
+  // Substitui por: número, hífen e espaço (mantém o espaço após o hífen)
+  textoProcessado = textoProcessado.replace(/^(\d+)\s+-\s+/gm, '$1- ')
 
   try {
     const response = await corridaApi.criarPareo(
       pareoFormCriar.value.campeonatoId,
       pareoFormCriar.value.tipoRodadaId,
-      pareoFormCriar.value.texto
+      textoProcessado
     )
     
     mensagemPareo.value = 'Pareo criado com sucesso!'
