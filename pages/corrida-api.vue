@@ -6358,12 +6358,19 @@ const gerarPDF = async () => {
         // Usar valorOriginalPremio individual de cada aposta, não somar
         const valorOriginalPremio = parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
         
+        // Calcular premioIndividual ajustando pela porcentagemPremio se diferente de 100
+        let premioIndividual = parseFloat(aposta.valorPremio || 0)
+        if (isCombinado && aposta.porcentagemPremio != null && aposta.porcentagemPremio !== 100) {
+          const porcentagem = parseFloat(aposta.porcentagemPremio) || 100
+          premioIndividual = (premioIndividual * porcentagem) / 100
+        }
+        
         apostasCarregadas.push({
           rodada: nomeRodada,
           chave: chave,
           valorAposta: parseFloat(aposta.valor || 0),
           porcentagem: parseFloat(aposta.porcentagemAposta || 0),
-          premioIndividual: parseFloat(aposta.valorPremio || 0),
+          premioIndividual: premioIndividual,
           totalRodada: valorOriginalPremio,
           tipo: nomeTipo,
           cavalo: nomeCavalo,
@@ -6408,9 +6415,9 @@ const gerarPDF = async () => {
           }
         }
         
-        apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].premioIndividual += parseFloat(aposta.valorPremio || 0)
+        apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].premioIndividual += premioIndividual
         apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].totalRodada += valorOriginalPremio
-        apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
+        apostasAgrupadas[nomeTipo]._totalPremio += premioIndividual
         apostasAgrupadas[nomeTipo]._totalRodada += valorOriginalPremio
       })
     })
@@ -7016,12 +7023,19 @@ const gerarHTMLApostador = (dados) => {
       // Usar valorOriginalPremio individual de cada aposta, não somar
       const valorOriginalPremio = parseFloat(aposta.valorOriginalPremio || aposta.valorPremio || 0)
       
+      // Calcular premioIndividual ajustando pela porcentagemPremio se diferente de 100
+      let premioIndividual = parseFloat(aposta.valorPremio || 0)
+      if (isCombinado && aposta.porcentagemPremio != null && aposta.porcentagemPremio !== 100) {
+        const porcentagem = parseFloat(aposta.porcentagemPremio) || 100
+        premioIndividual = (premioIndividual * porcentagem) / 100
+      }
+      
       apostasCarregadas.push({
         rodada: nomeRodada,
         chave: chave,
         valorAposta: parseFloat(aposta.valor || 0),
         porcentagem: parseFloat(aposta.porcentagemAposta || 0),
-        premioIndividual: parseFloat(aposta.valorPremio || 0),
+        premioIndividual: premioIndividual,
         totalRodada: valorOriginalPremio,
         tipo: nomeTipo,
         cavalo: nomeCavalo,
@@ -7066,9 +7080,9 @@ const gerarHTMLApostador = (dados) => {
         }
       }
       
-      apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].premioIndividual += parseFloat(aposta.valorPremio || 0)
+      apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].premioIndividual += premioIndividual
       apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo].totalRodada += valorOriginalPremio
-      apostasAgrupadas[nomeTipo]._totalPremio += parseFloat(aposta.valorPremio || 0)
+      apostasAgrupadas[nomeTipo]._totalPremio += premioIndividual
       apostasAgrupadas[nomeTipo]._totalRodada += valorOriginalPremio
     })
   })
