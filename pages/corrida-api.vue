@@ -1605,6 +1605,24 @@
                           {{ formatCurrency(apostador.saldoFinal) }}
                         </td>
                       </tr>
+                      <!-- Linha de Total -->
+                      <tr v-if="dadosRelatorioPagamentos.apostadores && dadosRelatorioPagamentos.apostadores.length > 0" class="bg-gray-100">
+                        <td class="border border-gray-600 px-4 py-3 text-left font-bold text-gray-900">TOTAL</td>
+                        <td class="border border-gray-600 px-4 py-3 text-right font-bold text-gray-900" colspan="2">
+                          {{ formatCurrency(-Math.abs(totaisRelatorioPagamentos.totalApostado)) }}
+                        </td>
+                        <td class="border border-gray-600 px-4 py-3 text-right font-bold text-gray-900">
+                          {{ formatCurrency(totaisRelatorioPagamentos.totalPremios) }}
+                        </td>
+                        <td 
+                          :class="[
+                            'border border-gray-600 px-4 py-3 text-right font-bold',
+                            totaisRelatorioPagamentos.totalSaldo >= 0 ? 'text-green-700' : 'text-red-700'
+                          ]"
+                        >
+                          {{ formatCurrency(totaisRelatorioPagamentos.totalSaldo) }}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -3389,6 +3407,23 @@ const tituloResumoRelatorioPagamentos = computed(() => {
   }
 
   return 'Campeonato:'
+})
+
+const totaisRelatorioPagamentos = computed(() => {
+  if (!dadosRelatorioPagamentos.value || !dadosRelatorioPagamentos.value.apostadores) {
+    return {
+      totalApostado: 0,
+      totalPremios: 0,
+      totalSaldo: 0
+    }
+  }
+  
+  const apostadores = dadosRelatorioPagamentos.value.apostadores
+  return {
+    totalApostado: apostadores.reduce((sum, a) => sum + (Math.abs(a.totalApostado || 0)), 0),
+    totalPremios: apostadores.reduce((sum, a) => sum + (a.totalPremiosVencidos || 0), 0),
+    totalSaldo: apostadores.reduce((sum, a) => sum + (a.saldoFinal || 0), 0)
+  }
 })
 
 // Estados para dropdowns
