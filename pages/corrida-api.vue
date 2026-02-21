@@ -3020,11 +3020,10 @@ const carregarTextoRodadaSelecionada = async (
   }
 
   try {
-    const resposta = await corridaApi.postRodadaAposta(
-      campeonatoId,
-      tipoRodadaId,
-      nomeRodada
-    )
+    const [resposta, valorCasa] = await Promise.all([
+      corridaApi.postRodadaAposta(campeonatoId, tipoRodadaId, nomeRodada),
+      corridaApi.getValorCasaRodada(campeonatoId, nomeRodada).catch(() => null)
+    ])
 
     const apostas = Array.isArray(resposta?.apostas)
       ? resposta.apostas
@@ -3047,6 +3046,12 @@ const carregarTextoRodadaSelecionada = async (
 
     apostaForm.value.tipoRodadaId = tipoRodadaId
     apostaForm.value.texto = textoGerado
+
+    // Preencher Valor da Casa se retornado
+    if (valorCasa != null && valorCasa !== '') {
+      rodadaCasaForm.value.valorCasa = String(valorCasa)
+    }
+
     mensagemApostas.value = 'Texto preenchido com sucesso!'
     mensagemApostasTipo.value = 'sucesso'
     setTimeout(() => (mensagemApostas.value = ''), 3000)

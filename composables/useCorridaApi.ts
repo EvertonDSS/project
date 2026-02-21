@@ -571,6 +571,16 @@ export const useCorridaApi = () => {
       }
     },
 
+    async getValorCasaRodada(campeonatoId: string | number, nomeRodada: string) {
+      try {
+        const response = await api(`/apostas/rodadas/${campeonatoId}/${nomeRodada}/casa`)
+        return response
+      } catch (error) {
+        console.error('Erro ao buscar valor da casa da rodada:', error)
+        throw error
+      }
+    },
+
     async getVencedoresCampeonato(campeonatoId: string | number) {
       try {
         const response = await api(`/vencedores/${campeonatoId}`)
