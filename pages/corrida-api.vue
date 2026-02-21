@@ -6460,6 +6460,7 @@ const gerarPDF = async () => {
       <html>
         <head>
           <title>Relatório de Apostas - ${apostadorNome}</title>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
           <style>
             body { 
               font-family: Arial, sans-serif; 
@@ -6542,9 +6543,30 @@ const gerarPDF = async () => {
               background-color: #f9f9f9;
             }
             @media print {
-              body { margin: 0; }
-              .container { box-shadow: none; }
-              .no-print { display: none !important; }
+              body {
+                margin: 0;
+                padding: 0;
+                background: white;
+              }
+              body * {
+                visibility: hidden;
+              }
+              .container,
+              .container * {
+                visibility: visible;
+              }
+              .container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+                margin: 0;
+                padding: 20px;
+              }
+              .no-print {
+                display: none !important;
+              }
             }
             .editable-valor:read-only,
             .editable-premio:read-only,
@@ -6567,12 +6589,11 @@ const gerarPDF = async () => {
               cursor: text;
             }
             .btn-container {
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              z-index: 1000;
               display: flex;
+              justify-content: flex-end;
               gap: 10px;
+              margin-bottom: 16px;
+              padding: 0 4px;
             }
             .btn {
               padding: 12px 24px;
@@ -6598,9 +6619,67 @@ const gerarPDF = async () => {
             .btn-download {
               background: #2196F3;
             }
+            .context-menu {
+              display: none;
+              position: fixed;
+              z-index: 9999;
+              background: white;
+              border: 1px solid #e5e5e5;
+              border-radius: 8px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+              padding: 4px 0;
+              min-width: 180px;
+            }
+            .context-menu.visible {
+              display: block;
+            }
+            .context-menu-item {
+              padding: 10px 16px;
+              cursor: pointer;
+              font-size: 14px;
+              color: #333;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              transition: background 0.15s;
+            }
+            .context-menu-item:hover {
+              background: #f0f0f0;
+            }
+            .context-menu-item.editar { color: #2e7d32; }
+            .context-menu-item.download { color: #1565c0; }
+            .context-menu-item.copiar { color: #6a1b9a; }
+            .toast-notification {
+              position: fixed;
+              bottom: 24px;
+              right: 24px;
+              padding: 12px 20px;
+              background: #323232;
+              color: white;
+              border-radius: 8px;
+              font-size: 14px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              z-index: 10000;
+              opacity: 0;
+              transform: translateY(10px);
+              transition: opacity 0.3s, transform 0.3s;
+            }
+            .toast-notification.visible {
+              opacity: 1;
+              transform: translateY(0);
+            }
+            .toast-notification.erro { background: #c62828; }
+            .toast-notification.sucesso { background: #2e7d32; }
           </style>
         </head>
         <body>
+          <div id="toastNotification" class="toast-notification no-print"></div>
+          <div id="contextMenu" class="context-menu no-print">
+            <div class="context-menu-item editar" data-action="editar">✏️ Editar</div>
+            <div class="context-menu-item download" data-action="download">📥 Download PDF</div>
+            <div class="context-menu-item copiar" data-action="copiar-imagem">🖼️ Copiar como imagem</div>
+          </div>
+          <div id="areaParaCaptura">
           <div class="btn-container no-print">
             <button id="btnEditar" class="btn btn-editar" onclick="toggleEdicao()">✏️ Editar</button>
             <button id="btnDownload" class="btn btn-download" onclick="downloadPDF()">📥 Download PDF</button>
@@ -6714,6 +6793,7 @@ const gerarPDF = async () => {
               </div>
             `).join('')}
           </div>
+          </div>
         </body>
       </html>
     `
@@ -6736,6 +6816,33 @@ const gerarPDF = async () => {
         const campeonatoNome = '${campeonatoNomeEscapado}';
         const valorTotalApostasOriginal = ${valorTotalApostas};
         const isCombinado = ${isCombinado};
+        
+        // Menu de contexto (clique direito)
+        const contextMenu = document.getElementById('contextMenu');
+        document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          contextMenu.classList.add('visible');
+          contextMenu.style.left = e.clientX + 'px';
+          contextMenu.style.top = e.clientY + 'px';
+          // Ajustar se sair da tela (usar requestAnimationFrame para ter dimensões corretas)
+          requestAnimationFrame(function() {
+            const rect = contextMenu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) contextMenu.style.left = (e.clientX - rect.width) + 'px';
+            if (rect.bottom > window.innerHeight) contextMenu.style.top = (e.clientY - rect.height) + 'px';
+          });
+        });
+        document.addEventListener('click', function() {
+          contextMenu.classList.remove('visible');
+        });
+        contextMenu.querySelectorAll('.context-menu-item').forEach(function(item) {
+          item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (this.dataset.action === 'editar') toggleEdicao();
+            if (this.dataset.action === 'download') downloadPDF();
+            if (this.dataset.action === 'copiar-imagem') copiarComoImagem();
+            contextMenu.classList.remove('visible');
+          });
+        });
         
         function formatCurrency(value) {
           const numValue = parseFloat(value) || 0;
@@ -6865,8 +6972,53 @@ const gerarPDF = async () => {
         }
         
         async function downloadPDF() {
-          // Apenas abrir a impressão sem alterar o conteúdo da página
           window.print();
+        }
+        
+        function mostrarNotificacao(msg, tipo) {
+          var toast = document.getElementById('toastNotification');
+          if (!toast) return;
+          toast.textContent = msg;
+          toast.className = 'toast-notification no-print visible ' + (tipo || '');
+          clearTimeout(toast._timeout);
+          toast._timeout = setTimeout(function() {
+            toast.classList.remove('visible');
+          }, 3000);
+        }
+        
+        async function copiarComoImagem() {
+          var area = document.querySelector('.container');
+          if (!area) return;
+          if (typeof html2canvas === 'undefined') {
+            mostrarNotificacao('Biblioteca de captura carregando. Tente em alguns segundos.', 'erro');
+            return;
+          }
+          try {
+            var canvas = await html2canvas(area, {
+              useCORS: true,
+              allowTaint: true,
+              scale: 2,
+              backgroundColor: '#ffffff',
+              logging: false
+            });
+            canvas.toBlob(function(blob) {
+              if (!blob) {
+                mostrarNotificacao('Não foi possível gerar a imagem.', 'erro');
+                return;
+              }
+              navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+              ]).then(function() {
+                mostrarNotificacao('Imagem copiada para a área de transferência!', 'sucesso');
+              }).catch(function(err) {
+                console.error('Erro ao copiar:', err);
+                mostrarNotificacao('Não foi possível copiar. Tente salvar como PDF.', 'erro');
+              });
+            }, 'image/png');
+          } catch (err) {
+            console.error('Erro ao capturar:', err);
+            mostrarNotificacao('Erro ao capturar a imagem. Tente novamente.', 'erro');
+          }
         }
         
         function gerarHTMLPDF(apostas, resumo, valorTotal) {
