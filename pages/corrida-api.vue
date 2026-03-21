@@ -3,11 +3,8 @@
     <main class="container mx-auto px-4 py-8">
       <!-- Header -->
       <div class="mb-8 text-center">
-        <h1 class="text-4xl font-bold text-gray-800 mb-2">
-          🏇 API Corrida App
-        </h1>
         <p class="text-gray-600">
-          Consumindo dados de: https://corrida-app11.onrender.com/
+          Consumindo dados de: https://corrida-app.squareweb.app/
         </p>
       </div>
 
@@ -177,6 +174,18 @@
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>
+                  <div class="mb-4">
+                    <label for="abreviacaoTipoRodada" class="block text-sm font-medium text-gray-700 mb-2">
+                      Abreviação
+                    </label>
+                    <input
+                      id="abreviacaoTipoRodada"
+                      v-model="novoTipoRodada.abreviacao"
+                      type="text"
+                      placeholder="Ex: ELI, CLA..."
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
 
                   <button
                     type="submit"
@@ -233,10 +242,17 @@
                             class="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             placeholder="Novo nome do tipo de rodada"
                           />
+                          <input
+                            v-model="tipoRodadaAbreviacaoEdicao"
+                            type="text"
+                            class="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Abreviação"
+                          />
                           <p class="text-xs text-gray-500">ID: {{ tipoRodada.id }}</p>
                         </div>
                         <div v-else>
                         <h4 class="font-semibold text-gray-800">{{ tipoRodada.nome }}</h4>
+                        <p v-if="tipoRodada.abreviacao" class="text-sm text-gray-600">{{ tipoRodada.abreviacao }}</p>
                         <p class="text-sm text-gray-600">ID: {{ tipoRodada.id }}</p>
                       </div>
                       </div>
@@ -2487,7 +2503,7 @@
             <div class="bg-indigo-50 p-4 rounded-lg">
               <div class="text-indigo-600 text-sm font-semibold mb-1">Endpoint</div>
               <div class="text-sm text-indigo-800 truncate">
-                corrida-app11.onrender.com
+                https://corrida-app.squareweb.app/
               </div>
             </div>
             
@@ -2926,12 +2942,13 @@ const mensagemTipo = ref('')
 const tiposRodadas = ref([])
 const carregandoTipos = ref(false)
 const criandoTipoRodada = ref(false)
-const novoTipoRodada = ref({ nome: '' })
+const novoTipoRodada = ref({ nome: '', abreviacao: '' })
 const mensagemTipoRodada = ref('')
 const mensagemTipoRodadaTipo = ref('')
 const atualizandoTipoRodadaId = ref(null)
 const tipoRodadaEditandoId = ref(null)
 const tipoRodadaNomeEdicao = ref('')
+const tipoRodadaAbreviacaoEdicao = ref('')
 
 // Estados para criar pareo
 const pareoFormCriar = ref({ campeonatoId: '', tipoRodadaId: '', texto: '' })
@@ -5362,13 +5379,16 @@ const criarTipoRodada = async () => {
   mensagemTipoRodada.value = ''
   
   try {
-    const response = await corridaApi.postTipoRodada({ nome: novoTipoRodada.value.nome })
+    const response = await corridaApi.postTipoRodada({
+      nome: novoTipoRodada.value.nome,
+      abreviacao: novoTipoRodada.value.abreviacao || undefined
+    })
     
     mensagemTipoRodada.value = 'Tipo de rodada criado com sucesso!'
     mensagemTipoRodadaTipo.value = 'sucesso'
     
     // Limpar formulário
-    novoTipoRodada.value.nome = ''
+    novoTipoRodada.value = { nome: '', abreviacao: '' }
     
     // Recarregar lista
     await loadTiposRodadas()
@@ -5389,12 +5409,14 @@ const criarTipoRodada = async () => {
 const iniciarEdicaoTipoRodada = (tipoRodada) => {
   tipoRodadaEditandoId.value = tipoRodada.id
   tipoRodadaNomeEdicao.value = tipoRodada.nome || ''
+  tipoRodadaAbreviacaoEdicao.value = tipoRodada.abreviacao || ''
   mensagemTipoRodada.value = ''
 }
 
 const cancelarEdicaoTipoRodada = () => {
   tipoRodadaEditandoId.value = null
   tipoRodadaNomeEdicao.value = ''
+  tipoRodadaAbreviacaoEdicao.value = ''
   atualizandoTipoRodadaId.value = null
 }
 
@@ -5406,7 +5428,9 @@ const salvarEdicaoTipoRodada = async () => {
 
   const tipoAtual = tiposRodadas.value.find((tipo) => tipo.id === id)
   const nomeAtual = (tipoAtual?.nome || '').trim()
+  const abreviacaoAtual = (tipoAtual?.abreviacao || '').trim()
   const nomeLimpo = (tipoRodadaNomeEdicao.value || '').trim()
+  const abreviacaoLimpa = (tipoRodadaAbreviacaoEdicao.value || '').trim()
 
   if (!nomeLimpo) {
     mensagemTipoRodada.value = 'O nome não pode ser vazio.'
@@ -5417,7 +5441,7 @@ const salvarEdicaoTipoRodada = async () => {
     return
   }
 
-  if (nomeLimpo === nomeAtual) {
+  if (nomeLimpo === nomeAtual && abreviacaoLimpa === abreviacaoAtual) {
     mensagemTipoRodada.value = 'Nenhuma alteração realizada.'
     mensagemTipoRodadaTipo.value = 'erro'
     setTimeout(() => {
@@ -5430,7 +5454,7 @@ const salvarEdicaoTipoRodada = async () => {
   mensagemTipoRodada.value = ''
 
   try {
-    await corridaApi.updateTipoRodada(id, { nome: nomeLimpo })
+    await corridaApi.updateTipoRodada(id, { nome: nomeLimpo, abreviacao: abreviacaoLimpa || undefined })
 
     mensagemTipoRodada.value = 'Tipo de rodada atualizado com sucesso!'
     mensagemTipoRodadaTipo.value = 'sucesso'

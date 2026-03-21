@@ -110,7 +110,7 @@ export const useCorridaApi = () => {
       }
     },
 
-    async updateTipoRodada(id: string | number, payload: { nome: string }) {
+    async updateTipoRodada(id: string | number, payload: { nome: string; abreviacao?: string }) {
       try {
         const response = await api(`/tipos-rodada/${id}`, { method: 'PATCH', body: payload })
         return response
