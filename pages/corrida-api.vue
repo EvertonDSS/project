@@ -5454,7 +5454,7 @@ const salvarEdicaoTipoRodada = async () => {
   mensagemTipoRodada.value = ''
 
   try {
-    await corridaApi.updateTipoRodada(id, { nome: nomeLimpo, abreviacao: abreviacaoLimpa || undefined })
+    await corridaApi.updateTipoRodada(id, { nome: nomeLimpo, abreviacao: abreviacaoLimpa })
 
     mensagemTipoRodada.value = 'Tipo de rodada atualizado com sucesso!'
     mensagemTipoRodadaTipo.value = 'sucesso'
@@ -6371,14 +6371,20 @@ const gerarPDF = async () => {
       
       const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
       const nomeRodada = rodada.nomeRodada || 'N/A'
+      const baseRodada = (nomeRodada || '')
+      const textoRodada = rodada.tipoRodada?.abreviacao
+        ? `${baseRodada} - ${rodada.tipoRodada.abreviacao}`
+        : nomeRodada
       
       rodada.apostas.forEach((aposta) => {
         if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
           return
         }
         
-        const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
-        const nomeCavalo = `${aposta.pareo.numero || ''} - ${cavalosNomes}`
+        const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome)
+        const nomeCavalo = cavalosNomes.length > 1
+          ? `${aposta.pareo.numero || ''} - ${cavalosNomes[0]}\n${cavalosNomes.slice(1).join('\n')}`
+          : `${aposta.pareo.numero || ''} - ${cavalosNomes[0] || ''}`
         const chave = nomeCavalo
         
         // Obter nome do apostador se for aposta combinada
@@ -6395,7 +6401,7 @@ const gerarPDF = async () => {
         }
         
         apostasCarregadas.push({
-          rodada: nomeRodada,
+          rodada: textoRodada,
           chave: chave,
           valorAposta: parseFloat(aposta.valor || 0),
           porcentagem: parseFloat(aposta.porcentagemAposta || 0),
@@ -6436,7 +6442,7 @@ const gerarPDF = async () => {
         // Usar a chave normalizada para agrupamento, mas manter nomeCavalo original para exibição
         if (!apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo]) {
           apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo] = {
-            rodada: nomeRodada,
+            rodada: textoRodada,
             porcentagem: parseFloat(aposta.porcentagemAposta || 0),
             premioIndividual: 0,
             totalRodada: 0,
@@ -6749,8 +6755,8 @@ const gerarPDF = async () => {
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
                       ${aposta.rodada ? `<input type="text" class="editable-texto" data-field="rodada" data-index="${index}" data-original="${rodadaEscapado}" value="${rodadaEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
                     </td>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
-                      ${aposta.chave ? `<input type="text" class="editable-texto" data-field="chave" data-index="${index}" data-original="${chaveEscapado}" value="${chaveEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px; vertical-align: top;">
+                      ${aposta.chave ? `<div class="editable-texto" data-field="chave" data-index="${index}" data-original="${chaveEscapado}" style="white-space: pre-line; font-size: 14px; line-height: 1.4;">${chaveEscapado}</div>` : '<span>-</span>'}
                     </td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">
                       ${aposta.valorAposta ? `<input type="text" class="editable-valor" data-field="valorAposta" data-index="${index}" data-original="${parseFloat(aposta.valorAposta) || 0}" value="${formatCurrency(aposta.valorAposta)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
@@ -6803,8 +6809,8 @@ const gerarPDF = async () => {
                       const resumoKeyEscapado = escapeHtml(resumoKey);
                       return `
                       <tr>
-                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">
-                          ${chaveExibicao ? `<input type="text" class="editable-resumo-chave" data-field="chaveExibicao" data-resumo-key="${resumoKeyEscapado}" data-original="${chaveExibicaoEscapado}" value="${chaveExibicaoEscapado}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left; font-weight: bold;">` : '<span>-</span>'}
+                        <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold; white-space: pre-line; line-height: 1.4;">
+                          ${chaveExibicao ? `<div class="editable-resumo-chave" data-field="chaveExibicao" data-resumo-key="${resumoKeyEscapado}" data-original="${chaveExibicaoEscapado}" style="font-size: 14px; font-weight: bold;">${chaveExibicaoEscapado}</div>` : '<span>-</span>'}
                         </td>
                         <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">
                           ${cavaloData.premioIndividual ? `<input type="text" class="editable-resumo-premio" data-field="premioIndividual" data-resumo-key="${resumoKeyEscapado}" data-original="${parseFloat(cavaloData.premioIndividual) || 0}" value="${formatCurrency(cavaloData.premioIndividual)}" readonly style="width: 100%; border: none; background: transparent; font-size: 14px; text-align: left;">` : '<span>-</span>'}
@@ -7052,7 +7058,7 @@ const gerarPDF = async () => {
               .filter(([key]) => !key.startsWith('_'))
               .map(([chave, cavaloData]) => {
                 return '<tr>' +
-                  '<td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">' + (cavaloData.chaveExibicao || chave) + '</td>' +
+                  '<td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold; white-space: pre-line; line-height: 1.4;">' + (cavaloData.chaveExibicao || chave) + '</td>' +
                   '<td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">' + formatCurrency(cavaloData.premioIndividual) + '</td>' +
                   '</tr>'
               }).join('');
@@ -7188,14 +7194,20 @@ const gerarHTMLApostador = (dados) => {
     
     const nomeTipo = rodada.tipoRodada?.nome || 'SEM TIPO'
     const nomeRodada = rodada.nomeRodada || 'N/A'
+    const baseRodada = (nomeRodada || '').trim().startsWith('Rodada') ? nomeRodada : `Rodada - ${nomeRodada}`
+    const textoRodada = rodada.tipoRodada?.abreviacao
+      ? `${baseRodada} - ${rodada.tipoRodada.abreviacao}`
+      : nomeRodada
     
     rodada.apostas.forEach((aposta) => {
       if (!aposta.pareo || !aposta.pareo.cavalos || !Array.isArray(aposta.pareo.cavalos)) {
         return
       }
       
-      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
-      const nomeCavalo = `${aposta.pareo.numero || ''} - ${cavalosNomes}`
+      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome)
+      const nomeCavalo = cavalosNomes.length > 1
+        ? `${aposta.pareo.numero || ''} - ${cavalosNomes[0]}\n${cavalosNomes.slice(1).join('\n')}`
+        : `${aposta.pareo.numero || ''} - ${cavalosNomes[0] || ''}`
       const chave = nomeCavalo
       
       // Obter nome do apostador se for aposta combinada
@@ -7212,7 +7224,7 @@ const gerarHTMLApostador = (dados) => {
       }
       
       apostasCarregadas.push({
-        rodada: nomeRodada,
+        rodada: textoRodada,
         chave: chave,
         valorAposta: parseFloat(aposta.valor || 0),
         porcentagem: parseFloat(aposta.porcentagemAposta || 0),
@@ -7253,7 +7265,7 @@ const gerarHTMLApostador = (dados) => {
       // Usar a chave normalizada para agrupamento, mas manter nomeCavalo original para exibição
       if (!apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo]) {
         apostasAgrupadas[nomeTipo][chaveAgrupamentoResumo] = {
-          rodada: nomeRodada,
+          rodada: textoRodada,
           porcentagem: parseFloat(aposta.porcentagemAposta || 0),
           premioIndividual: 0,
           totalRodada: 0,
@@ -7312,7 +7324,7 @@ const gerarHTMLApostador = (dados) => {
             ${apostasCarregadas.map(aposta => `
               <tr>
                 <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.rodada}</td>
-                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.chave}</td>
+                <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px; white-space: pre-line; line-height: 1.4;">${aposta.chave}</td>
                 <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.valorAposta)}</td>
                 <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${aposta.porcentagem}%</td>
                 <td style="border: 1px solid #e5e5e5; padding: 12px; background-color: white; font-size: 14px;">${formatCurrency(aposta.premioIndividual)}</td>
@@ -7348,7 +7360,7 @@ const gerarHTMLApostador = (dados) => {
               <tbody>
                 ${Object.entries(tipoData).filter(([key]) => !key.startsWith('_')).map(([chave, cavaloData]) => `
                   <tr>
-                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold;">${cavaloData.chaveExibicao || chave}</td>
+                    <td style="border: 1px solid #e5e5e5; padding: 12px; background: white; font-weight: bold; white-space: pre-line; line-height: 1.4;">${cavaloData.chaveExibicao || chave}</td>
                     <td style="border: 1px solid #e5e5e5; padding: 12px; background: white;">${formatCurrency(cavaloData.premioIndividual)}</td>
                   </tr>
                 `).join('')}

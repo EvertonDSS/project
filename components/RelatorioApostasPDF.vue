@@ -88,11 +88,17 @@ const gerarPDF = async () => {
   props.dados.apostasPorRodada.forEach(rodada => {
     rodada.apostas.forEach((aposta, index) => {
       const isUltimaLinha = index === rodada.apostas.length - 1
+      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome)
+      const chave = cavalosNomes.length > 1
+        ? `${aposta.pareo.numero} - ${cavalosNomes[0]}\n${cavalosNomes.slice(1).join('\n')}`
+        : `${aposta.pareo.numero} - ${cavalosNomes[0] || ''}`
+      const numLinhasChave = chave.split('\n').length
+      const alturaLinha = Math.max(12, numLinhasChave * 6 + 6)
       
       // Fundo da linha (alternado)
       const isEven = Math.floor((currentY - 52) / 12) % 2 === 0
       doc.setFillColor(isEven ? 255 : 249, isEven ? 255 : 249, isEven ? 255 : 249)
-      doc.rect(20, currentY, 160, 12, 'F')
+      doc.rect(20, currentY, 160, alturaLinha, 'F')
       
       // Bordas
       doc.setDrawColor('#ddd')
@@ -104,42 +110,45 @@ const gerarPDF = async () => {
       // RODADA (só na última linha da rodada)
       doc.setTextColor(corCinzaEscuro)
       doc.setFontSize(12)
+      
       if (isUltimaLinha) {
-        doc.text(rodada.nomeRodada, currentX + 2, currentY + 8)
+        const base = (rodada.nomeRodada || '').trim().startsWith('Rodada') ? rodada.nomeRodada : `Rodada - ${rodada.nomeRodada}`
+        const textoRodada = rodada.tipoRodada?.abreviacao
+          ? `${base} - ${rodada.tipoRodada.abreviacao}`
+          : rodada.nomeRodada
+        doc.text(textoRodada, currentX + 2, currentY + alturaLinha / 2)
       }
       currentX += colWidths[0]
       
-      // CHAVE
-      const cavalos = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
-      const chave = `${aposta.pareo.numero}- ${cavalos}`
-      doc.text(chave, currentX + 2, currentY + 8)
+      // CHAVE (com quebra de linha quando vários cavalos)
+      doc.text(chave, currentX + 2, currentY + 6, { maxWidth: colWidths[1] - 4 })
       currentX += colWidths[1]
       
       // VALOR DA APOSTA
       doc.setTextColor(corVerde)
       doc.setFont(undefined, 'bold')
-      doc.text(`R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + 8)
+      doc.text(`R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + alturaLinha / 2)
       currentX += colWidths[2]
       
       // %
       doc.setTextColor(corAzul)
       doc.setFont(undefined, 'bold')
-      doc.text(`${aposta.porcentagemAposta}%`, currentX + 2, currentY + 8)
+      doc.text(`${aposta.porcentagemAposta}%`, currentX + 2, currentY + alturaLinha / 2)
       currentX += colWidths[3]
       
       // PRÊMIO INDIVIDUAL
       doc.setTextColor(corDourada)
       doc.setFont(undefined, 'bold')
-      doc.text(`R$ ${aposta.valorPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + 8)
+      doc.text(`R$ ${aposta.valorPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + alturaLinha / 2)
       currentX += colWidths[4]
       
       // TOTAL DA RODADA (só na última linha da rodada)
       if (isUltimaLinha) {
         doc.setFillColor('#E8F5E8')
-        doc.rect(currentX, currentY, colWidths[5], 12, 'F')
+        doc.rect(currentX, currentY, colWidths[5], alturaLinha, 'F')
         doc.setTextColor(corVerde)
         doc.setFont(undefined, 'bold')
-        doc.text(`R$ ${aposta.valorOriginalPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + 8)
+        doc.text(`R$ ${aposta.valorOriginalPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + alturaLinha / 2)
       }
       
       totalApostado += aposta.valor
@@ -154,7 +163,7 @@ const gerarPDF = async () => {
         valor: aposta.valorPremio
       })
       
-      currentY += 12
+      currentY += alturaLinha
     })
   })
   
@@ -203,18 +212,20 @@ const gerarPDF = async () => {
       currentY += 12
       
       apostas.forEach(aposta => {
+        const numLinhasChaveResumo = (aposta.chave || '').split('\n').length
+        const alturaLinhaResumo = Math.max(12, numLinhasChaveResumo * 6 + 6)
         doc.setFillColor(255, 255, 255)
-        doc.rect(20, currentY, 160, 12, 'F')
+        doc.rect(20, currentY, 160, alturaLinhaResumo, 'F')
         doc.setDrawColor('#ddd')
         doc.setLineWidth(0.1)
         doc.line(20, currentY, 180, currentY)
         
         doc.setTextColor(corCinzaEscuro)
         doc.setFontSize(12)
-        doc.text(aposta.chave, 25, currentY + 8)
-        doc.text(`R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 150, currentY + 8)
+        doc.text(aposta.chave, 25, currentY + 6, { maxWidth: 120 })
+        doc.text(`R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 150, currentY + alturaLinhaResumo / 2)
         
-        currentY += 12
+        currentY += alturaLinhaResumo
       })
       
       currentY += 10

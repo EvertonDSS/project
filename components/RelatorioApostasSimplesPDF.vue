@@ -134,9 +134,10 @@ const gerarHTML = () => {
   // Processar dados
   props.dados.apostasPorRodada.forEach(rodada => {
     rodada.apostas.forEach((aposta, index) => {
-      const isUltimaLinha = index === rodada.apostas.length - 1
-      const cavalos = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
-      const chave = `${aposta.pareo.numero}- ${cavalos}`
+      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome)
+      const chave = cavalosNomes.length > 1
+        ? `${aposta.pareo.numero} - ${cavalosNomes[0]}\n${cavalosNomes.slice(1).join('\n')}`
+        : `${aposta.pareo.numero} - ${cavalosNomes[0] || ''}`
       
       totalApostado += aposta.valor
       
@@ -196,12 +197,15 @@ const gerarHTML = () => {
   const linhasTabela = rodadasOrdenadas.map(rodada => 
     rodada.apostas.map((aposta, index) => {
       const isUltimaLinha = index === rodada.apostas.length - 1
-      const cavalos = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
+      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome)
+      const chave = cavalosNomes.length > 1
+        ? `${aposta.pareo.numero} - ${cavalosNomes[0]}\n${cavalosNomes.slice(1).join('\n')}`
+        : `${aposta.pareo.numero} - ${cavalosNomes[0] || ''}`
       
       return `
         <tr>
           <td>${rodada.nomeRodada}</td>
-          <td>${aposta.pareo.numero}- ${cavalos}</td>
+          <td style="white-space: pre-line; line-height: 1.4;">${chave}</td>
           <td class="valor">R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
           <td class="porcentagem">${aposta.porcentagemAposta}%</td>
           <td class="premio">R$ ${aposta.valorPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
@@ -219,7 +223,7 @@ const gerarHTML = () => {
         <tbody>
           ${Array.from(apostasMap.entries()).map(([chave, valor]) => `
             <tr>
-              <td>${chave}</td>
+              <td style="white-space: pre-line; line-height: 1.4;">${chave}</td>
               <td>R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
             </tr>
           `).join('')}
@@ -563,8 +567,10 @@ const gerarPDFDownload = async () => {
   
   rodadasOrdenadas.forEach(rodada => {
     rodada.apostas.forEach((aposta, index) => {
-      const cavalos = aposta.pareo.cavalos.map(cavalo => cavalo.nome).join(' / ')
-      const chave = `${aposta.pareo.numero}- ${cavalos}`
+      const cavalosNomes = aposta.pareo.cavalos.map(cavalo => cavalo.nome)
+      const chave = cavalosNomes.length > 1
+        ? `${aposta.pareo.numero} - ${cavalosNomes[0]}\n${cavalosNomes.slice(1).join('\n')}`
+        : `${aposta.pareo.numero} - ${cavalosNomes[0] || ''}`
       const chaveUnica = `${rodada.nomeRodada}-${chave}`
       
       // Se já processamos esta chave única, pular
@@ -576,6 +582,8 @@ const gerarPDFDownload = async () => {
       apostasProcessadas.set(chaveUnica, true)
       
       const isUltimaLinha = index === rodada.apostas.length - 1
+      const numLinhasChave = chave.split('\n').length
+      const alturaLinha = Math.max(12, numLinhasChave * 6 + 6)
       
       // Fundo da linha (alternado)
       const isEven = Math.floor((currentY - 52) / 12) % 2 === 0
@@ -584,7 +592,7 @@ const gerarPDFDownload = async () => {
       } else {
         doc.setFillColor(249, 249, 249)
       }
-      doc.rect(20, currentY, totalWidth, 12, 'F')
+      doc.rect(20, currentY, totalWidth, alturaLinha, 'F')
       
       // Bordas
       doc.setDrawColor('#ddd')
@@ -598,39 +606,39 @@ const gerarPDFDownload = async () => {
       doc.setFontSize(9)
       doc.setFont(undefined, 'normal')
       if (isUltimaLinha) {
-        doc.text(rodada.nomeRodada, currentX + 2, currentY + 8)
+        doc.text(rodada.nomeRodada, currentX + 2, currentY + alturaLinha / 2)
       }
       currentX += colWidths[0]
       
-      // CHAVE
-      doc.text(chave, currentX + 2, currentY + 8)
+      // CHAVE (com quebra de linha quando vários cavalos)
+      doc.text(chave, currentX + 2, currentY + 6, { maxWidth: colWidths[1] - 4 })
       currentX += colWidths[1]
       
       // VALOR DA APOSTA (verde e negrito)
       doc.setTextColor(verdeRgb.r, verdeRgb.g, verdeRgb.b)
       doc.setFont(undefined, 'bold')
-      doc.text(`R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + 8)
+      doc.text(`R$ ${aposta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + alturaLinha / 2)
       currentX += colWidths[2]
       
       // % (azul e negrito)
       doc.setTextColor(azulRgb.r, azulRgb.g, azulRgb.b)
       doc.setFont(undefined, 'bold')
-      doc.text(`${aposta.porcentagemAposta}%`, currentX + 2, currentY + 8)
+      doc.text(`${aposta.porcentagemAposta}%`, currentX + 2, currentY + alturaLinha / 2)
       currentX += colWidths[3]
       
       // PRÊMIO INDIVIDUAL (dourado e negrito)
       doc.setTextColor(douradaRgb.r, douradaRgb.g, douradaRgb.b)
       doc.setFont(undefined, 'bold')
-      doc.text(`R$ ${aposta.valorPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + 8)
+      doc.text(`R$ ${aposta.valorPremio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, currentX + 2, currentY + alturaLinha / 2)
       currentX += colWidths[4]
       
       // TOTAL DA RODADA (só na última linha da rodada, com fundo verde)
       if (isUltimaLinha) {
         doc.setFillColor('#E8F5E8')
-        doc.rect(currentX, currentY, colWidths[5], 12, 'F')
+        doc.rect(currentX, currentY, colWidths[5], alturaLinha, 'F')
         doc.setTextColor(verdeRgb.r, verdeRgb.g, verdeRgb.b)
         doc.setFont(undefined, 'bold')
-        doc.text(`R$ ${formatarNumeroBrasileiro(aposta.valorOriginalPremio)}`, currentX + 2, currentY + 8)
+        doc.text(`R$ ${formatarNumeroBrasileiro(aposta.valorOriginalPremio)}`, currentX + 2, currentY + alturaLinha / 2)
       }
       
       totalApostado += aposta.valor
@@ -650,7 +658,7 @@ const gerarPDFDownload = async () => {
       }
       
       // Avançar Y após cada linha da tabela
-      currentY += 12
+      currentY += alturaLinha
     })
   })
   
@@ -708,8 +716,10 @@ const gerarPDFDownload = async () => {
       currentY += 12
       
       Array.from(apostasMap.entries()).forEach(([chave, valor]) => {
+        const numLinhasChaveResumo = chave.split('\n').length
+        const alturaLinhaResumo = Math.max(12, numLinhasChaveResumo * 6 + 6)
         doc.setFillColor(255, 255, 255)
-        doc.rect(20, currentY, totalWidth, 12, 'F')
+        doc.rect(20, currentY, totalWidth, alturaLinhaResumo, 'F')
         doc.setDrawColor('#ddd')
         doc.setLineWidth(0.1)
         doc.line(20, currentY, 20 + totalWidth, currentY)
@@ -717,11 +727,11 @@ const gerarPDFDownload = async () => {
         doc.setTextColor(corCinzaEscuro)
         doc.setFontSize(9)
         doc.setFont(undefined, 'normal')
-        doc.text(chave, 25, currentY + 8)
-        doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20 + totalWidth - 30, currentY + 8)
+        doc.text(chave, 25, currentY + 6, { maxWidth: totalWidth - 50 })
+        doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20 + totalWidth - 30, currentY + alturaLinhaResumo / 2)
         
         // Avançar Y após cada linha da tabela de resumo
-        currentY += 12
+        currentY += alturaLinhaResumo
       })
       
       // Espaçamento entre seções de resumo
