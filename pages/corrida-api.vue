@@ -2566,13 +2566,29 @@
     </main>
 
     <!-- Modal de Pareo -->
-    <div v-if="modalPareoOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="fecharModalPareo">
+    <div v-if="modalPareoOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4" @click.self="fecharModalPareo">
       <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
         <!-- Header -->
         <div class="bg-gradient-to-r from-orange-600 to-amber-600 text-white p-6">
           <div class="flex justify-between items-center">
-            <div>
+            <div class="flex items-center gap-3">
               <h2 class="text-2xl font-bold">Pareo #{{ pareoSelecionado?.numero }}</h2>
+              <button
+                v-if="pareoSelecionado && !editandoPareo && !isPareoExcluido(pareoSelecionado)"
+                type="button"
+                @click="excluirPareoCompleto(pareoSelecionado)"
+                :disabled="excluindoPareoCompletoId === (pareoSelecionado?.id ?? pareoSelecionado?.pareoId)"
+                class="p-2 rounded-lg bg-white/15 hover:bg-white/25 transition-colors disabled:opacity-50"
+                title="Excluir pareo completamente"
+              >
+                <svg v-if="excluindoPareoCompletoId === (pareoSelecionado?.id ?? pareoSelecionado?.pareoId)" class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                </svg>
+              </button>
             </div>
             <button 
               @click="fecharModalPareo"
@@ -2701,14 +2717,33 @@
               <h2 class="text-2xl font-bold">Lista de Pareos</h2>
               <p class="text-orange-100 text-sm">{{ pareosListadosUnicos.length }} pareo{{ pareosListadosUnicos.length !== 1 ? 's' : '' }} encontrado{{ pareosListadosUnicos.length !== 1 ? 's' : '' }}</p>
             </div>
-            <button 
-              @click="fecharModalPareos"
-              class="text-white hover:text-gray-200 transition-colors"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                @click="excluirTodosPareosCompletoListaModal"
+                :disabled="excluindoTodosPareosCompletoLista"
+                class="text-white hover:text-orange-100 transition-colors p-1 disabled:opacity-50"
+                title="Excluir completamente todos os pareos (campeonato e tipo de rodada atuais)"
+              >
+                <svg v-if="excluindoTodosPareosCompletoLista" class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+              <button 
+                type="button"
+                @click="fecharModalPareos"
+                class="text-white hover:text-gray-200 transition-colors p-1"
+                title="Fechar"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2735,14 +2770,18 @@
               ]"
             >
               <div class="flex items-center justify-between mb-2">
-                <h3 :class="[
-                  'font-bold text-lg',
-                  isPareoExcluido(pareo) ? 'text-red-800' : 'text-blue-800'
-                ]">Pareo #{{ pareo.numero }}</h3>
+                <h3
+                  :class="[
+                    'font-bold text-lg cursor-pointer hover:underline',
+                    isPareoExcluido(pareo) ? 'text-red-800' : 'text-blue-800'
+                  ]"
+                  title="Abrir detalhes do pareo"
+                  @click="abrirModalPareo(pareo)"
+                >Pareo #{{ pareo.numero }}</h3>
                 <div class="flex items-center space-x-2">
                   <button
                     v-if="!isPareoExcluido(pareo) && pareoEditandoId !== pareo.id"
-                    @click="iniciarEdicaoPareoInline(pareo)"
+                    @click.stop="iniciarEdicaoPareoInline(pareo)"
                     class="text-blue-600 hover:text-blue-800 transition-colors p-1"
                     title="Editar pareo"
                   >
@@ -2752,7 +2791,7 @@
                   </button>
                   <button
                     v-if="!isPareoExcluido(pareo) && pareoEditandoId !== pareo.id"
-                    @click="excluirPareo(pareo)"
+                    @click.stop="excluirPareo(pareo)"
                     class="text-red-600 hover:text-red-800 transition-colors p-1"
                     title="Excluir pareo"
                   >
@@ -3273,6 +3312,8 @@ const cavalosEditandoPorPareo = ref({})
 
 // Estados para modal de lista de pareos
 const modalPareosOpen = ref(false)
+const excluindoPareoCompletoId = ref(null)
+const excluindoTodosPareosCompletoLista = ref(false)
 
 // Estados Possíveis Ganhadores
 const campeonatoPossiveisGanhadores = ref('')
@@ -5805,6 +5846,55 @@ const excluirPareo = async (pareo) => {
   } catch (err) {
     alert('Erro ao excluir pareo. Verifique se a API está online.')
     console.error('Erro ao excluir pareo:', err)
+  }
+}
+
+const excluirPareoCompleto = async (pareo) => {
+  const pareoId = pareo.id ?? pareo.pareoId
+  const campeonatoId = pareo.campeonatoId ?? pareoFormBuscar.value.campeonatoId
+  if (!pareoId || !campeonatoId) {
+    alert('Não foi possível identificar o pareo ou o campeonato.')
+    return
+  }
+  if (!confirm(`Excluir completamente o pareo #${pareo.numero}?`)) {
+    return
+  }
+  excluindoPareoCompletoId.value = pareoId
+  try {
+    await corridaApi.excluirPareoCompleto(campeonatoId, pareoId)
+    alert('Pareo excluído completamente com sucesso!')
+    if (modalPareoOpen.value) {
+      fecharModalPareo()
+    }
+    await carregarPareos()
+  } catch (err) {
+    alert('Erro ao excluir pareo completamente. Verifique se a API está online.')
+    console.error('Erro ao excluir pareo completo:', err)
+  } finally {
+    excluindoPareoCompletoId.value = null
+  }
+}
+
+const excluirTodosPareosCompletoListaModal = async () => {
+  const campeonatoId = pareoFormBuscar.value.campeonatoId
+  const idPareo = pareoFormBuscar.value.tipoRodadaId
+  if (!campeonatoId || !idPareo) {
+    alert('Campeonato e tipo de rodada são necessários.')
+    return
+  }
+  if (!confirm('Excluir completamente todos os pareos deste campeonato e tipo de rodada?')) {
+    return
+  }
+  excluindoTodosPareosCompletoLista.value = true
+  try {
+    await corridaApi.excluirPareoCompleto(campeonatoId, idPareo)
+    alert('Pareos excluídos com sucesso.')
+    await carregarPareos()
+  } catch (err) {
+    alert('Erro ao excluir pareos. Verifique se a API está online.')
+    console.error('Erro ao excluir todos os pareos completos:', err)
+  } finally {
+    excluindoTodosPareosCompletoLista.value = false
   }
 }
 

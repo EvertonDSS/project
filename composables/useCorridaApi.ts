@@ -195,6 +195,18 @@ export const useCorridaApi = () => {
       }
     },
 
+    async excluirPareoCompleto(campeonatoId: string | number, pareoId: string | number) {
+      try {
+        const response = await api(`/pareos/excluir-completo/${campeonatoId}/${pareoId}`, {
+          method: 'DELETE'
+        })
+        return response
+      } catch (error) {
+        console.error('Erro ao excluir pareo completo:', error)
+        throw error
+      }
+    },
+
     async atualizarPareo(
       campeonatoId: string | number,
       tipoRodadaId: string | number,
