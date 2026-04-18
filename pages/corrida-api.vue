@@ -2006,6 +2006,20 @@
                 {{ mensagemGanhadoresPossiveis }}
               </div>
 
+              <div class="mb-4">
+                <label for="filtroPossiveisGanhadores" class="block text-sm font-medium text-gray-700 mb-1">
+                  Filtrar cavalos
+                </label>
+                <input
+                  id="filtroPossiveisGanhadores"
+                  v-model="filtroPossiveisGanhadoresModal"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Nome, parte do nome ou ID (várias palavras)…"
+                  class="w-full max-w-xl px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm"
+                />
+              </div>
+
               <div
                 v-if="cavalosSelecionadosFinalistasDetalhes.length"
                 class="mb-4 p-3 border border-green-200 bg-green-50 rounded-lg"
@@ -2028,10 +2042,16 @@
                   </span>
                 </div>
               </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              <div
+                v-if="cavalosPossiveisGanhadoresExibidosModal.length === 0"
+                class="py-10 text-center text-gray-500 text-sm"
+              >
+                Nenhum cavalo corresponde ao filtro.
+              </div>
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div 
-                  v-for="cavalo in cavalosPossiveisGanhadoresOrdenados" 
+                  v-for="cavalo in cavalosPossiveisGanhadoresExibidosModal" 
                   :key="cavalo.id || cavalo.idcavalo"
                   @click="toggleCavaloFinalista(cavalo.id || cavalo.idcavalo)"
                   :class="[
@@ -3339,6 +3359,7 @@ const cavalosSelecionadosVencedores = ref(new Set())
 const salvandoGanhadoresPossiveis = ref(false)
 const mensagemGanhadoresPossiveis = ref('')
 const mensagemGanhadoresPossiveisTipo = ref('')
+const filtroPossiveisGanhadoresModal = ref('')
 const cavalosPossiveisGanhadoresOrdenados = computed(() => {
   if (!Array.isArray(cavalosPossiveisGanhadores.value)) {
     return []
@@ -3402,6 +3423,14 @@ const textoCasaFiltroPalavras = (textoAlvo, filtro) => {
   const hay = textoSoLetrasENumeros(textoAlvo)
   return tokens.every((tok) => hay.includes(tok))
 }
+
+const cavalosPossiveisGanhadoresExibidosModal = computed(() =>
+  cavalosPossiveisGanhadoresOrdenados.value.filter((c) => {
+    const nome = c?.nome ?? c?.nomecavalo ?? ''
+    const idStr = String(c?.id ?? c?.idcavalo ?? '')
+    return textoCasaFiltroPalavras(`${nome} ${idStr}`, filtroPossiveisGanhadoresModal.value)
+  })
+)
 
 const mapaCavalosPorNome = computed(() => {
   const mapa = new Map()
@@ -3607,6 +3636,7 @@ const buscarCavalosPossiveisGanhadores = async () => {
 
   mensagemGanhadoresPossiveis.value = ''
   mensagemGanhadoresPossiveisTipo.value = ''
+  filtroPossiveisGanhadoresModal.value = ''
   carregandoCavalosPossiveisGanhadores.value = true
   cavalosPossiveisGanhadores.value = []
   // Limpar seleções anteriores ao carregar novos cavalos
@@ -3711,6 +3741,7 @@ const fecharModalPossiveisGanhadores = () => {
   cavalosSelecionadosVencedores.value = new Set()
   mensagemGanhadoresPossiveis.value = ''
   mensagemGanhadoresPossiveisTipo.value = ''
+  filtroPossiveisGanhadoresModal.value = ''
 }
 
 const toggleCavaloFinalista = (cavaloId) => {
