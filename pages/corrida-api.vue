@@ -365,22 +365,49 @@
               </select>
             </div>
 
-            <!-- Seleção de Tipo de Rodada -->
-            <div class="mb-4">
-              <label for="tipoRodadaCriar" class="block text-sm font-medium text-gray-700 mb-2">
+            <!-- Seleção de Tipo de Rodada (combobox: digitar filtra a lista abaixo) -->
+            <div class="mb-4 relative">
+              <label for="tipoRodadaPareoCombobox" class="block text-sm font-medium text-gray-700 mb-2">
                 Tipo de Rodada
               </label>
-              <select
-                id="tipoRodadaCriar"
-                v-model="pareoFormCriar.tipoRodadaId"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              <input
+                id="tipoRodadaPareoCombobox"
+                v-model="filtroTipoRodadaPareoCriar"
+                type="text"
+                autocomplete="off"
+                role="combobox"
+                :aria-expanded="listaTiposRodadaPareoAberta"
+                aria-autocomplete="list"
+                aria-controls="listaTiposRodadaPareo"
+                placeholder="Digite para buscar por nome ou abreviação…"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                @focus="onFocusTipoRodadaPareoCriar"
+                @blur="onBlurTipoRodadaPareoCriar"
+                @input="onInputTipoRodadaPareoCriar"
+                @keydown.escape.prevent="listaTiposRodadaPareoAberta = false"
+              />
+              <ul
+                v-show="listaTiposRodadaPareoAberta"
+                id="listaTiposRodadaPareo"
+                role="listbox"
+                class="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"
               >
-                <option value="">Selecione um tipo de rodada</option>
-                <option v-for="tipoRodada in tiposRodadas" :key="tipoRodada.id" :value="tipoRodada.id">
-                  {{ tipoRodada.nome }}
-                </option>
-              </select>
+                <li
+                  v-if="tiposRodadasFiltradosPareoCriar.length === 0"
+                  class="px-3 py-2 text-sm text-gray-500 cursor-default"
+                >
+                  {{ filtroTipoRodadaPareoCriar.trim() ? 'Nenhum tipo encontrado' : 'Nenhum tipo cadastrado' }}
+                </li>
+                <li
+                  v-for="tipoRodada in tiposRodadasFiltradosPareoCriar"
+                  :key="tipoRodada.id"
+                  role="option"
+                  class="px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 border-b border-gray-100 last:border-0"
+                  @mousedown.prevent="selecionarTipoRodadaPareo(tipoRodada)"
+                >
+                  {{ labelTipoRodadaPareo(tipoRodada) }}
+                </li>
+              </ul>
             </div>
 
             <!-- Textarea para colar o texto -->
@@ -533,7 +560,7 @@
               <select
                 id="campeonatoAposta"
                 v-model="apostaForm.campeonatoId"
-                @change="carregarRodadasCadastradas"
+                @change="onCampeonatoApostaChange"
                 required
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
@@ -553,10 +580,13 @@
                 id="tipoRodadaAposta"
                 v-model="apostaForm.tipoRodadaId"
                 required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                :disabled="carregandoTiposApostaCampeonato || tiposRodadasApostaCampeonato.length === 0"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">Selecione um tipo de rodada</option>
-                <option v-for="tipoRodada in tiposRodadas" :key="tipoRodada.id" :value="tipoRodada.id">
+                <option value="">
+                  {{ carregandoTiposApostaCampeonato ? 'Carregando tipos...' : tiposRodadasApostaCampeonato.length === 0 ? 'Selecione um campeonato primeiro' : 'Selecione um tipo de rodada' }}
+                </option>
+                <option v-for="tipoRodada in tiposRodadasApostaCampeonato" :key="tipoRodada.id" :value="tipoRodada.id">
                   {{ tipoRodada.nome }}
                 </option>
               </select>
@@ -1876,45 +1906,97 @@
                 />
               </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+              <div class="relative">
+                <label for="rodadaCampeaoCombobox" class="block text-sm font-medium text-gray-700 mb-2">
                   Rodada
                 </label>
-                <select
-                  v-model="rodadaSelecionadaCampeao"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                <input
+                  id="rodadaCampeaoCombobox"
+                  v-model="filtroRodadaCampeao"
+                  type="text"
+                  autocomplete="off"
+                  role="combobox"
+                  :aria-expanded="listaRodadaCampeaoAberta"
+                  aria-autocomplete="list"
+                  aria-controls="listaRodadaCampeao"
+                  placeholder="Digite para buscar rodada…"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  :disabled="!rodadasDisponiveisCampeao.length"
+                  @focus="onFocusRodadaCampeao"
+                  @blur="onBlurRodadaCampeao"
+                  @input="onInputRodadaCampeao"
+                  @keydown.escape.prevent="listaRodadaCampeaoAberta = false"
+                />
+                <ul
+                  v-show="listaRodadaCampeaoAberta && rodadasDisponiveisCampeao.length"
+                  id="listaRodadaCampeao"
+                  role="listbox"
+                  class="absolute z-[60] left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"
                 >
-                  <option value="" disabled>Selecione uma rodada</option>
-                  <option
-                    v-for="rodada in rodadasDisponiveisCampeao"
-                    :key="rodada.valor"
-                    :value="rodada.valor"
+                  <li
+                    v-if="rodadasFiltradasCampeao.length === 0"
+                    class="px-3 py-2 text-sm text-gray-500 cursor-default"
+                  >
+                    {{ filtroRodadaCampeao.trim() ? 'Nenhuma rodada encontrada' : 'Nenhuma rodada cadastrada' }}
+                  </li>
+                  <li
+                    v-for="rodada in rodadasFiltradasCampeao"
+                    :key="`${rodada.valor}__${rodada.nomeTipo ?? ''}`"
+                    role="option"
+                    class="px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 border-b border-gray-100 last:border-0"
+                    @mousedown.prevent="selecionarRodadaCampeao(rodada)"
                   >
                     {{ rodada.rotulo }}
-                  </option>
-                </select>
+                  </li>
+                </ul>
                 <p v-if="!rodadasDisponiveisCampeao.length" class="mt-2 text-sm text-gray-500">
                   Nenhuma rodada encontrada. Carregue os dados de rodadas do campeonato.
                 </p>
               </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+              <div class="relative">
+                <label for="cavaloCampeaoCombobox" class="block text-sm font-medium text-gray-700 mb-2">
                   Cavalo
                 </label>
-                <select
-                  v-model="campeaoSelecionado"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                <input
+                  id="cavaloCampeaoCombobox"
+                  v-model="filtroCavaloCampeao"
+                  type="text"
+                  autocomplete="off"
+                  role="combobox"
+                  :aria-expanded="listaCavaloCampeaoAberta"
+                  aria-autocomplete="list"
+                  aria-controls="listaCavaloCampeao"
+                  placeholder="Digite para buscar cavalo…"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  :disabled="!cavalosDisponiveisCampeao.length"
+                  @focus="onFocusCavaloCampeao"
+                  @blur="onBlurCavaloCampeao"
+                  @input="onInputCavaloCampeao"
+                  @keydown.escape.prevent="listaCavaloCampeaoAberta = false"
+                />
+                <ul
+                  v-show="listaCavaloCampeaoAberta && cavalosDisponiveisCampeao.length"
+                  id="listaCavaloCampeao"
+                  role="listbox"
+                  class="absolute z-[60] left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"
                 >
-                  <option value="" disabled>Selecione um cavalo</option>
-                  <option
-                    v-for="cavalo in cavalosDisponiveisCampeao"
+                  <li
+                    v-if="cavalosFiltradosCampeao.length === 0"
+                    class="px-3 py-2 text-sm text-gray-500 cursor-default"
+                  >
+                    {{ filtroCavaloCampeao.trim() ? 'Nenhum cavalo encontrado' : 'Nenhum cavalo cadastrado' }}
+                  </li>
+                  <li
+                    v-for="cavalo in cavalosFiltradosCampeao"
                     :key="cavalo.id"
-                    :value="cavalo.id"
+                    role="option"
+                    class="px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 border-b border-gray-100 last:border-0"
+                    @mousedown.prevent="selecionarCavaloCampeao(cavalo)"
                   >
                     {{ cavalo.nome }}
-                  </option>
-                </select>
+                  </li>
+                </ul>
                 <p v-if="!cavalosDisponiveisCampeao.length" class="mt-2 text-sm text-gray-500">
                   Nenhum cavalo encontrado. Verifique se os finalistas foram carregados para este campeonato.
                 </p>
@@ -2991,6 +3073,50 @@ const tipoRodadaAbreviacaoEdicao = ref('')
 
 // Estados para criar pareo
 const pareoFormCriar = ref({ campeonatoId: '', tipoRodadaId: '', texto: '' })
+const filtroTipoRodadaPareoCriar = ref('')
+const listaTiposRodadaPareoAberta = ref(false)
+let blurFecharListaTipoRodadaTimer = null
+
+const labelTipoRodadaPareo = (t) => {
+  if (!t) {
+    return ''
+  }
+  return t.abreviacao ? `${t.nome} (${t.abreviacao})` : String(t.nome ?? '')
+}
+
+const tiposRodadasFiltradosPareoCriar = computed(() => {
+  const filtro = filtroTipoRodadaPareoCriar.value
+  const lista = Array.isArray(tiposRodadas.value) ? tiposRodadas.value : []
+  return lista.filter((t) =>
+    textoCasaFiltroPalavras(`${t.nome ?? ''} ${t.abreviacao ?? ''}`, filtro)
+  )
+})
+
+const onFocusTipoRodadaPareoCriar = () => {
+  if (blurFecharListaTipoRodadaTimer) {
+    clearTimeout(blurFecharListaTipoRodadaTimer)
+    blurFecharListaTipoRodadaTimer = null
+  }
+  listaTiposRodadaPareoAberta.value = true
+}
+
+const onBlurTipoRodadaPareoCriar = () => {
+  blurFecharListaTipoRodadaTimer = setTimeout(() => {
+    listaTiposRodadaPareoAberta.value = false
+  }, 200)
+}
+
+const onInputTipoRodadaPareoCriar = () => {
+  pareoFormCriar.value = { ...pareoFormCriar.value, tipoRodadaId: '' }
+  listaTiposRodadaPareoAberta.value = true
+}
+
+const selecionarTipoRodadaPareo = (t) => {
+  pareoFormCriar.value = { ...pareoFormCriar.value, tipoRodadaId: t.id }
+  filtroTipoRodadaPareoCriar.value = labelTipoRodadaPareo(t)
+  listaTiposRodadaPareoAberta.value = false
+}
+
 const enviandoPareo = ref(false)
 const mensagemPareo = ref('')
 const mensagemPareoTipo = ref('')
@@ -3005,6 +3131,8 @@ const carregandoPareos = ref(false)
 
 // Estados para criar apostas
 const apostaForm = ref({ campeonatoId: '', tipoRodadaId: '', texto: '' })
+const tiposRodadasApostaCampeonato = ref([])
+const carregandoTiposApostaCampeonato = ref(false)
 const enviandoApostas = ref(false)
 const mensagemApostas = ref('')
 const mensagemApostasTipo = ref('')
@@ -3375,6 +3503,25 @@ const normalizarTexto = (texto) => {
     .trim()
 }
 
+/** Só letras e números (minúsculas, sem acento), para busca ignorar espaços e pontuação. */
+const textoSoLetrasENumeros = (texto) => normalizarTexto(texto).replace(/[^a-z0-9]/g, '')
+
+const tokensAlfanumericosFiltro = (filtro) =>
+  normalizarTexto(filtro)
+    .split(/\s+/)
+    .map((w) => textoSoLetrasENumeros(w))
+    .filter(Boolean)
+
+/** Cada palavra separada por espaço vira token alfanumérico; todos devem aparecer no alvo (em qualquer posição). */
+const textoCasaFiltroPalavras = (textoAlvo, filtro) => {
+  const tokens = tokensAlfanumericosFiltro(filtro)
+  if (!tokens.length) {
+    return true
+  }
+  const hay = textoSoLetrasENumeros(textoAlvo)
+  return tokens.every((tok) => hay.includes(tok))
+}
+
 const mapaCavalosPorNome = computed(() => {
   const mapa = new Map()
 
@@ -3420,6 +3567,77 @@ const campeaoSelecionado = ref('')
 const rodadaSelecionadaCampeao = ref('')
 const cavalosDisponiveisCampeao = ref([])
 const rodadasDisponiveisCampeao = ref([])
+const filtroRodadaCampeao = ref('')
+const listaRodadaCampeaoAberta = ref(false)
+let blurTimerRodadaCampeao = null
+const filtroCavaloCampeao = ref('')
+const listaCavaloCampeaoAberta = ref(false)
+let blurTimerCavaloCampeao = null
+
+const rodadasFiltradasCampeao = computed(() => {
+  const filtro = filtroRodadaCampeao.value
+  const lista = Array.isArray(rodadasDisponiveisCampeao.value) ? rodadasDisponiveisCampeao.value : []
+  return lista.filter((r) =>
+    textoCasaFiltroPalavras(`${r.rotulo ?? ''} ${r.valor ?? ''} ${r.nomeTipo ?? ''}`, filtro)
+  )
+})
+
+const cavalosFiltradosCampeao = computed(() => {
+  const filtro = filtroCavaloCampeao.value
+  const lista = Array.isArray(cavalosDisponiveisCampeao.value) ? cavalosDisponiveisCampeao.value : []
+  return lista.filter((c) => textoCasaFiltroPalavras(c.nome ?? '', filtro))
+})
+
+const onFocusRodadaCampeao = () => {
+  if (blurTimerRodadaCampeao) {
+    clearTimeout(blurTimerRodadaCampeao)
+    blurTimerRodadaCampeao = null
+  }
+  listaRodadaCampeaoAberta.value = true
+}
+
+const onBlurRodadaCampeao = () => {
+  blurTimerRodadaCampeao = setTimeout(() => {
+    listaRodadaCampeaoAberta.value = false
+  }, 200)
+}
+
+const onInputRodadaCampeao = () => {
+  rodadaSelecionadaCampeao.value = ''
+  listaRodadaCampeaoAberta.value = true
+}
+
+const selecionarRodadaCampeao = (r) => {
+  rodadaSelecionadaCampeao.value = r.rotulo
+  filtroRodadaCampeao.value = r.rotulo
+  listaRodadaCampeaoAberta.value = false
+}
+
+const onFocusCavaloCampeao = () => {
+  if (blurTimerCavaloCampeao) {
+    clearTimeout(blurTimerCavaloCampeao)
+    blurTimerCavaloCampeao = null
+  }
+  listaCavaloCampeaoAberta.value = true
+}
+
+const onBlurCavaloCampeao = () => {
+  blurTimerCavaloCampeao = setTimeout(() => {
+    listaCavaloCampeaoAberta.value = false
+  }, 200)
+}
+
+const onInputCavaloCampeao = () => {
+  campeaoSelecionado.value = ''
+  listaCavaloCampeaoAberta.value = true
+}
+
+const selecionarCavaloCampeao = (c) => {
+  campeaoSelecionado.value = c.id
+  filtroCavaloCampeao.value = c.nome
+  listaCavaloCampeaoAberta.value = false
+}
+
 const carregandoSelecaoCampeao = ref(false)
 const salvandoSelecaoCampeao = ref(false)
 const mensagemSelecaoCampeao = ref('')
@@ -3443,6 +3661,50 @@ const filtrarSaldosNegativos = ref(false)
 const filtrarSaldosPositivos = ref(false)
 const relatorioPagamentosCampeonatosSelecionados = ref([])
 const mensagemTextoCopiado = ref('')
+
+const algumModalCorridaApiAberto = computed(
+  () =>
+    modalApostasRodadaOpen.value ||
+    modalVisualizacaoGanhadoresOpen.value ||
+    modalRelatorioPagamentosOpen.value ||
+    modalTextoRelatorioOpen.value ||
+    modalSelecionarCampeaoOpen.value ||
+    modalPossiveisGanhadoresOpen.value ||
+    modalFinalistasOpen.value ||
+    modalVencedoresOpen.value ||
+    modalPareoOpen.value ||
+    modalPareosOpen.value ||
+    modalEditarApostador.value
+)
+
+watch(algumModalCorridaApiAberto, (aberto) => {
+  if (typeof document === 'undefined') {
+    return
+  }
+  const { documentElement: html, body } = document
+  if (aberto) {
+    html.style.overflow = 'hidden'
+    html.style.overscrollBehavior = 'none'
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+  } else {
+    html.style.overflow = ''
+    html.style.overscrollBehavior = ''
+    body.style.overflow = ''
+    body.style.overscrollBehavior = ''
+  }
+}, { immediate: true })
+
+onUnmounted(() => {
+  if (typeof document === 'undefined') {
+    return
+  }
+  const { documentElement: html, body } = document
+  html.style.overflow = ''
+  html.style.overscrollBehavior = ''
+  body.style.overflow = ''
+  body.style.overscrollBehavior = ''
+})
 
 const descricaoRelatorioPagamentos = computed(() => {
   if (!dadosRelatorioPagamentos.value) {
@@ -4114,6 +4376,18 @@ const abrirModalSelecionarCampeao = async () => {
   mensagemModalCampeaoTipo.value = ''
   cavalosDisponiveisCampeao.value = []
   rodadasDisponiveisCampeao.value = []
+  filtroRodadaCampeao.value = ''
+  filtroCavaloCampeao.value = ''
+  listaRodadaCampeaoAberta.value = false
+  listaCavaloCampeaoAberta.value = false
+  if (blurTimerRodadaCampeao) {
+    clearTimeout(blurTimerRodadaCampeao)
+    blurTimerRodadaCampeao = null
+  }
+  if (blurTimerCavaloCampeao) {
+    clearTimeout(blurTimerCavaloCampeao)
+    blurTimerCavaloCampeao = null
+  }
 
   modalSelecionarCampeaoOpen.value = true
   carregandoSelecaoCampeao.value = true
@@ -4147,7 +4421,9 @@ const abrirModalSelecionarCampeao = async () => {
         .filter(Boolean)
       : []
 
-    const rodadasLista = []
+    /** Evita duplicar a mesma rodada: a API agrupa por tipo e a mesma chave pode repetir em mais de um bloco. */
+    /** Chave valor+tipo: o mesmo texto de rodada (ex. RODADA - 01) pode existir em tipos diferentes. */
+    const rodadasPorChave = new Map()
 
     if (rodadasResponse && typeof rodadasResponse === 'object') {
       Object.values(rodadasResponse).forEach((dados) => {
@@ -4155,9 +4431,14 @@ const abrirModalSelecionarCampeao = async () => {
         if (Array.isArray(dados?.rodadas)) {
           dados.rodadas.forEach((rodada) => {
             const valor = rodada !== undefined && rodada !== null ? String(rodada) : ''
-            if (valor) {
-              rodadasLista.push({
+            if (!valor) {
+              return
+            }
+            const chave = `${valor}\n${nomeTipo}`
+            if (!rodadasPorChave.has(chave)) {
+              rodadasPorChave.set(chave, {
                 valor,
+                nomeTipo,
                 rotulo: nomeTipo ? `${valor} - ${nomeTipo}` : valor
               })
             }
@@ -4165,6 +4446,8 @@ const abrirModalSelecionarCampeao = async () => {
         }
       })
     }
+
+    const rodadasLista = Array.from(rodadasPorChave.values())
 
     cavalosDisponiveisCampeao.value = cavalosLista
     rodadasDisponiveisCampeao.value = rodadasLista
@@ -4186,6 +4469,18 @@ const fecharModalSelecionarCampeao = () => {
   modalSelecionarCampeaoOpen.value = false
   campeaoSelecionado.value = ''
   rodadaSelecionadaCampeao.value = ''
+  filtroRodadaCampeao.value = ''
+  filtroCavaloCampeao.value = ''
+  listaRodadaCampeaoAberta.value = false
+  listaCavaloCampeaoAberta.value = false
+  if (blurTimerRodadaCampeao) {
+    clearTimeout(blurTimerRodadaCampeao)
+    blurTimerRodadaCampeao = null
+  }
+  if (blurTimerCavaloCampeao) {
+    clearTimeout(blurTimerCavaloCampeao)
+    blurTimerCavaloCampeao = null
+  }
   mensagemModalCampeao.value = ''
   mensagemModalCampeaoTipo.value = ''
   carregandoSelecaoCampeao.value = false
@@ -5576,6 +5871,8 @@ const enviarPareo = async () => {
     
     // Limpar formulário
     pareoFormCriar.value = { campeonatoId: '', tipoRodadaId: '', texto: '' }
+    filtroTipoRodadaPareoCriar.value = ''
+    listaTiposRodadaPareoAberta.value = false
     
     // Limpar mensagem após 3 segundos
     setTimeout(() => {
@@ -5613,6 +5910,35 @@ const carregarTiposRodadasCampeonato = async () => {
   } finally {
     carregandoTiposCampeonato.value = false
   }
+}
+
+const carregarTiposRodadasApostaCampeonato = async () => {
+  if (!apostaForm.value.campeonatoId) {
+    tiposRodadasApostaCampeonato.value = []
+    apostaForm.value.tipoRodadaId = ''
+    return
+  }
+
+  carregandoTiposApostaCampeonato.value = true
+
+  try {
+    const response = await corridaApi.getTiposRodadasCampeonato(apostaForm.value.campeonatoId)
+    tiposRodadasApostaCampeonato.value = Array.isArray(response.tipos) ? response.tipos : []
+    apostaForm.value.tipoRodadaId = ''
+    console.log('Tipos de rodadas (apostas) carregados:', response)
+  } catch (err) {
+    console.error('Erro ao carregar tipos de rodadas (apostas):', err)
+    tiposRodadasApostaCampeonato.value = []
+  } finally {
+    carregandoTiposApostaCampeonato.value = false
+  }
+}
+
+const onCampeonatoApostaChange = async () => {
+  await Promise.all([
+    carregarRodadasCadastradas(),
+    carregarTiposRodadasApostaCampeonato()
+  ])
 }
 
 // Função para carregar pareos
